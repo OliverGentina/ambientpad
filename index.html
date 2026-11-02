@@ -205,7 +205,7 @@
 
 <script>
 "use strict";
-const VERSION="1.4.1";
+const VERSION="1.4.2";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -735,9 +735,9 @@ async function locateFolder(){
   const want=norm(R.folder);
   const branches=[info.default_branch];
   try{for(const b of await ghApi("/branches?per_page=50"))if(!branches.includes(b.name))branches.push(b.name);}catch(e){}
-  let rootNames=null;
+  let rootNames=null,noContents=false;
   for(const br of branches){
-    let root;try{root=await gh("",false,br);}catch(e){continue;}
+    let root;try{root=await gh("",false,br);}catch(e){if(e.status===403||e.status===404)noContents=true;continue;}
     if(br===info.default_branch)rootNames=root.map(x=>x.type==="dir"?x.name+"/":x.name);
     const hit=root.find(x=>x.type==="dir"&&norm(x.name)===want);
     if(hit){
@@ -749,6 +749,10 @@ async function locateFolder(){
       return {ok:true,notes};
     }
   }
+  if(rootNames===null&&noContents)return {ok:false,title:"Schlüssel darf keine Dateien lesen",lines:[
+    `Das Repository „${R.owner}/${R.repo}“ ist erreichbar, aber der Schlüssel hat keine Leserechte für die Dateien.`,
+    "Auf github.com: Settings → Developer settings → Fine-grained tokens → Schlüssel antippen → „Edit“.",
+    "Unter „Permissions“ bei „Contents“ „Read-only“ wählen und speichern. In der App muss nichts geändert werden – danach einfach erneut suchen."]};
   return {ok:false,title:`Ordner „${R.folder}“ nicht gefunden`,lines:[
     `Das Repository „${R.owner}/${R.repo}“ ist erreichbar, aber der Ordner fehlt${branches.length>1?` (gesucht in: ${branches.join(", ")})`:""}.`,
     rootNames&&rootNames.length?`Ganz oben im Repository liegt: ${rootNames.join(", ")}`:"Das Repository ist leer – wurde in GitHub Desktop „Push origin“ geklickt?",
