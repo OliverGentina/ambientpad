@@ -177,7 +177,8 @@
   <div class="row"><button class="btn accent" id="r_check">Nach neuen Pads suchen</button></div>
   <div class="row"><button class="btn" id="r_login">Mit Microsoft anmelden</button><button class="btn" id="r_logout">Abmelden</button></div>
   <details><summary style="color:var(--dim);font-size:14px">Erweitert</summary>
-    <label style="margin-top:8px">Microsoft-Anwendungs-ID<input type="text" id="r_client" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="z. B. 1a2b3c4d-…"></label>
+    <label style="margin-top:8px">Microsoft-Anwendungs-ID<input type="text" id="r_client" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="fest eingetragen"></label>
+    <label style="margin-top:8px">Verzeichnis-ID (Mandant)<input type="text" id="r_tenant" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="fest eingetragen"></label>
   </details>
   <h3>Speicher</h3>
   <p id="storageInfo">–</p>
@@ -207,7 +208,7 @@
 
 <script>
 "use strict";
-const VERSION="1.5.1";
+const VERSION="1.6.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -713,11 +714,13 @@ $("clearSetBtn").onclick=async()=>{
 // Anmeldung: OAuth 2.0 Authorization Code + PKCE direkt bei Microsoft (ohne Server, ohne Bibliothek).
 // Microsoft begrenzt die Anmeldung von Web-Apps auf 24 Stunden – Abspielen geht immer, nur zum Suchen
 // nach neuen Pads ist dann eine neue Anmeldung nötig (meist ein Tipp, ohne Passwort).
-const MS_DEFAULT_CLIENT_ID="af1d903a-5c9a-41e2-a6cf-892f2ee5aa98";            // Anwendungs-ID aus der Microsoft-Registrierung
-const MS_AUTH="https://login.microsoftonline.com/consumers/oauth2/v2.0";
+const MS_DEFAULT_CLIENT_ID="9798d7a7-5f76-47d2-aa17-84efb0f86119";            // Anwendungs-ID aus der Microsoft-Registrierung
+const MS_DEFAULT_TENANT="f0ce23f1-a52e-4146-bb93-3bd2e8635baa";  // "consumers" = privates OneDrive, sonst Verzeichnis-ID (Mandant) des Geschäftskontos
+const msTenant=()=>(OD.tenant||MS_DEFAULT_TENANT||"consumers").trim();
+const msAuth=()=>`https://login.microsoftonline.com/${encodeURIComponent(msTenant())}/oauth2/v2.0`;
 const MS_SCOPES="openid profile offline_access Files.Read";
 const GRAPH="https://graph.microsoft.com/v1.0";
-const OD=Object.assign({folder:"Meine Pads",clientId:""},load("apl.onedrive",{}));
+const OD=Object.assign({folder:"Meine Pads",clientId:"",tenant:""},load("apl.onedrive",{}));
 const saveOD=()=>store("apl.onedrive",OD);
 let MST=load("apl.mstoken",null);       // {at, atExp, rt, rtExp, user}
 const saveMST=()=>store("apl.mstoken",MST);
@@ -740,7 +743,7 @@ async function msLogin(afterwards="check"){
   store("apl.pkce",{verifier,state,afterwards,t:Date.now()});
   const q=new URLSearchParams({client_id:cid,response_type:"code",redirect_uri:redirectUri(),response_mode:"query",scope:MS_SCOPES,state,code_challenge:challenge,code_challenge_method:"S256"});
   if(MST&&MST.user)q.set("login_hint",MST.user);
-  location.href=`${MS_AUTH}/authorize?${q}`;
+  location.href=`${msAuth()}/authorize?${q}`;
 }
 function storeTokens(j,sessionStart){
   const now=Date.now();
@@ -755,10 +758,15 @@ async function handleAuthRedirect(){
   if(!q.has("code")&&!q.has("error"))return null;
   history.replaceState(null,"",location.pathname);
   const pk=load("apl.pkce",null);try{localStorage.removeItem("apl.pkce");}catch(e){}
-  if(q.has("error")){toast("Anmeldung abgebrochen");return null;}
+  if(q.has("error")){
+    const d=(q.get("error_description")||"").replace(/\+/g," ");
+    if(/consent|AADSTS65001|AADSTS90094|admin/i.test(d+q.get("error")))showInfoSheet("Zustimmung des Administrators nötig",["Dein Firmenkonto erlaubt AmbientPad noch nicht, Dateien zu lesen.","Im Entra-Portal: App-Registrierungen → AmbientPad → API-Berechtigungen → „Administratorzustimmung erteilen“ – oder deine IT darum bitten.",d.slice(0,200)]);
+    else toast("Anmeldung abgebrochen");
+    return null;
+  }
   if(!pk||pk.state!==q.get("state")){toast("Anmeldung ungültig – bitte erneut anmelden");return null;}
   try{
-    const res=await fetch(`${MS_AUTH}/token`,{method:"POST",body:new URLSearchParams({client_id:msClientId(),grant_type:"authorization_code",code:q.get("code"),redirect_uri:redirectUri(),code_verifier:pk.verifier,scope:MS_SCOPES})});
+    const res=await fetch(`${msAuth()}/token`,{method:"POST",body:new URLSearchParams({client_id:msClientId(),grant_type:"authorization_code",code:q.get("code"),redirect_uri:redirectUri(),code_verifier:pk.verifier,scope:MS_SCOPES})});
     const j=await res.json();
     if(!res.ok||!j.access_token)throw new Error(j.error_description||j.error||res.status);
     storeTokens(j,true);toast("Mit Microsoft angemeldet"+(MST.user?` (${MST.user})`:""));
@@ -770,7 +778,7 @@ async function getToken(){
   if(MST.at&&Date.now()<MST.atExp)return MST.at;
   if(!msSessionValid())return null;
   try{
-    const res=await fetch(`${MS_AUTH}/token`,{method:"POST",body:new URLSearchParams({client_id:msClientId(),grant_type:"refresh_token",refresh_token:MST.rt,scope:MS_SCOPES})});
+    const res=await fetch(`${msAuth()}/token`,{method:"POST",body:new URLSearchParams({client_id:msClientId(),grant_type:"refresh_token",refresh_token:MST.rt,scope:MS_SCOPES})});
     const j=await res.json();if(!res.ok||!j.access_token)throw 0;
     storeTokens(j,false);return MST.at;
   }catch(e){MST.rtExp=0;saveMST();return null;}
@@ -934,6 +942,7 @@ async function applySync(){
 $("syncGo").onclick=applySync;
 $("syncLater").onclick=()=>{$("syncSheet").classList.remove("open");if(remotePlan)$("settingsBtn").classList.add("badge");};
 $("r_folder").value=OD.folder;$("r_folder").onchange=()=>{OD.folder=$("r_folder").value.trim()||"Meine Pads";saveOD();};
+$("r_tenant").value=OD.tenant;$("r_tenant").onchange=()=>{OD.tenant=$("r_tenant").value.trim();saveOD();MST=null;try{localStorage.removeItem("apl.mstoken");}catch(e){}updateAccountInfo();};
 $("r_client").value=OD.clientId;$("r_client").onchange=()=>{OD.clientId=$("r_client").value.trim();saveOD();updateAccountInfo();};
 $("r_check").onclick=()=>{OD.folder=$("r_folder").value.trim()||"Meine Pads";OD.clientId=$("r_client").value.trim();saveOD();$("settingsSheet").classList.remove("open");checkRemote(true);};
 $("r_login").onclick=()=>{OD.clientId=$("r_client").value.trim();saveOD();msLogin("check");};
