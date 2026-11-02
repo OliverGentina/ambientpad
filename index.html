@@ -61,6 +61,12 @@
   .row{display:flex;align-items:center;gap:9px}
   .grow{flex:1;min-width:0}
   input[type=range]{width:100%;accent-color:var(--accent);height:30px}
+  .pad.dropping{outline:3px dashed var(--setcolor);outline-offset:-6px;transform:scale(1.03);background:#2a3142}
+  .sets button.dropping{outline:2px dashed var(--setcolor)}
+  #dropHint{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 64px);transform:translateX(-50%);z-index:35;display:none;
+    background:rgba(20,24,34,.97);border:1px solid var(--line);border-radius:14px;padding:10px 16px;font-size:14px;font-weight:600;text-align:center;max-width:92vw;pointer-events:none}
+  body.dragging #dropHint{display:block}
+  @media (min-width:900px){body{max-width:900px;margin:0 auto}}
   #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 140px);transform:translateX(-50%);background:rgba(40,46,60,.97);
     padding:10px 16px;border-radius:22px;font-size:14px;font-weight:600;max-width:90vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
   #toast.show{opacity:1}
@@ -106,6 +112,7 @@
 </footer>
 
 <div id="toast" role="status"></div>
+<div id="dropHint">Datei auf eine <b>Tonart</b> ziehen – oder auf einen <b>Set-Knopf</b> bzw. irgendwo loslassen: Zuordnung nach Tonart im Dateinamen</div>
 <input type="file" id="fileMulti" accept="audio/*,.mp3,.wav,.m4a,.aif,.aiff" multiple hidden>
 <input type="file" id="fileOne" accept="audio/*,.mp3,.wav,.m4a,.aif,.aiff" hidden>
 <audio id="silent" loop playsinline preload="auto"></audio>
@@ -159,7 +166,7 @@
 
 <script>
 "use strict";
-const VERSION="1.1.0";
+const VERSION="1.2.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -492,21 +499,25 @@ async function assignFile(set,k,file){
 $("importBtn").onclick=()=>{unlockAudio();$("fileMulti").click();};
 $("fileMulti").onchange=async e=>{
   const files=[...e.target.files];e.target.value="";
+  await importFiles(S.set,files);
+};
+// Mehrere Dateien: Tonart aus dem Dateinamen, sonst auf leere Tasten verteilen
+async function importFiles(set,files){
   if(!files.length)return;
   toast(`Lade ${files.length} Datei(en) …`);
-  let ok=0,auto=0,fail=0;const rest=[];
+  let ok=0,auto=0,fail=0,skipped=0;const rest=[];
   for(const f of files){
     const k=parseKey(f.name);
     if(k===null){rest.push(f);continue;}
-    try{await assignFile(S.set,k,f);ok++;auto++;render();}catch(err){fail++;}
+    try{await assignFile(set,k,f);ok++;auto++;render();}catch(err){fail++;}
   }
   for(const f of rest){
-    const k=pads[S.set].findIndex(p=>!p);if(k<0){fail++;continue;}
-    try{await assignFile(S.set,k,f);ok++;render();}catch(err){fail++;}
+    const k=pads[set].findIndex(p=>!p);if(k<0){skipped++;continue;}
+    try{await assignFile(set,k,f);ok++;render();}catch(err){fail++;}
   }
   render(); updateStorage();
-  toast(`${S.names[S.set]}: ${ok} geladen${auto?` (${auto} nach Tonart im Namen)`:""}${fail?` · ${fail} fehlgeschlagen`:""}`);
-};
+  toast(`${S.names[set]}: ${ok} geladen${auto?` (${auto} nach Tonart im Namen)`:""}${skipped?` · ${skipped} ohne Tonart im Namen – bitte direkt auf eine Taste ziehen`:""}${fail?` · ${fail} nicht lesbar`:""}`);
+}
 let assignKey=0;
 function openAssign(k){assignKey=k;fillAssign();$("assignSheet").classList.add("open");}
 function fillAssign(){
@@ -544,6 +555,45 @@ $("assignVol").oninput=e=>{
   dbPut("meta",id(S.set,assignKey),p.bundled?{bundled:true,vol:p.vol}:{name:p.name,vol:p.vol}).catch(()=>{});
 };
 $("assignClose").onclick=()=>$("assignSheet").classList.remove("open");
+
+// ================= Drag & Drop =================
+const isAudio=f=>/^audio\//.test(f.type)||/\.(mp3|wav|wave|m4a|aac|aif|aiff|caf|flac|ogg)$/i.test(f.name);
+const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
+let dragDepth=0;
+window.addEventListener("dragenter",e=>{if(!hasFiles(e))return;e.preventDefault();dragDepth++;document.body.classList.add("dragging");});
+window.addEventListener("dragleave",e=>{if(!hasFiles(e))return;dragDepth=Math.max(0,dragDepth-1);if(!dragDepth)document.body.classList.remove("dragging");});
+window.addEventListener("dragover",e=>{if(!hasFiles(e))return;e.preventDefault();e.dataTransfer.dropEffect="copy";});
+function endDrag(){dragDepth=0;document.body.classList.remove("dragging");document.querySelectorAll(".dropping").forEach(el=>el.classList.remove("dropping"));}
+// Irgendwo loslassen → automatische Zuordnung ins aktuelle Set
+window.addEventListener("drop",async e=>{
+  if(!hasFiles(e))return;e.preventDefault();endDrag();
+  const files=[...e.dataTransfer.files].filter(isAudio);
+  if(!files.length){toast("Keine Audiodatei erkannt (MP3, WAV, M4A, AIFF)");return;}
+  ensureCtx();await importFiles(S.set,files);
+});
+function dropTarget(el,onFiles){
+  el.addEventListener("dragover",e=>{if(!hasFiles(e))return;e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect="copy";el.classList.add("dropping");});
+  el.addEventListener("dragleave",()=>el.classList.remove("dropping"));
+  el.addEventListener("drop",async e=>{
+    if(!hasFiles(e))return;e.preventDefault();e.stopPropagation();endDrag();
+    const files=[...e.dataTransfer.files].filter(isAudio);
+    if(!files.length){toast("Keine Audiodatei erkannt (MP3, WAV, M4A, AIFF)");return;}
+    ensureCtx();await onFiles(files);
+  });
+}
+// Auf eine Tonart: genau diese Taste belegen (bei mehreren Dateien: automatische Zuordnung)
+padEls.forEach((el,k)=>dropTarget(el,async files=>{
+  if(files.length>1){await importFiles(S.set,files);return;}
+  toast(`Lade ${files[0].name} …`);
+  try{await assignFile(S.set,k,files[0]);setSelected(k);toast(`${S.names[S.set]} · ${KEYS[k][0]}: ${files[0].name}`);}
+  catch(err){toast(err&&err.name==="QuotaExceededError"?"Speicher voll":"Datei konnte nicht gelesen werden");}
+  render();updateStorage();
+}));
+// Auf einen Set-Knopf: in dieses Set importieren
+document.querySelectorAll("#sets button").forEach(b=>dropTarget(b,async files=>{
+  const set=+b.dataset.set; if(set!==S.set)switchSet(set);
+  await importFiles(set,files);
+}));
 
 // ================= Set zurücksetzen =================
 $("clearSetBtn").onclick=async()=>{

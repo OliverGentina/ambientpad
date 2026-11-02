@@ -4,7 +4,7 @@ Pad-Sounds in allen 12 Tonarten für Worship. Läuft offline als Web-App auf iPh
 (Safari → Teilen → „Zum Home-Bildschirm“): https://olivergentina.github.io/ambientpad/
 
 - 2 Sets mit je 12 Tonarten, vorbelegt mit den Standard-Pads **Warm** und **Shimmer**
-- Eigene MP3/WAV/M4A-Dateien ersetzen einzelne Tasten
+- Eigene MP3/WAV/M4A-Dateien ersetzen einzelne Tasten – per Dateiauswahl oder Drag & Drop auf eine Tonart (gespeichert nur im jeweiligen Browser)
 - Weiche Überblendungen, nahtlose Schleifen
 - Steuerung per Bluetooth-Umblätter-Pedal (2 Tasten): links kurz = nächste Tonart, lang = zurück;
   rechts kurz = Start/Stopp, lang = alles ausblenden
