@@ -68,6 +68,15 @@
     background:rgba(20,24,34,.97);border:1px solid var(--line);border-radius:14px;padding:10px 16px;font-size:14px;font-weight:600;text-align:center;max-width:92vw;pointer-events:none}
   body.dragging #dropHint{display:block}
   @media (min-width:900px){body{max-width:900px;margin:0 auto}}
+  body.arranging .pad{animation:wiggle .28s ease-in-out infinite alternate;touch-action:none;cursor:grab}
+  body.arranging .pad:nth-child(2n){animation-delay:-.14s}
+  body.arranging .pad::after{content:"⠿";position:absolute;top:6px;right:9px;font-size:16px;opacity:.55;animation:none;background:none;width:auto;height:auto}
+  body.arranging .pad.dragging{animation:none;transform:scale(1.07);z-index:3;box-shadow:0 10px 30px rgba(0,0,0,.6);outline:3px solid var(--setcolor);cursor:grabbing}
+  @keyframes wiggle{from{transform:rotate(-1.2deg)}to{transform:rotate(1.2deg)}}
+  #arrangeBar{display:none;flex-direction:column;gap:9px}
+  body.arranging #arrangeBar{display:flex}
+  body.arranging #mainFooter{display:none}
+  #arrangeBar p{margin:0;text-align:center;color:var(--dim);font-size:14px}
   #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 140px);transform:translateX(-50%);background:rgba(40,46,60,.97);
     padding:10px 16px;border-radius:22px;font-size:14px;font-weight:600;max-width:90vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
   #toast.show{opacity:1}
@@ -104,7 +113,12 @@
 
 <main id="grid" aria-label="Tonarten"></main>
 
-<footer>
+<div id="arrangeBar">
+  <p>Kacheln an die gewünschte Stelle ziehen</p>
+  <div class="row"><button class="btn grow" id="orderChrom">Chromatisch</button><button class="btn grow" id="orderFifths">Quintenzirkel</button></div>
+  <button class="btn accent" id="arrangeDone" style="min-height:52px;font-size:18px">Fertig</button>
+</div>
+<footer id="mainFooter">
   <div class="row">
     <span aria-hidden="true">🔈</span>
     <input class="grow" type="range" id="master" min="0" max="1" step="0.01" aria-label="Master-Lautstärke">
@@ -144,6 +158,9 @@
   <h3>Pedal</h3>
   <p id="pedalInfo"></p>
   <div class="row"><button class="btn accent" id="learnBtn">Pedal lernen</button><button class="btn" id="pedalReset">Standard</button></div>
+  <h3>Anordnung</h3>
+  <p>Reihenfolge der Tonart-Kacheln – das Pedal („nächste Tonart“) folgt ihr. Gilt für alle Sets.</p>
+  <div class="row"><button class="btn" id="arrangeBtn">Kacheln anordnen</button></div>
   <h3>Übergänge</h3>
   <label><span>Tonartwechsel überblenden <b id="v_xfade"></b></span><input type="range" id="s_xfade" min="0.5" max="10" step="0.5"></label>
   <label><span>Einblenden (aus der Stille) <b id="v_fadeIn"></b></span><input type="range" id="s_fadeIn" min="0" max="10" step="0.5"></label>
@@ -188,7 +205,7 @@
 
 <script>
 "use strict";
-const VERSION="1.3.2";
+const VERSION="1.4.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -227,6 +244,11 @@ const S=Object.assign({xfade:3,fadeIn:2,fadeOut:4,loopX:3,master:0.9,set:"0",nam
 S.set=String(S.set);
 if(S.names[0]==="Set 1"&&S.names[1]==="Set 2")S.names=["Warm","Shimmer"];
 const saveSettings=()=>store("apl.settings",S);
+// Reihenfolge der Kacheln (Tonart-Indizes 0–11), gilt für alle Sets
+const ORDER_CHROM=[0,1,2,3,4,5,6,7,8,9,10,11], ORDER_FIFTHS=[0,7,2,9,4,11,6,1,8,3,10,5];
+let ORDER=(o=>Array.isArray(o)&&o.length===12&&[...o].sort((a,b)=>a-b).every((v,i)=>v===i)?o:ORDER_CHROM.slice())(load("apl.order",null));
+const saveOrder=()=>store("apl.order",ORDER);
+function stepSel(n){const i=ORDER.indexOf(selected);setSelected(ORDER[((i+n)%12+12)%12]);}
 const PEDAL_DEFAULT={left:["ArrowLeft","ArrowUp","PageUp"],right:["ArrowRight","ArrowDown","PageDown"," ","Enter"],hold:true};
 let P=Object.assign({},PEDAL_DEFAULT,load("apl.pedal",{}));
 const savePedal=()=>store("apl.pedal",P);
@@ -400,7 +422,7 @@ const down={};            // side → {t, timer, longFired}
 let learning=null, lastSide=null, lastSideT=0, fallbackTimer=null, fallbackSide=null;
 function sideOf(key){ if(P.left.includes(key))return "left"; if(P.right.includes(key))return "right"; return null; }
 function action(side,long){
-  if(side==="left"){ long?setSelected(selected-1):setSelected(selected+1); }
+  if(side==="left"){ long?stepSel(-1):stepSel(1); }
   else{ long?fadeAll(S.fadeOut):toggleKey(selected); }
 }
 function pedalEvent(side,isLong){
@@ -408,7 +430,7 @@ function pedalEvent(side,isLong){
   // Fallback ohne Halten
   const now=performance.now();
   if(fallbackTimer&&fallbackSide&&fallbackSide!==side){clearTimeout(fallbackTimer);fallbackTimer=null;fallbackSide=null;fadeAll(S.fadeOut);toast("Alles ausblenden");return;}
-  if(side==="left"&&lastSide==="left"&&now-lastSideT<450){lastSide=null;setSelected(selected-2);return;}
+  if(side==="left"&&lastSide==="left"&&now-lastSideT<450){lastSide=null;stepSel(-2);return;}
   clearTimeout(fallbackTimer);fallbackSide=side;
   fallbackTimer=setTimeout(()=>{fallbackTimer=null;fallbackSide=null;action(side,false);},130);
   lastSide=side;lastSideT=now;
@@ -491,13 +513,42 @@ const padEls=KEYS.map(([k,alt],i)=>{
   const el=document.createElement("div");el.className="pad";el.setAttribute("role","button");
   el.innerHTML=`<div class="k">${k}</div>${alt?`<div class="alt">${alt}</div>`:""}<div class="name"></div>`;
   let timer=null,long=false;
-  el.addEventListener("pointerdown",()=>{long=false;timer=setTimeout(()=>{long=true;openAssign(i);},550);});
+  el.addEventListener("pointerdown",e=>{
+    if(arranging){startArrange(el,i,e);return;}
+    long=false;timer=setTimeout(()=>{long=true;openAssign(i);},550);
+  });
   const cancel=()=>{clearTimeout(timer);timer=null;};
-  el.addEventListener("pointerup",()=>{if(timer){cancel();if(!long){unlockAudio();if(!pads[S.set][i]){setSelected(i);openAssign(i);}else toggleKey(i);}}});
+  el.addEventListener("pointerup",()=>{if(arranging)return;if(timer){cancel();if(!long){unlockAudio();if(!pads[S.set][i]){setSelected(i);openAssign(i);}else toggleKey(i);}}});
   el.addEventListener("pointerleave",cancel);el.addEventListener("pointercancel",cancel);
   el.addEventListener("contextmenu",e=>e.preventDefault());
   grid.appendChild(el);return el;
 });
+// ---- Kacheln anordnen ----
+let arranging=false,dragKey=null;
+function applyOrder(){padEls.forEach((el,k)=>{el.style.order=ORDER.indexOf(k);});}
+function startArrange(el,k,e){
+  e.preventDefault();dragKey=k;el.classList.add("dragging");
+  try{el.setPointerCapture(e.pointerId);}catch(_){}
+  const move=ev=>{
+    if(dragKey===null)return;
+    const under=document.elementFromPoint(ev.clientX,ev.clientY);
+    const t=under&&under.closest&&under.closest(".pad");
+    if(!t||t===el)return;
+    const tk=padEls.indexOf(t),from=ORDER.indexOf(dragKey),to=ORDER.indexOf(tk);
+    ORDER.splice(from,1);ORDER.splice(to,0,dragKey);applyOrder();
+  };
+  const end=()=>{
+    el.classList.remove("dragging");dragKey=null;saveOrder();
+    el.removeEventListener("pointermove",move);el.removeEventListener("pointerup",end);el.removeEventListener("pointercancel",end);
+  };
+  el.addEventListener("pointermove",move);el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);
+}
+function setArranging(on){arranging=on;document.body.classList.toggle("arranging",on);if(!on)saveOrder();}
+$("arrangeBtn").onclick=()=>{$("settingsSheet").classList.remove("open");setArranging(true);};
+$("arrangeDone").onclick=()=>{setArranging(false);toast("Anordnung gespeichert");};
+$("orderChrom").onclick=()=>{ORDER=ORDER_CHROM.slice();applyOrder();saveOrder();};
+$("orderFifths").onclick=()=>{ORDER=ORDER_FIFTHS.slice();applyOrder();saveOrder();};
+applyOrder();
 function applySetColor(){ document.documentElement.style.setProperty("--setcolor",setColor(S.set)); }
 function renderSetButtons(){
   const box=$("sets"); box.innerHTML="";
