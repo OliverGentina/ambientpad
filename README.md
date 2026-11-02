@@ -9,6 +9,12 @@ Pad-Sounds in allen 12 Tonarten für Worship. Läuft offline als Web-App auf iPh
 - Steuerung per Bluetooth-Umblätter-Pedal (2 Tasten): links kurz = nächste Tonart, lang = zurück;
   rechts kurz = Start/Stopp, lang = alles ausblenden
 
+## Meine Pads (privat)
+
+Eigene, gekaufte Pads liegen in einem separaten **privaten** Repository (Standard: `meine-pads`, Ordner `Meine Pads/<Set-Name>/`).
+Jeder Unterordner erscheint in der App als eigenes Set; die Tonart wird aus dem Dateinamen gelesen (z. B. „01 - Key of A Pads.mp3“).
+Zugriff per fein abgestuftem GitHub-Token (nur Lesen, nur dieses Repository), einmal pro Gerät in ⚙︎ eintragen.
+
 ## Standard-Pads
 
 `pads/` enthält 24 selbst synthetisierte Loops (60 s, 160 kbit/s MP3, exakt periodisch).

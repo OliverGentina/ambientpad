@@ -31,8 +31,9 @@
   .btn.danger{background:var(--danger)}
   .btn:disabled{opacity:.4}
   header{display:flex;align-items:center;gap:8px}
-  .sets{display:flex;flex:1;background:var(--empty);border-radius:12px;padding:3px;gap:3px;min-width:0}
-  .sets button{flex:1;border:0;border-radius:9px;background:transparent;color:var(--dim);font-weight:700;padding:8px 6px;min-height:38px;
+  .sets{display:flex;flex:1;background:var(--empty);border-radius:12px;padding:3px;gap:3px;min-width:0;overflow-x:auto;scrollbar-width:none}
+  .sets::-webkit-scrollbar{display:none}
+  .sets button{flex:1 0 auto;min-width:74px;border:0;border-radius:9px;background:transparent;color:var(--dim);font-weight:700;padding:8px 6px;min-height:38px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sets button.on{background:var(--surface);color:#fff;box-shadow:inset 0 -3px 0 var(--setcolor)}
   #status{display:flex;justify-content:space-between;gap:8px;color:var(--dim);font-size:12.5px;margin-top:-4px}
@@ -80,7 +81,11 @@
   .sheet label span b{font-weight:600;color:var(--dim)}
   .sheet p{margin:0;color:var(--dim);font-size:14px}
   .sheet .row .btn{flex:1}
-  .sheet input[type=text]{background:var(--empty);border:1px solid var(--line);border-radius:10px;color:#fff;padding:10px;font:inherit;width:100%}
+  #settingsBtn{position:relative}
+  #settingsBtn.badge::after{content:"";position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:var(--ok)}
+  .synclist{display:flex;flex-direction:column;gap:6px;font-size:15px}
+  .synclist div{background:var(--empty);border-radius:10px;padding:9px 12px}
+  .sheet input[type=password],.sheet input[type=text]{background:var(--empty);border:1px solid var(--line);border-radius:10px;color:#fff;padding:10px;font:inherit;width:100%}
   .learnbox{background:var(--empty);border-radius:14px;padding:14px;text-align:center;font-size:17px;font-weight:650;min-height:60px}
   kbd{background:#2a3040;border-radius:5px;padding:1px 6px;font:12px ui-monospace,monospace}
   #unlock{position:fixed;inset:0;background:rgba(10,13,20,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:40;text-align:center;padding:24px}
@@ -91,7 +96,7 @@
 </head>
 <body>
 <header>
-  <div class="sets" id="sets"><button data-set="0">Warm</button><button data-set="1">Shimmer</button></div>
+  <div class="sets" id="sets"></div>
   <button class="btn" id="importBtn" aria-label="Sounds importieren">Sounds +</button>
   <button class="btn" id="settingsBtn" aria-label="Einstellungen" style="min-width:44px">⚙︎</button>
 </header>
@@ -147,6 +152,14 @@
   <h3>Sets</h3>
   <label>Name Set 1 (Standard: Warm)<input type="text" id="name0" maxlength="20"></label>
   <label>Name Set 2 (Standard: Shimmer)<input type="text" id="name1" maxlength="20"></label>
+  <h3>Meine Pads (privater GitHub-Ordner)</h3>
+  <p>Jeder Unterordner von „Meine Pads“ in deinem privaten Repository wird ein eigenes Set. Die Tonart liest die App aus dem Dateinamen.</p>
+  <label>GitHub-Benutzer<input type="text" id="r_owner" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+  <label>Repository<input type="text" id="r_repo" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+  <label>Ordner<input type="text" id="r_folder" autocorrect="off" spellcheck="false"></label>
+  <label>Schlüssel (Token, nur Lesen)<input type="password" id="r_token" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
+  <p id="remoteStatus"></p>
+  <div class="row"><button class="btn accent" id="r_check">Nach neuen Pads suchen</button><button class="btn" id="r_forget">Schlüssel entfernen</button></div>
   <h3>Speicher</h3>
   <p id="storageInfo">–</p>
   <p id="offlineInfo"></p>
@@ -154,6 +167,14 @@
   <p>Tipps: Stummmodus aus, Lautstärke hoch. Die App spielt nur, solange sie im Vordergrund ist – Display nicht sperren. MP3 oder M4A sparen Speicher gegenüber WAV.</p>
   <p id="versionInfo"></p>
   <div class="row"><button class="btn accent" id="settingsClose">Fertig</button></div>
+</div></div>
+
+<!-- Abgleich Pad-Ordner -->
+<div class="sheet-bg" id="syncSheet"><div class="sheet">
+  <h2>Neues im Pad-Ordner</h2>
+  <div class="synclist" id="syncList"></div>
+  <p id="syncInfo"></p>
+  <div class="row"><button class="btn" id="syncLater">Später</button><button class="btn accent" id="syncGo">Jetzt laden</button></div>
 </div></div>
 
 <!-- Pedal lernen -->
@@ -166,7 +187,7 @@
 
 <script>
 "use strict";
-const VERSION="1.2.0";
+const VERSION="1.3.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -201,7 +222,8 @@ function parseKey(filename){
 }
 
 // ================= Einstellungen =================
-const S=Object.assign({xfade:3,fadeIn:2,fadeOut:4,loopX:3,master:0.9,set:0,names:["Warm","Shimmer"]},load("apl.settings",{}));
+const S=Object.assign({xfade:3,fadeIn:2,fadeOut:4,loopX:3,master:0.9,set:"0",names:["Warm","Shimmer"]},load("apl.settings",{}));
+S.set=String(S.set);
 if(S.names[0]==="Set 1"&&S.names[1]==="Set 2")S.names=["Warm","Shimmer"];
 const saveSettings=()=>store("apl.settings",S);
 const PEDAL_DEFAULT={left:["ArrowLeft","ArrowUp","PageUp"],right:["ArrowRight","ArrowDown","PageDown"," ","Enter"],hold:true};
@@ -223,8 +245,18 @@ const dbGet=(s,k)=>dbReq(s,"readonly",o=>o.get(k));
 function dbAllMeta(){return new Promise(res=>{try{if(!db)return res([]);const out=[];const c=db.transaction("meta").objectStore("meta").openCursor();
   c.onsuccess=()=>{const cur=c.result;if(cur){out.push([cur.key,cur.value]);cur.continue();}else res(out);};c.onerror=()=>res([]);}catch(e){res([]);}});}
 
-// pads[set][key] = {name, vol, bundled?} – eigene Datei (IndexedDB) oder Standard-Pad
-const pads=[new Array(12).fill(null),new Array(12).fill(null)];
+// Sets: "0" = Warm, "1" = Shimmer (mitgeliefert), "r/<Ordner>" = Unterordner aus „Meine Pads“
+// pads[set][key] = {name, vol, bundled? | remote?, sha?, path?}
+const pads={"0":new Array(12).fill(null),"1":new Array(12).fill(null)};
+let remoteSets=load("apl.remoteSets",[]);
+const saveRemoteSets=()=>store("apl.remoteSets",remoteSets);
+const RCOLORS=["#7ed957","#f06292","#b388ff","#ffd54f","#4dd0e1","#ff8a65"];
+const isRemote=s=>String(s).startsWith("r/");
+const setName=s=>isRemote(s)?String(s).slice(2):S.names[s];
+const setColor=s=>isRemote(s)?RCOLORS[Math.max(0,remoteSets.indexOf(String(s).slice(2)))%RCOLORS.length]:SETCOLORS[s];
+const allSetKeys=()=>["0","1",...remoteSets.map(f=>"r/"+f)];
+function ensureSetArrays(){for(const k of allSetKeys())if(!pads[k])pads[k]=new Array(12).fill(null);}
+ensureSetArrays();
 const id=(set,k)=>set+":"+k;
 
 // ================= Audio =================
@@ -349,15 +381,15 @@ function isPlaying(k){return current&&current.set===S.set&&current.key===k;}
 function toggleKey(k){
   setSelected(k);
   if(isPlaying(k)){stopCurrent(S.fadeOut);return;}
-  if(!pads[S.set][k]){toast(`${KEYS[k][0]} ist in „${S.names[S.set]}“ nicht belegt`);return;}
+  if(!pads[S.set][k]){toast(`${KEYS[k][0]} ist in „${setName(S.set)}“ nicht belegt`);return;}
   play(S.set,k);
 }
 function setSelected(k){ selected=((k%12)+12)%12; store("apl.selected",selected); render(); clearTimeout(setSelected.t); setSelected.t=setTimeout(()=>prefetch(S.set,selected),250); }
 function switchSet(s){
-  if(s===S.set)return;
+  s=String(s); if(s===S.set||!pads[s])return;
   S.set=s; saveSettings(); applySetColor();
   if(current&&pads[s][current.key])play(s,current.key);   // gleichen Ton im anderen Set überblenden
-  render(); toast(S.names[s]);
+  render(); toast(setName(s));
 }
 
 // ================= Pedal =================
@@ -380,8 +412,9 @@ function pedalEvent(side,isLong){
   fallbackTimer=setTimeout(()=>{fallbackTimer=null;fallbackSide=null;action(side,false);},130);
   lastSide=side;lastSideT=now;
 }
+const typing=e=>e.target&&e.target.tagName==="INPUT"&&(e.target.type==="text"||e.target.type==="password");
 window.addEventListener("keydown",e=>{
-  if(e.target&&e.target.tagName==="INPUT"&&e.target.type==="text")return;
+  if(typing(e))return;
   if(learning){e.preventDefault();learnKeyDown(e);return;}
   const side=sideOf(e.key); if(!side)return;
   e.preventDefault(); markPedal(e.key);
@@ -392,7 +425,7 @@ window.addEventListener("keydown",e=>{
   down[side]=d;
 },true);
 window.addEventListener("keyup",e=>{
-  if(e.target&&e.target.tagName==="INPUT"&&e.target.type==="text")return;
+  if(typing(e))return;
   if(learning){e.preventDefault();learnKeyUp(e);return;}
   const side=sideOf(e.key); if(!side)return;
   e.preventDefault();
@@ -464,7 +497,21 @@ const padEls=KEYS.map(([k,alt],i)=>{
   el.addEventListener("contextmenu",e=>e.preventDefault());
   grid.appendChild(el);return el;
 });
-function applySetColor(){ document.documentElement.style.setProperty("--setcolor",SETCOLORS[S.set]); }
+function applySetColor(){ document.documentElement.style.setProperty("--setcolor",setColor(S.set)); }
+function renderSetButtons(){
+  const box=$("sets"); box.innerHTML="";
+  for(const k of allSetKeys()){
+    const b=document.createElement("button"); b.dataset.set=k; b.textContent=setName(k);
+    b.onclick=()=>{unlockAudio();switchSet(k);};
+    dropTarget(b,async files=>{
+      if(isRemote(k)){toast(`„${setName(k)}“ wird über deinen GitHub-Ordner befüllt`);return;}
+      if(k!==S.set)switchSet(k);
+      await importFiles(k,files);
+    });
+    box.appendChild(b);
+  }
+  render();
+}
 function render(){
   const set=S.set;
   padEls.forEach((el,i)=>{
@@ -475,10 +522,10 @@ function render(){
     el.classList.toggle("loading",loadingKey===id(set,i));
     el.querySelector(".name").textContent=p?p.name:"leer · halten zum Zuweisen";
   });
-  document.querySelectorAll("#sets button").forEach(b=>{const s=+b.dataset.set;b.classList.toggle("on",s===set);b.textContent=S.names[s];});
+  document.querySelectorAll("#sets button").forEach(b=>{const s=b.dataset.set;b.classList.toggle("on",s===set);b.textContent=setName(s);});
+  const on=document.querySelector("#sets button.on"); if(on&&on.scrollIntoView)try{on.scrollIntoView({block:"nearest",inline:"nearest"});}catch(e){}
   $("xfInfo").textContent="Überblenden "+S.xfade.toFixed(1).replace(".",",")+" s";
 }
-document.querySelectorAll("#sets button").forEach(b=>b.onclick=()=>{unlockAudio();switchSet(+b.dataset.set);});
 // Buttons nach Klick entfokussieren, damit Leertaste/Enter vom Pedal nichts auslösen
 document.addEventListener("click",e=>{const b=e.target.closest("button");if(b)setTimeout(()=>b.blur(),0);},true);
 
@@ -504,6 +551,7 @@ $("fileMulti").onchange=async e=>{
 // Mehrere Dateien: Tonart aus dem Dateinamen, sonst auf leere Tasten verteilen
 async function importFiles(set,files){
   if(!files.length)return;
+  if(isRemote(set)){toast(`„${setName(set)}“ wird über deinen GitHub-Ordner befüllt – dort Dateien ändern`);return;}
   toast(`Lade ${files.length} Datei(en) …`);
   let ok=0,auto=0,fail=0,skipped=0;const rest=[];
   for(const f of files){
@@ -516,19 +564,21 @@ async function importFiles(set,files){
     try{await assignFile(set,k,f);ok++;render();}catch(err){fail++;}
   }
   render(); updateStorage();
-  toast(`${S.names[set]}: ${ok} geladen${auto?` (${auto} nach Tonart im Namen)`:""}${skipped?` · ${skipped} ohne Tonart im Namen – bitte direkt auf eine Taste ziehen`:""}${fail?` · ${fail} nicht lesbar`:""}`);
+  toast(`${setName(set)}: ${ok} geladen${auto?` (${auto} nach Tonart im Namen)`:""}${skipped?` · ${skipped} ohne Tonart im Namen – bitte direkt auf eine Taste ziehen`:""}${fail?` · ${fail} nicht lesbar`:""}`);
 }
 let assignKey=0;
 function openAssign(k){assignKey=k;fillAssign();$("assignSheet").classList.add("open");}
 function fillAssign(){
   const p=pads[S.set][assignKey];
-  $("assignTitle").textContent=`${S.names[S.set]} · Tonart ${KEYS[assignKey][0]}${KEYS[assignKey][1]?" / "+KEYS[assignKey][1]:""}`;
+  $("assignTitle").textContent=`${setName(S.set)} · Tonart ${KEYS[assignKey][0]}${KEYS[assignKey][1]?" / "+KEYS[assignKey][1]:""}`;
   $("assignName").textContent=p?p.name:"Kein Sound zugewiesen";
   $("assignVol").value=p?p.vol:0.9;$("assignVol").disabled=!p;
   $("assignVolVal").textContent=Math.round((p?p.vol:0.9)*100)+" %";
-  $("assignRemove").disabled=!p;
+  const rem=isRemote(S.set);
+  $("assignPick").disabled=rem;
+  $("assignRemove").disabled=!p||rem;
   $("assignRemove").textContent=!p?"Entfernen":(p.bundled?"Taste leeren":"Eigene Datei entfernen");
-  $("assignHint").textContent=p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ das Set auf Standard zurücksetzen.");
+  $("assignHint").textContent=rem?"Dieses Set kommt aus deinem GitHub-Ordner „Meine Pads“. Dateien dort ändern – hier nur die Lautstärke.":p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ das Set auf Standard zurücksetzen.");
 }
 $("assignPick").onclick=()=>{unlockAudio();$("fileOne").click();};
 $("fileOne").onchange=async e=>{
@@ -552,7 +602,7 @@ $("assignVol").oninput=e=>{
   const p=pads[S.set][assignKey];if(!p)return;p.vol=+e.target.value;
   $("assignVolVal").textContent=Math.round(p.vol*100)+" %";
   if(current&&current.id===id(S.set,assignKey))ramp(current.g,p.vol,0.15);
-  dbPut("meta",id(S.set,assignKey),p.bundled?{bundled:true,vol:p.vol}:{name:p.name,vol:p.vol}).catch(()=>{});
+  dbPut("meta",id(S.set,assignKey),p.bundled?{bundled:true,vol:p.vol}:p.remote?{name:p.name,vol:p.vol,remote:true,sha:p.sha,path:p.path}:{name:p.name,vol:p.vol}).catch(()=>{});
 };
 $("assignClose").onclick=()=>$("assignSheet").classList.remove("open");
 
@@ -583,33 +633,154 @@ function dropTarget(el,onFiles){
 }
 // Auf eine Tonart: genau diese Taste belegen (bei mehreren Dateien: automatische Zuordnung)
 padEls.forEach((el,k)=>dropTarget(el,async files=>{
-  if(files.length>1){await importFiles(S.set,files);return;}
+  if(files.length>1||isRemote(S.set)){await importFiles(S.set,files);return;}
   toast(`Lade ${files[0].name} …`);
-  try{await assignFile(S.set,k,files[0]);setSelected(k);toast(`${S.names[S.set]} · ${KEYS[k][0]}: ${files[0].name}`);}
+  try{await assignFile(S.set,k,files[0]);setSelected(k);toast(`${setName(S.set)} · ${KEYS[k][0]}: ${files[0].name}`);}
   catch(err){toast(err&&err.name==="QuotaExceededError"?"Speicher voll":"Datei konnte nicht gelesen werden");}
   render();updateStorage();
 }));
-// Auf einen Set-Knopf: in dieses Set importieren
-document.querySelectorAll("#sets button").forEach(b=>dropTarget(b,async files=>{
-  const set=+b.dataset.set; if(set!==S.set)switchSet(set);
-  await importFiles(set,files);
-}));
 
 // ================= Set zurücksetzen =================
+function clearBtnLabel(){return isRemote(S.set)?`„${setName(S.set)}“ von diesem Gerät löschen`:"Set auf Standard zurücksetzen";}
 $("clearSetBtn").onclick=async()=>{
   const btn=$("clearSetBtn"),set=S.set;
-  if(btn.dataset.confirm!=="1"){btn.dataset.confirm="1";btn.textContent="Wirklich? Eigene Sounds werden gelöscht";setTimeout(()=>{btn.dataset.confirm="";btn.textContent="Set auf Standard zurücksetzen";},3500);return;}
-  btn.dataset.confirm="";btn.textContent="Set auf Standard zurücksetzen";
+  if(btn.dataset.confirm!=="1"){btn.dataset.confirm="1";btn.textContent=isRemote(set)?"Wirklich löschen?":"Wirklich? Eigene Sounds werden gelöscht";setTimeout(()=>{btn.dataset.confirm="";btn.textContent=clearBtnLabel();},3500);return;}
+  btn.dataset.confirm="";
   fadeAll(0.3);
+  if(isRemote(set)){await removeRemoteSet(set.slice(2));btn.textContent=clearBtnLabel();toast(`„${set.slice(2)}“ vom Gerät gelöscht – „Nach neuen Pads suchen“ lädt es wieder`);return;}
+  btn.textContent=clearBtnLabel();
   for(let k=0;k<12;k++){pads[set][k]=bundledPad(set,k);cache.delete(id(set,k));try{await dbDel("files",id(set,k));await dbDel("meta",id(set,k));}catch(e){}}
-  render();updateStorage();toast(S.names[set]+": Standard-Pads wiederhergestellt");
+  render();updateStorage();toast(setName(set)+": Standard-Pads wiederhergestellt");
 };
+
+// ================= Pad-Ordner „Meine Pads“ (privates GitHub-Repository) =================
+const R=Object.assign({owner:"OliverGentina",repo:"meine-pads",folder:"Meine Pads",token:""},load("apl.remote",{}));
+const saveRemote=()=>store("apl.remote",R);
+const AUDIO_EXT=/\.(mp3|m4a|aac|wav|wave|aif|aiff|caf|flac|ogg)$/i;
+let remotePlan=null, syncing=false;
+const encPath=p=>p.split("/").map(encodeURIComponent).join("/");
+async function gh(path,raw){
+  const url=`https://api.github.com/repos/${encodeURIComponent(R.owner.trim())}/${encodeURIComponent(R.repo.trim())}/contents/${encPath(path)}`;
+  const res=await fetch(url,{cache:"no-store",headers:{"Authorization":"Bearer "+R.token.trim(),"Accept":raw?"application/vnd.github.raw":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}});
+  if(!res.ok){const e=new Error("HTTP "+res.status);e.status=res.status;throw e;}
+  return raw?res.arrayBuffer():res.json();
+}
+function remoteError(e){
+  if(e.status===401)return "Schlüssel ungültig oder abgelaufen.";
+  if(e.status===403)return "Zugriff verweigert – hat der Schlüssel Leserechte für das Repository?";
+  if(e.status===404)return `„${R.owner}/${R.repo}“ oder Ordner „${R.folder}“ nicht gefunden – Namen und Schlüssel prüfen.`;
+  return "Pad-Ordner nicht erreichbar (Internet?).";
+}
+function setRemoteStatus(t){const el=$("remoteStatus");if(el)el.textContent=t;}
+const hhmm=()=>new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+const mb=b=>(b/1048576).toFixed(b>10485760?0:1).replace(".",",")+" MB";
+async function checkRemote(interactive){
+  if(syncing)return;
+  if(!R.token.trim()){if(interactive)toast("Bitte zuerst den Schlüssel eintragen");setRemoteStatus("Noch kein Schlüssel eingetragen.");return;}
+  if(!navigator.onLine){if(interactive)toast("Kein Internet");return;}
+  setRemoteStatus("Prüfe Pad-Ordner …");
+  let dirs;
+  try{const list=await gh(R.folder.trim());if(!Array.isArray(list))throw Object.assign(new Error("kein Ordner"),{status:404});dirs=list.filter(x=>x.type==="dir");}
+  catch(e){setRemoteStatus(remoteError(e));if(interactive)toast(remoteError(e));return;}
+  const plan={sets:[],downloads:[],removals:[],removeSets:[],bytes:0,unknown:[],dupes:[]};
+  const seen=new Set();
+  for(const d of dirs){
+    let files;try{files=(await gh(d.path)).filter(x=>x.type==="file"&&AUDIO_EXT.test(x.name)).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true}));}catch(e){continue;}
+    seen.add(d.name);
+    const setKey="r/"+d.name,byKey=new Array(12).fill(null);
+    for(const f of files){const k=parseKey(f.name);if(k===null){plan.unknown.push(`${d.name}/${f.name}`);continue;}if(byKey[k]){plan.dupes.push(`${d.name}/${f.name}`);continue;}byKey[k]=f;}
+    const local=pads[setKey]||new Array(12).fill(null);
+    let nNew=0,nChg=0,nDel=0;
+    for(let k=0;k<12;k++){
+      const f=byKey[k],l=local[k];
+      if(f&&(!l||l.sha!==f.sha)){plan.downloads.push({setKey,folder:d.name,k,file:f});plan.bytes+=f.size||0;l?nChg++:nNew++;}
+      else if(!f&&l){plan.removals.push({setKey,k});nDel++;}
+    }
+    if(nNew||nChg||nDel)plan.sets.push({name:d.name,nNew,nChg,nDel,isNew:!remoteSets.includes(d.name)});
+  }
+  for(const f of remoteSets)if(!seen.has(f)){plan.removeSets.push(f);plan.sets.push({name:f,gone:true});}
+  if(!plan.sets.length){
+    remotePlan=null;$("settingsBtn").classList.remove("badge");
+    setRemoteStatus(`Alles aktuell (${remoteSets.length} Set${remoteSets.length===1?"":"s"}) · geprüft ${hhmm()}`+(plan.unknown.length?` · ${plan.unknown.length} Datei(en) ohne erkennbare Tonart`:""));
+    if(interactive)toast("Pad-Ordner: alles aktuell");
+    return;
+  }
+  remotePlan=plan;
+  setRemoteStatus(`Neues im Pad-Ordner gefunden · geprüft ${hhmm()}`);
+  // Nie mitten in der Wiedergabe aufpoppen – dann nur ein Punkt am ⚙︎-Knopf
+  if(interactive||!current)showSyncSheet(plan); else $("settingsBtn").classList.add("badge");
+}
+function showSyncSheet(plan){
+  const list=$("syncList");list.innerHTML="";
+  for(const st of plan.sets){
+    const d=document.createElement("div");
+    if(st.gone)d.textContent=`„${st.name}“ – im Ordner gelöscht, wird vom Gerät entfernt`;
+    else{const parts=[];if(st.nNew)parts.push(`${st.nNew} neu`);if(st.nChg)parts.push(`${st.nChg} geändert`);if(st.nDel)parts.push(`${st.nDel} entfernt`);
+      d.textContent=`„${st.name}“${st.isNew?" (neues Set)":""}: ${parts.join(", ")}`;}
+    list.appendChild(d);
+  }
+  const info=[];
+  if(plan.downloads.length)info.push(`Download: ${plan.downloads.length} Datei(en), ${mb(plan.bytes)}. Danach offline verfügbar.`);
+  if(plan.unknown.length)info.push(`Übersprungen (keine Tonart im Namen erkannt): ${plan.unknown.slice(0,4).join(", ")}${plan.unknown.length>4?" …":""}`);
+  if(plan.dupes.length)info.push(`Doppelt belegt, übersprungen: ${plan.dupes.slice(0,3).join(", ")}${plan.dupes.length>3?" …":""}`);
+  $("syncInfo").textContent=info.join(" ");
+  $("syncGo").disabled=false;$("syncGo").textContent=plan.downloads.length?"Jetzt laden":"Übernehmen";
+  $("syncLater").disabled=false;
+  $("syncSheet").classList.add("open");
+}
+async function removeRemoteSet(folder){
+  const key="r/"+folder;
+  if(current&&current.set===key)stopCurrent(0.5);
+  for(let k=0;k<12;k++){cache.delete(id(key,k));try{await dbDel("files",id(key,k));await dbDel("meta",id(key,k));}catch(e){}}
+  remoteSets=remoteSets.filter(f=>f!==folder);saveRemoteSets();delete pads[key];
+  if(S.set===key){S.set="0";saveSettings();applySetColor();}
+  renderSetButtons();updateStorage();
+}
+async function applySync(){
+  const plan=remotePlan;if(!plan||syncing)return;
+  syncing=true;$("syncGo").disabled=true;$("syncLater").disabled=true;
+  let done=0,fail=0,quota=false;
+  for(const f of plan.removeSets)await removeRemoteSet(f);
+  for(const r of plan.removals){
+    if(!pads[r.setKey])continue;
+    if(current&&current.id===id(r.setKey,r.k))stopCurrent(0.5);
+    pads[r.setKey][r.k]=null;cache.delete(id(r.setKey,r.k));
+    try{await dbDel("files",id(r.setKey,r.k));await dbDel("meta",id(r.setKey,r.k));}catch(e){}
+  }
+  for(const d of plan.downloads){
+    $("syncGo").textContent=`Lade ${done+fail+1}/${plan.downloads.length} …`;
+    $("syncInfo").textContent=`${d.folder} – ${d.file.name}`;
+    try{
+      const data=await gh(d.file.path,true);
+      if(!remoteSets.includes(d.folder)){remoteSets.push(d.folder);saveRemoteSets();ensureSetArrays();renderSetButtons();}
+      const old=pads[d.setKey][d.k];
+      const meta={name:d.file.name.replace(/\.[^.]+$/,""),vol:old?.vol??0.85,remote:true,sha:d.file.sha,path:d.file.path};
+      await dbPut("files",id(d.setKey,d.k),data);
+      await dbPut("meta",id(d.setKey,d.k),meta);
+      if(current&&current.id===id(d.setKey,d.k))stopCurrent(0.5);
+      pads[d.setKey][d.k]=meta;cache.delete(id(d.setKey,d.k));done++;render();
+    }catch(e){fail++;if(e&&e.name==="QuotaExceededError"){quota=true;break;}}
+  }
+  syncing=false;remotePlan=null;$("settingsBtn").classList.remove("badge");
+  $("syncSheet").classList.remove("open");
+  renderSetButtons();updateStorage();
+  setRemoteStatus(`Abgeglichen ${hhmm()} · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}`);
+  toast(quota?"Speicher voll – nicht alle Pads geladen":fail?`${done} geladen, ${fail} fehlgeschlagen – später erneut suchen`:`Pad-Ordner abgeglichen${done?` · ${done} Pad(s) geladen`:""}`);
+}
+$("syncGo").onclick=applySync;
+$("syncLater").onclick=()=>{$("syncSheet").classList.remove("open");if(remotePlan)$("settingsBtn").classList.add("badge");};
+for(const [f,el] of [["owner","r_owner"],["repo","r_repo"],["folder","r_folder"],["token","r_token"]]){
+  $(el).value=R[f];$(el).onchange=()=>{R[f]=$(el).value.trim();saveRemote();};
+}
+$("r_check").onclick=()=>{for(const [f,el] of [["owner","r_owner"],["repo","r_repo"],["folder","r_folder"],["token","r_token"]])R[f]=$(el).value.trim();saveRemote();$("settingsSheet").classList.remove("open");checkRemote(true);};
+$("r_forget").onclick=()=>{R.token="";saveRemote();$("r_token").value="";setRemoteStatus("Schlüssel entfernt. Bereits geladene Sets bleiben auf dem Gerät.");};
+window.addEventListener("online",()=>{if(R.token)checkRemote(false);});
 
 // ================= Standard-Pads offline speichern =================
 let offlineCount=0;
 async function cacheBundledPads(){
   let c;try{c=await caches.open(PADCACHE);}catch(e){return;}
-  const urls=[];for(let s=0;s<2;s++)for(let k=0;k<12;k++)urls.push(bundledUrl(s,k));
+  const urls=[];for(const s of ["0","1"])for(let k=0;k<12;k++)urls.push(bundledUrl(s,k));
   let have=0;for(const u of urls)if(await c.match(u))have++;
   offlineCount=have;updateOfflineInfo();
   if(have===urls.length||!navigator.onLine)return;
@@ -628,7 +799,7 @@ for(const key of ["xfade","fadeIn","fadeOut","loopX"]){
   el.oninput=()=>{S[key]=+el.value;lab.textContent=fmt(S[key]);saveSettings();render();};
 }
 [0,1].forEach(s=>{const el=$("name"+s);el.value=S.names[s];el.oninput=()=>{S.names[s]=el.value.trim()||("Set "+(s+1));saveSettings();render();};});
-$("settingsBtn").onclick=()=>{updatePedalInfo();updateStorage();updateOfflineInfo();$("settingsSheet").classList.add("open");};
+$("settingsBtn").onclick=()=>{updatePedalInfo();updateStorage();updateOfflineInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
 $("settingsClose").onclick=()=>$("settingsSheet").classList.remove("open");
 for(const sh of ["assignSheet","settingsSheet"])$(sh).addEventListener("click",e=>{if(e.target===$(sh))$(sh).classList.remove("open");});
 const masterEl=$("master");masterEl.value=S.master;
@@ -674,18 +845,23 @@ setInterval(()=>{if(ctx)updateAudioState();},1000);
 
 // ================= Start =================
 (async()=>{
-  applySetColor();render();updatePedalInfo();
+  if(!allSetKeys().includes(S.set))S.set="0";
+  applySetColor();renderSetButtons();updatePedalInfo();
   await openDB();
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
-  for(let s=0;s<2;s++)for(let k=0;k<12;k++)pads[s][k]=bundledPad(s,k);
+  for(const s of ["0","1"])for(let k=0;k<12;k++)pads[s][k]=bundledPad(s,k);
   for(const [key,v] of await dbAllMeta()){
-    const [s,k]=key.split(":").map(Number);if(!pads[s])continue;
+    const i=key.lastIndexOf(":"),s=key.slice(0,i),k=+key.slice(i+1);
+    if(isRemote(s)&&v.remote){const f=s.slice(2);if(!remoteSets.includes(f)){remoteSets.push(f);saveRemoteSets();}ensureSetArrays();pads[s][k]={name:v.name,vol:v.vol??0.85,remote:true,sha:v.sha,path:v.path};continue;}
+    if(!pads[s])continue;
     if(v.hidden)pads[s][k]=null;
     else if(v.bundled)pads[s][k]=Object.assign(bundledPad(s,k),{vol:v.vol??0.85});
     else pads[s][k]={name:v.name,vol:v.vol??0.9};
   }
-  render();
+  if(!allSetKeys().includes(S.set))S.set="0";
+  applySetColor();renderSetButtons();
   cacheBundledPads();
+  if(R.token)checkRemote(false); else setRemoteStatus("Noch kein Schlüssel eingetragen.");
   if("serviceWorker"in navigator&&location.protocol!=="file:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 })();
 </script>
