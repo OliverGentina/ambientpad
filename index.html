@@ -171,7 +171,7 @@
 
 <!-- Abgleich Pad-Ordner -->
 <div class="sheet-bg" id="syncSheet"><div class="sheet">
-  <h2>Neues im Pad-Ordner</h2>
+  <h2 id="syncTitle">Neues im Pad-Ordner</h2>
   <div class="synclist" id="syncList"></div>
   <p id="syncInfo"></p>
   <div class="row"><button class="btn" id="syncLater">Später</button><button class="btn accent" id="syncGo">Jetzt laden</button></div>
@@ -187,7 +187,7 @@
 
 <script>
 "use strict";
-const VERSION="1.3.0";
+const VERSION="1.3.1";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -654,16 +654,59 @@ $("clearSetBtn").onclick=async()=>{
 };
 
 // ================= Pad-Ordner „Meine Pads“ (privates GitHub-Repository) =================
-const R=Object.assign({owner:"OliverGentina",repo:"meine-pads",folder:"Meine Pads",token:""},load("apl.remote",{}));
+const R=Object.assign({owner:"OliverGentina",repo:"meine-pads",folder:"Meine Pads",token:"",ref:""},load("apl.remote",{}));
 const saveRemote=()=>store("apl.remote",R);
 const AUDIO_EXT=/\.(mp3|m4a|aac|wav|wave|aif|aiff|caf|flac|ogg)$/i;
 let remotePlan=null, syncing=false;
 const encPath=p=>p.split("/").map(encodeURIComponent).join("/");
-async function gh(path,raw){
-  const url=`https://api.github.com/repos/${encodeURIComponent(R.owner.trim())}/${encodeURIComponent(R.repo.trim())}/contents/${encPath(path)}`;
+async function ghApi(sub,raw){
+  const url=`https://api.github.com/repos/${encodeURIComponent(R.owner.trim())}/${encodeURIComponent(R.repo.trim())}${sub}`;
   const res=await fetch(url,{cache:"no-store",headers:{"Authorization":"Bearer "+R.token.trim(),"Accept":raw?"application/vnd.github.raw":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}});
   if(!res.ok){const e=new Error("HTTP "+res.status);e.status=res.status;throw e;}
   return raw?res.arrayBuffer():res.json();
+}
+const refQ=ref=>ref?`?ref=${encodeURIComponent(ref)}`:"";
+const gh=(path,raw,ref=R.ref)=>ghApi(`/contents/${encPath(path)}${refQ(ref)}`,raw);
+const norm=t=>t.normalize("NFC").trim().toLowerCase();
+// Findet den Pad-Ordner – auch bei anderer Schreibweise oder in einem anderen Zweig.
+// Gibt {ok:true} zurück oder {ok:false, title, lines} mit einer verständlichen Erklärung.
+async function locateFolder(){
+  let info;
+  try{info=await ghApi("");}
+  catch(e){
+    if(e.status===401)return {ok:false,title:"Schlüssel ungültig",lines:["GitHub lehnt den Schlüssel ab – er ist falsch kopiert, abgelaufen oder gelöscht.","Bitte einen neuen Schlüssel erstellen und einfügen."]};
+    if(e.status===404||e.status===403)return {ok:false,title:"Repository nicht erreichbar",lines:[`„${R.owner}/${R.repo}“ wurde nicht gefunden – oder der Schlüssel darf es nicht lesen (GitHub meldet dann ebenfalls „nicht gefunden“).`,"Prüfe beim Schlüssel auf github.com:","• Resource owner: dein Konto","• Repository access: „Only select repositories“ → meine-pads","• Repository permissions → Contents: „Read-only“","Und in ⚙︎: Benutzer und Repository genau so geschrieben wie auf GitHub."]};
+    return {ok:false,title:"Keine Verbindung",lines:["GitHub ist gerade nicht erreichbar. Internetverbindung prüfen und erneut suchen."]};
+  }
+  const want=norm(R.folder);
+  const branches=[info.default_branch];
+  try{for(const b of await ghApi("/branches?per_page=50"))if(!branches.includes(b.name))branches.push(b.name);}catch(e){}
+  let rootNames=null;
+  for(const br of branches){
+    let root;try{root=await gh("",false,br);}catch(e){continue;}
+    if(br===info.default_branch)rootNames=root.map(x=>x.type==="dir"?x.name+"/":x.name);
+    const hit=root.find(x=>x.type==="dir"&&norm(x.name)===want);
+    if(hit){
+      const notes=[];
+      if(hit.name!==R.folder.trim())notes.push(`Ordnername angepasst: „${hit.name}“`);
+      if(br!==info.default_branch)notes.push(`Ordner liegt im Zweig „${br}“ – wird ab jetzt verwendet`);
+      R.folder=hit.name;R.ref=br===info.default_branch?"":br;saveRemote();
+      if($("r_folder"))$("r_folder").value=R.folder;
+      return {ok:true,notes};
+    }
+  }
+  return {ok:false,title:`Ordner „${R.folder}“ nicht gefunden`,lines:[
+    `Das Repository „${R.owner}/${R.repo}“ ist erreichbar, aber der Ordner fehlt${branches.length>1?` (gesucht in: ${branches.join(", ")})`:""}.`,
+    rootNames&&rootNames.length?`Ganz oben im Repository liegt: ${rootNames.join(", ")}`:"Das Repository ist leer – wurde in GitHub Desktop „Push origin“ geklickt?",
+    "Entweder den Ordner auf GitHub umbenennen oder in ⚙︎ bei „Ordner“ den richtigen Namen eintragen (bei Unterordnern mit „/“, z. B. Audio/Meine Pads)."]};
+}
+function showInfoSheet(title,lines){
+  $("syncTitle").textContent=title;
+  const list=$("syncList");list.innerHTML="";
+  for(const l of lines){const d=document.createElement("div");d.textContent=l;list.appendChild(d);}
+  $("syncInfo").textContent="";
+  $("syncGo").style.display="none";$("syncLater").textContent="OK";$("syncLater").disabled=false;
+  $("syncSheet").classList.add("open");
 }
 function remoteError(e){
   if(e.status===401)return "Schlüssel ungültig oder abgelaufen.";
@@ -679,9 +722,17 @@ async function checkRemote(interactive){
   if(!R.token.trim()){if(interactive)toast("Bitte zuerst den Schlüssel eintragen");setRemoteStatus("Noch kein Schlüssel eingetragen.");return;}
   if(!navigator.onLine){if(interactive)toast("Kein Internet");return;}
   setRemoteStatus("Prüfe Pad-Ordner …");
-  let dirs;
+  let dirs,notes=[];
   try{const list=await gh(R.folder.trim());if(!Array.isArray(list))throw Object.assign(new Error("kein Ordner"),{status:404});dirs=list.filter(x=>x.type==="dir");}
-  catch(e){setRemoteStatus(remoteError(e));if(interactive)toast(remoteError(e));return;}
+  catch(e){
+    // Ursache genau ermitteln (und Schreibweise/Zweig ggf. selbst korrigieren)
+    const loc=await locateFolder();
+    if(!loc.ok){setRemoteStatus(loc.title);if(interactive)showInfoSheet(loc.title,loc.lines);return;}
+    notes=loc.notes;
+    try{dirs=(await gh(R.folder)).filter(x=>x.type==="dir");}catch(e2){setRemoteStatus(remoteError(e2));if(interactive)toast(remoteError(e2));return;}
+  }
+  if(!dirs.length){const t=`Ordner „${R.folder}“ gefunden, aber ohne Unterordner`;setRemoteStatus(t);
+    if(interactive)showInfoSheet(t,["Die App macht aus jedem Unterordner ein Set. Lege z. B. „"+R.folder+"/Ambient Swells“ an und lege die MP3s dort hinein."]);return;}
   const plan={sets:[],downloads:[],removals:[],removeSets:[],bytes:0,unknown:[],dupes:[]};
   const seen=new Set();
   for(const d of dirs){
@@ -701,16 +752,20 @@ async function checkRemote(interactive){
   for(const f of remoteSets)if(!seen.has(f)){plan.removeSets.push(f);plan.sets.push({name:f,gone:true});}
   if(!plan.sets.length){
     remotePlan=null;$("settingsBtn").classList.remove("badge");
-    setRemoteStatus(`Alles aktuell (${remoteSets.length} Set${remoteSets.length===1?"":"s"}) · geprüft ${hhmm()}`+(plan.unknown.length?` · ${plan.unknown.length} Datei(en) ohne erkennbare Tonart`:""));
-    if(interactive)toast("Pad-Ordner: alles aktuell");
+    setRemoteStatus(`Alles aktuell (${remoteSets.length} Set${remoteSets.length===1?"":"s"}) · geprüft ${hhmm()}`+(plan.unknown.length?` · ${plan.unknown.length} Datei(en) ohne erkennbare Tonart`:"")+(notes.length?" · "+notes.join(" · "):""));
+    if(interactive){
+      if(plan.unknown.length&&!remoteSets.length)showInfoSheet("Keine Tonart erkannt",["Die Dateien wurden gefunden, aber in keinem Namen eine Tonart erkannt:",...plan.unknown.slice(0,8),"Namen bitte nach dem Schema „Key of A Pads.mp3“ vergeben."]);
+      else toast("Pad-Ordner: alles aktuell"+(notes.length?" · "+notes.join(" · "):""));
+    }
     return;
   }
-  remotePlan=plan;
+  remotePlan=plan;plan.notes=notes;
   setRemoteStatus(`Neues im Pad-Ordner gefunden · geprüft ${hhmm()}`);
   // Nie mitten in der Wiedergabe aufpoppen – dann nur ein Punkt am ⚙︎-Knopf
   if(interactive||!current)showSyncSheet(plan); else $("settingsBtn").classList.add("badge");
 }
 function showSyncSheet(plan){
+  $("syncTitle").textContent="Neues im Pad-Ordner";$("syncGo").style.display="";$("syncLater").textContent="Später";
   const list=$("syncList");list.innerHTML="";
   for(const st of plan.sets){
     const d=document.createElement("div");
@@ -722,6 +777,7 @@ function showSyncSheet(plan){
   const info=[];
   if(plan.downloads.length)info.push(`Download: ${plan.downloads.length} Datei(en), ${mb(plan.bytes)}. Danach offline verfügbar.`);
   if(plan.unknown.length)info.push(`Übersprungen (keine Tonart im Namen erkannt): ${plan.unknown.slice(0,4).join(", ")}${plan.unknown.length>4?" …":""}`);
+  if(plan.notes&&plan.notes.length)info.push(plan.notes.join(". ")+".");
   if(plan.dupes.length)info.push(`Doppelt belegt, übersprungen: ${plan.dupes.slice(0,3).join(", ")}${plan.dupes.length>3?" …":""}`);
   $("syncInfo").textContent=info.join(" ");
   $("syncGo").disabled=false;$("syncGo").textContent=plan.downloads.length?"Jetzt laden":"Übernehmen";
