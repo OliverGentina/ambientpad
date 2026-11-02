@@ -166,6 +166,7 @@
   <div class="row"><button class="btn" id="clearSetBtn">Set auf Standard zurücksetzen</button></div>
   <p>Tipps: Stummmodus aus, Lautstärke hoch. Die App spielt nur, solange sie im Vordergrund ist – Display nicht sperren. MP3 oder M4A sparen Speicher gegenüber WAV.</p>
   <p id="versionInfo"></p>
+  <div class="row"><button class="btn" id="updateBtn">App aktualisieren</button></div>
   <div class="row"><button class="btn accent" id="settingsClose">Fertig</button></div>
 </div></div>
 
@@ -187,7 +188,7 @@
 
 <script>
 "use strict";
-const VERSION="1.3.1";
+const VERSION="1.3.2";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -867,6 +868,7 @@ async function updateStorage(){
     $("storageInfo").textContent=`Belegt: ${(e.usage/1048576).toFixed(0)} MB von ca. ${(e.quota/1048576/1024).toFixed(1)} GB verfügbar.`;}catch(_){ $("storageInfo").textContent="Speicherangabe nicht verfügbar."; }
 }
 $("versionInfo").textContent="Version "+VERSION;
+$("updateBtn").onclick=()=>forceUpdate();
 
 // ================= iOS: Audio freischalten, Display wach halten =================
 (function(){ // stille WAV für den <audio>-Trick (Wiedergabe trotz Stummmodus)
@@ -899,6 +901,27 @@ document.addEventListener("touchend",unlockAudio,{passive:true});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){keepAwake();if(ctx&&ctx.state!=="running")$("unlock").classList.remove("hidden");}});
 setInterval(()=>{if(ctx)updateAudioState();},1000);
 
+// ================= Updates =================
+let swReg=null;
+function registerSW(){
+  if(!("serviceWorker"in navigator)||location.protocol==="file:")return;
+  const hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{swReg=reg;reg.update().catch(()=>{});}).catch(()=>{});
+  // Neue Version hat übernommen → neu laden (nicht mitten in der Wiedergabe)
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(!hadController)return;
+    if(!current&&!syncing)location.reload();
+    else toast("Neue App-Version bereit – nach dem Spielen App neu öffnen");
+  });
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&swReg)swReg.update().catch(()=>{});});
+async function forceUpdate(){
+  $("updateBtn").textContent="Aktualisiere …";
+  try{if(swReg)await swReg.update();}catch(e){}
+  try{for(const k of await caches.keys())if(k.startsWith("ambientpad-")&&k!==PADCACHE)await caches.delete(k);}catch(e){}
+  location.reload();
+}
+
 // ================= Start =================
 (async()=>{
   if(!allSetKeys().includes(S.set))S.set="0";
@@ -918,7 +941,7 @@ setInterval(()=>{if(ctx)updateAudioState();},1000);
   applySetColor();renderSetButtons();
   cacheBundledPads();
   if(R.token)checkRemote(false); else setRemoteStatus("Noch kein Schlüssel eingetragen.");
-  if("serviceWorker"in navigator&&location.protocol!=="file:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+  registerSW();
 })();
 </script>
 </body>
