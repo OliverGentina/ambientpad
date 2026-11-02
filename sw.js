@@ -1,7 +1,8 @@
 // Offline-Cache für AmbientPad Live.
 // Bei jeder neuen Version VERSION erhöhen – dann lädt die App beim nächsten Start die neuen Dateien.
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const CACHE = "ambientpad-" + VERSION;
+const PADCACHE = "ambientpad-pads-v1";   // Standard-Pads: bleiben über App-Updates hinweg erhalten
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -11,7 +12,7 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k.startsWith("ambientpad-") && k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith("ambientpad-") && k !== CACHE && k !== PADCACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -19,7 +20,19 @@ self.addEventListener("activate", e => {
 // Erst aus dem Cache (sofort, auch offline), im Hintergrund aktualisieren.
 self.addEventListener("fetch", e => {
   const req = e.request;
-  if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
+  const url = new URL(req.url);
+  if (req.method !== "GET" || url.origin !== location.origin) return;
+  // Pads: nur aus dem Cache bzw. einmal aus dem Netz – nie bei jedem Start neu laden
+  if (url.pathname.includes("/pads/")) {
+    e.respondWith(caches.open(PADCACHE).then(async c => {
+      const hit = await c.match(req, { ignoreSearch: true });
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res && res.ok) c.put(req, res.clone());
+      return res;
+    }));
+    return;
+  }
   e.respondWith(
     caches.open(CACHE).then(async cache => {
       const cached = await cache.match(req, { ignoreSearch: true });

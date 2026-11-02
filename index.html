@@ -85,7 +85,7 @@
 </head>
 <body>
 <header>
-  <div class="sets" id="sets"><button data-set="0">Set 1</button><button data-set="1">Set 2</button></div>
+  <div class="sets" id="sets"><button data-set="0">Warm</button><button data-set="1">Shimmer</button></div>
   <button class="btn" id="importBtn" aria-label="Sounds importieren">Sounds +</button>
   <button class="btn" id="settingsBtn" aria-label="Einstellungen" style="min-width:44px">⚙︎</button>
 </header>
@@ -120,6 +120,7 @@
 <div class="sheet-bg" id="assignSheet"><div class="sheet">
   <h2 id="assignTitle">Tonart</h2>
   <p id="assignName">Kein Sound</p>
+  <p id="assignHint"></p>
   <div class="row"><button class="btn accent" id="assignPick">Datei wählen …</button><button class="btn" id="assignRemove">Entfernen</button></div>
   <label><span>Lautstärke <b id="assignVolVal"></b></span><input type="range" id="assignVol" min="0" max="1" step="0.01"></label>
   <div class="row"><button class="btn" id="assignClose">Fertig</button></div>
@@ -137,11 +138,12 @@
   <label><span>Ausblenden / Fade Out <b id="v_fadeOut"></b></span><input type="range" id="s_fadeOut" min="0.5" max="15" step="0.5"></label>
   <label><span>Loop-Überblendung am Dateiende <b id="v_loopX"></b></span><input type="range" id="s_loopX" min="0" max="8" step="0.5"></label>
   <h3>Sets</h3>
-  <label>Name Set 1<input type="text" id="name0" maxlength="20"></label>
-  <label>Name Set 2<input type="text" id="name1" maxlength="20"></label>
+  <label>Name Set 1 (Standard: Warm)<input type="text" id="name0" maxlength="20"></label>
+  <label>Name Set 2 (Standard: Shimmer)<input type="text" id="name1" maxlength="20"></label>
   <h3>Speicher</h3>
   <p id="storageInfo">–</p>
-  <div class="row"><button class="btn" id="demoBtn">Demo-Pads (Test)</button><button class="btn" id="clearSetBtn">Set leeren</button></div>
+  <p id="offlineInfo"></p>
+  <div class="row"><button class="btn" id="clearSetBtn">Set auf Standard zurücksetzen</button></div>
   <p>Tipps: Stummmodus aus, Lautstärke hoch. Die App spielt nur, solange sie im Vordergrund ist – Display nicht sperren. MP3 oder M4A sparen Speicher gegenüber WAV.</p>
   <p id="versionInfo"></p>
   <div class="row"><button class="btn accent" id="settingsClose">Fertig</button></div>
@@ -157,10 +159,16 @@
 
 <script>
 "use strict";
-const VERSION="1.0.0";
+const VERSION="1.1.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
+// Mitgelieferte Standard-Pads (Ordner pads/ im Repository)
+const BUNDLED=[{name:"Warm",prefix:"Warm"},{name:"Shimmer",prefix:"Shimmer"}];
+const FILEKEYS=["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+const bundledUrl=(set,k)=>`pads/${BUNDLED[set].prefix}-${FILEKEYS[k]}.mp3`;
+const bundledPad=(set,k)=>({name:`${BUNDLED[set].name} ${KEYS[k][0]}`,vol:0.85,bundled:true});
+const PADCACHE="ambientpad-pads-v1";
 const $=id=>document.getElementById(id);
 let toastTimer;
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2800);}
@@ -186,7 +194,8 @@ function parseKey(filename){
 }
 
 // ================= Einstellungen =================
-const S=Object.assign({xfade:3,fadeIn:2,fadeOut:4,loopX:3,master:0.9,set:0,names:["Set 1","Set 2"]},load("apl.settings",{}));
+const S=Object.assign({xfade:3,fadeIn:2,fadeOut:4,loopX:3,master:0.9,set:0,names:["Warm","Shimmer"]},load("apl.settings",{}));
+if(S.names[0]==="Set 1"&&S.names[1]==="Set 2")S.names=["Warm","Shimmer"];
 const saveSettings=()=>store("apl.settings",S);
 const PEDAL_DEFAULT={left:["ArrowLeft","ArrowUp","PageUp"],right:["ArrowRight","ArrowDown","PageDown"," ","Enter"],hold:true};
 let P=Object.assign({},PEDAL_DEFAULT,load("apl.pedal",{}));
@@ -207,7 +216,7 @@ const dbGet=(s,k)=>dbReq(s,"readonly",o=>o.get(k));
 function dbAllMeta(){return new Promise(res=>{try{if(!db)return res([]);const out=[];const c=db.transaction("meta").objectStore("meta").openCursor();
   c.onsuccess=()=>{const cur=c.result;if(cur){out.push([cur.key,cur.value]);cur.continue();}else res(out);};c.onerror=()=>res([]);}catch(e){res([]);}});}
 
-// pads[set][key] = {name, vol, demo?, demoBuf?}
+// pads[set][key] = {name, vol, bundled?} – eigene Datei (IndexedDB) oder Standard-Pad
 const pads=[new Array(12).fill(null),new Array(12).fill(null)];
 const id=(set,k)=>set+":"+k;
 
@@ -233,7 +242,19 @@ function ramp(g,to,dur){
   catch(e){try{p.cancelScheduledValues(0);}catch(_){}p.setValueAtTime(from,now);p.linearRampToValueAtTime(to,t0+dur);}
   g._r={from,to,t0,dur};
 }
+function trimSilence(buf){
+  // MP3-Encoder hängen oft wenige ms Stille an – die würden die Loop-Naht stören
+  const max=Math.min(buf.length>>2,Math.floor(buf.sampleRate*0.25)),th=1e-4;
+  const quiet=i=>{for(let c=0;c<buf.numberOfChannels;c++)if(Math.abs(buf.getChannelData(c)[i])>th)return false;return true;};
+  let a=0;while(a<max&&quiet(a))a++;
+  let b=buf.length;while(buf.length-b<max&&quiet(b-1))b--;
+  if(a===0&&b===buf.length)return buf;
+  const out=ctx.createBuffer(buf.numberOfChannels,b-a,buf.sampleRate);
+  for(let c=0;c<buf.numberOfChannels;c++)out.getChannelData(c).set(buf.getChannelData(c).subarray(a,b));
+  return out;
+}
 function makeLoop(buf,sec){
+  buf=trimSilence(buf);
   const n=buf.length,x=Math.min(Math.floor(sec*buf.sampleRate),Math.floor(n/2));
   if(x<=0)return buf;
   const m=n-x,out=ctx.createBuffer(buf.numberOfChannels,m,buf.sampleRate);
@@ -269,9 +290,15 @@ async function getBuffer(set,k){
   if(pending.has(key))return pending.get(key);
   const job=(async()=>{
     ensureCtx();
-    let src;
-    if(p.demo)src=p.demoBuf;
-    else{const data=await dbGet("files",key);if(!data)throw new Error("Datei fehlt");src=await ctx.decodeAudioData(data);}
+    let data;
+    if(p.bundled){
+      let res=null;
+      try{const c=await caches.open(PADCACHE);res=await c.match(bundledUrl(set,k));}catch(e){}
+      if(!res)res=await fetch(bundledUrl(set,k));
+      if(!res||!res.ok)throw new Error("Datei fehlt");
+      data=await res.arrayBuffer();
+    }else{data=await dbGet("files",key);if(!data)throw new Error("Datei fehlt");}
+    const src=await ctx.decodeAudioData(data);
     const buf=makeLoop(src,S.loopX);
     cache.set(key,{buf,loopSec:S.loopX,used:performance.now()});
     evict();
@@ -489,6 +516,8 @@ function fillAssign(){
   $("assignVol").value=p?p.vol:0.9;$("assignVol").disabled=!p;
   $("assignVolVal").textContent=Math.round((p?p.vol:0.9)*100)+" %";
   $("assignRemove").disabled=!p;
+  $("assignRemove").textContent=!p?"Entfernen":(p.bundled?"Taste leeren":"Eigene Datei entfernen");
+  $("assignHint").textContent=p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ das Set auf Standard zurücksetzen.");
 }
 $("assignPick").onclick=()=>{unlockAudio();$("fileOne").click();};
 $("fileOne").onchange=async e=>{
@@ -499,54 +528,48 @@ $("fileOne").onchange=async e=>{
   render();fillAssign();updateStorage();
 };
 $("assignRemove").onclick=async()=>{
-  const k=assignKey,key=id(S.set,k);
+  const k=assignKey,key=id(S.set,k),p=pads[S.set][k];if(!p)return;
   if(current&&current.id===key)stopCurrent(S.fadeOut);
-  pads[S.set][k]=null;cache.delete(key);
-  try{await dbDel("files",key);await dbDel("meta",key);}catch(e){}
+  cache.delete(key);
+  try{
+    if(p.bundled){pads[S.set][k]=null;await dbPut("meta",key,{hidden:true});}
+    else{await dbDel("files",key);await dbDel("meta",key);pads[S.set][k]=bundledPad(S.set,k);toast("Standard-Pad wiederhergestellt");}
+  }catch(e){}
   render();fillAssign();updateStorage();
 };
 $("assignVol").oninput=e=>{
   const p=pads[S.set][assignKey];if(!p)return;p.vol=+e.target.value;
   $("assignVolVal").textContent=Math.round(p.vol*100)+" %";
   if(current&&current.id===id(S.set,assignKey))ramp(current.g,p.vol,0.15);
-  if(!p.demo)dbPut("meta",id(S.set,assignKey),{name:p.name,vol:p.vol}).catch(()=>{});
+  dbPut("meta",id(S.set,assignKey),p.bundled?{bundled:true,vol:p.vol}:{name:p.name,vol:p.vol}).catch(()=>{});
 };
 $("assignClose").onclick=()=>$("assignSheet").classList.remove("open");
 
-// ================= Demo-Pads =================
-async function renderDemo(semi){
-  const sr=44100,dur=16,oc=new OfflineAudioContext(2,sr*dur,sr);
-  const out=oc.createGain();out.connect(oc.destination);
-  const root=130.8128*Math.pow(2,semi/12);
-  [[0.5,.35],[1,.5],[1.5,.35],[2,.3],[2.25,.18],[3,.1]].forEach(([ratio,gain],pi)=>[[-7,.2],[0,.5],[7,.8]].forEach(([cents,pan],di)=>{
-    const o=oc.createOscillator();o.frequency.value=root*ratio;o.detune.value=cents;
-    const g=oc.createGain();g.gain.value=gain*0.75;
-    const lfo=oc.createOscillator();lfo.frequency.value=0.07+0.03*pi+0.011*di;
-    const lg=oc.createGain();lg.gain.value=gain*0.25;lfo.connect(lg);lg.connect(g.gain);
-    const p=oc.createStereoPanner();p.pan.value=(pan-0.5)*1.2;
-    o.connect(g);g.connect(p);p.connect(out);o.start(0);lfo.start(0);
-  }));
-  const buf=await oc.startRendering();
-  let peak=1e-4;for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<d.length;i++){const a=Math.abs(d[i]);if(a>peak)peak=a;}}
-  const s=0.5/peak;for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<d.length;i++)d[i]*=s;}
-  return buf;
-}
-$("demoBtn").onclick=async()=>{
-  unlockAudio();toast("Demo-Pads werden erzeugt …");
-  try{
-    let n=0;
-    for(let k=0;k<12;k++){if(pads[S.set][k])continue;pads[S.set][k]={name:"Demo "+KEYS[k][0],vol:0.9,demo:true,demoBuf:await renderDemo(k)};n++;}
-    render();toast(n?`${n} freie Tasten mit Demo-Pads belegt (nur bis zum Neustart)`:"Keine freien Tasten in diesem Set");
-  }catch(e){toast("Demo-Pads konnten nicht erzeugt werden");}
-};
+// ================= Set zurücksetzen =================
 $("clearSetBtn").onclick=async()=>{
-  const set=S.set;
-  if($("clearSetBtn").dataset.confirm!=="1"){$("clearSetBtn").dataset.confirm="1";$("clearSetBtn").textContent="Wirklich leeren?";setTimeout(()=>{$("clearSetBtn").dataset.confirm="";$("clearSetBtn").textContent="Set leeren";},3000);return;}
-  $("clearSetBtn").dataset.confirm="";$("clearSetBtn").textContent="Set leeren";
+  const btn=$("clearSetBtn"),set=S.set;
+  if(btn.dataset.confirm!=="1"){btn.dataset.confirm="1";btn.textContent="Wirklich? Eigene Sounds werden gelöscht";setTimeout(()=>{btn.dataset.confirm="";btn.textContent="Set auf Standard zurücksetzen";},3500);return;}
+  btn.dataset.confirm="";btn.textContent="Set auf Standard zurücksetzen";
   fadeAll(0.3);
-  for(let k=0;k<12;k++){pads[set][k]=null;cache.delete(id(set,k));try{await dbDel("files",id(set,k));await dbDel("meta",id(set,k));}catch(e){}}
-  render();updateStorage();toast(S.names[set]+" geleert");
+  for(let k=0;k<12;k++){pads[set][k]=bundledPad(set,k);cache.delete(id(set,k));try{await dbDel("files",id(set,k));await dbDel("meta",id(set,k));}catch(e){}}
+  render();updateStorage();toast(S.names[set]+": Standard-Pads wiederhergestellt");
 };
+
+// ================= Standard-Pads offline speichern =================
+let offlineCount=0;
+async function cacheBundledPads(){
+  let c;try{c=await caches.open(PADCACHE);}catch(e){return;}
+  const urls=[];for(let s=0;s<2;s++)for(let k=0;k<12;k++)urls.push(bundledUrl(s,k));
+  let have=0;for(const u of urls)if(await c.match(u))have++;
+  offlineCount=have;updateOfflineInfo();
+  if(have===urls.length||!navigator.onLine)return;
+  for(const u of urls){
+    if(await c.match(u))continue;
+    try{const r=await fetch(u,{cache:"no-store"});if(r.ok){await c.put(u,r);offlineCount++;updateOfflineInfo();}}catch(e){}
+  }
+  if(offlineCount===urls.length)toast("Alle Standard-Pads sind jetzt offline verfügbar ✓");
+}
+function updateOfflineInfo(){ const el=$("offlineInfo"); if(el)el.textContent=`Standard-Pads offline gespeichert: ${offlineCount} von 24${offlineCount===24?" ✓":" – bitte einmal mit Internet geöffnet lassen"}`; }
 
 // ================= Einstellungen =================
 const fmt=v=>v.toFixed(1).replace(".",",")+" s";
@@ -555,7 +578,7 @@ for(const key of ["xfade","fadeIn","fadeOut","loopX"]){
   el.oninput=()=>{S[key]=+el.value;lab.textContent=fmt(S[key]);saveSettings();render();};
 }
 [0,1].forEach(s=>{const el=$("name"+s);el.value=S.names[s];el.oninput=()=>{S.names[s]=el.value.trim()||("Set "+(s+1));saveSettings();render();};});
-$("settingsBtn").onclick=()=>{updatePedalInfo();updateStorage();$("settingsSheet").classList.add("open");};
+$("settingsBtn").onclick=()=>{updatePedalInfo();updateStorage();updateOfflineInfo();$("settingsSheet").classList.add("open");};
 $("settingsClose").onclick=()=>$("settingsSheet").classList.remove("open");
 for(const sh of ["assignSheet","settingsSheet"])$(sh).addEventListener("click",e=>{if(e.target===$(sh))$(sh).classList.remove("open");});
 const masterEl=$("master");masterEl.value=S.master;
@@ -604,9 +627,15 @@ setInterval(()=>{if(ctx)updateAudioState();},1000);
   applySetColor();render();updatePedalInfo();
   await openDB();
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
-  for(const [key,v] of await dbAllMeta()){const [s,k]=key.split(":").map(Number);if(pads[s])pads[s][k]={name:v.name,vol:v.vol??0.9};}
+  for(let s=0;s<2;s++)for(let k=0;k<12;k++)pads[s][k]=bundledPad(s,k);
+  for(const [key,v] of await dbAllMeta()){
+    const [s,k]=key.split(":").map(Number);if(!pads[s])continue;
+    if(v.hidden)pads[s][k]=null;
+    else if(v.bundled)pads[s][k]=Object.assign(bundledPad(s,k),{vol:v.vol??0.85});
+    else pads[s][k]={name:v.name,vol:v.vol??0.9};
+  }
   render();
-  if(!pads[0].some(Boolean)&&!pads[1].some(Boolean))toast("Tipp: „Sounds +“ – oder in ⚙︎ „Demo-Pads“ zum Testen");
+  cacheBundledPads();
   if("serviceWorker"in navigator&&location.protocol!=="file:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}
 })();
 </script>
