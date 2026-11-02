@@ -115,7 +115,7 @@
 
 <div id="arrangeBar">
   <p>Kacheln an die gewünschte Stelle ziehen</p>
-  <div class="row"><button class="btn grow" id="orderChrom">Chromatisch</button><button class="btn grow" id="orderFifths">Quintenzirkel</button></div>
+  <div class="row"><button class="btn grow" id="orderChrom">↺ Zurücksetzen</button><button class="btn grow" id="orderFifths">Quintenzirkel</button></div>
   <button class="btn accent" id="arrangeDone" style="min-height:52px;font-size:18px">Fertig</button>
 </div>
 <footer id="mainFooter">
@@ -160,7 +160,7 @@
   <div class="row"><button class="btn accent" id="learnBtn">Pedal lernen</button><button class="btn" id="pedalReset">Standard</button></div>
   <h3>Anordnung</h3>
   <p>Reihenfolge der Tonart-Kacheln – das Pedal („nächste Tonart“) folgt ihr. Gilt für alle Sets.</p>
-  <div class="row"><button class="btn" id="arrangeBtn">Kacheln anordnen</button></div>
+  <div class="row"><button class="btn" id="arrangeBtn">Kacheln anordnen</button><button class="btn" id="orderReset">↺ Zurücksetzen</button></div>
   <h3>Übergänge</h3>
   <label><span>Tonartwechsel überblenden <b id="v_xfade"></b></span><input type="range" id="s_xfade" min="0.5" max="10" step="0.5"></label>
   <label><span>Einblenden (aus der Stille) <b id="v_fadeIn"></b></span><input type="range" id="s_fadeIn" min="0" max="10" step="0.5"></label>
@@ -205,7 +205,7 @@
 
 <script>
 "use strict";
-const VERSION="1.4.0";
+const VERSION="1.4.1";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -546,7 +546,9 @@ function startArrange(el,k,e){
 function setArranging(on){arranging=on;document.body.classList.toggle("arranging",on);if(!on)saveOrder();}
 $("arrangeBtn").onclick=()=>{$("settingsSheet").classList.remove("open");setArranging(true);};
 $("arrangeDone").onclick=()=>{setArranging(false);toast("Anordnung gespeichert");};
-$("orderChrom").onclick=()=>{ORDER=ORDER_CHROM.slice();applyOrder();saveOrder();};
+function resetOrder(){ORDER=ORDER_CHROM.slice();applyOrder();saveOrder();toast("Standard-Reihenfolge C, D♭, D … wiederhergestellt");}
+$("orderChrom").onclick=resetOrder;
+$("orderReset").onclick=resetOrder;
 $("orderFifths").onclick=()=>{ORDER=ORDER_FIFTHS.slice();applyOrder();saveOrder();};
 applyOrder();
 function applySetColor(){ document.documentElement.style.setProperty("--setcolor",setColor(S.set)); }
