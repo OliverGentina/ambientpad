@@ -72,6 +72,14 @@
   body.arranging .pad:nth-child(2n){animation-delay:-.14s}
   body.arranging .pad::after{content:"⠿";position:absolute;top:6px;right:9px;font-size:16px;opacity:.55;animation:none;background:none;width:auto;height:auto}
   body.arranging .pad.dragging{animation:none;transform:scale(1.07);z-index:3;box-shadow:0 10px 30px rgba(0,0,0,.6);outline:3px solid var(--setcolor);cursor:grabbing}
+  .sets button{position:relative}
+  .sets button .x{display:none}
+  body.arranging .sets button{animation:wiggle .28s ease-in-out infinite alternate;touch-action:none;padding-right:30px;cursor:grab}
+  body.arranging .sets button .x{display:inline-flex;position:absolute;right:5px;top:50%;margin-top:-10px;width:20px;height:20px;border-radius:50%;
+    background:var(--danger);color:#fff;font-size:14px;line-height:1;align-items:center;justify-content:center;cursor:pointer}
+  body.arranging #importBtn,body.arranging #settingsBtn{display:none}
+  body.arranging .sets{flex-wrap:wrap;overflow:visible}
+  body.arranging .sets button.dragging{animation:none;outline:2px solid var(--setcolor);z-index:2}
   @keyframes wiggle{from{transform:rotate(-1.2deg)}to{transform:rotate(1.2deg)}}
   #arrangeBar{display:none;flex-direction:column;gap:9px}
   body.arranging #arrangeBar{display:flex}
@@ -114,7 +122,8 @@
 <main id="grid" aria-label="Tonarten"></main>
 
 <div id="arrangeBar">
-  <p>Kacheln an die gewünschte Stelle ziehen</p>
+  <p>Kacheln und Set-Knöpfe an die gewünschte Stelle ziehen · × entfernt ein Set</p>
+  <button class="btn" id="restoreSets" style="display:none"></button>
   <div class="row"><button class="btn grow" id="orderChrom">↺ Zurücksetzen</button><button class="btn grow" id="orderFifths">Quintenzirkel</button></div>
   <button class="btn accent" id="arrangeDone" style="min-height:52px;font-size:18px">Fertig</button>
 </div>
@@ -159,8 +168,8 @@
   <p id="pedalInfo"></p>
   <div class="row"><button class="btn accent" id="learnBtn">Pedal lernen</button><button class="btn" id="pedalReset">Standard</button></div>
   <h3>Anordnung</h3>
-  <p>Reihenfolge der Tonart-Kacheln – das Pedal („nächste Tonart“) folgt ihr. Gilt für alle Sets.</p>
-  <div class="row"><button class="btn" id="arrangeBtn">Kacheln anordnen</button><button class="btn" id="orderReset">↺ Zurücksetzen</button></div>
+  <p>Reihenfolge der Tonart-Kacheln (das Pedal folgt ihr, gilt für alle Sets) sowie Reihenfolge und Auswahl der Set-Knöpfe.</p>
+  <div class="row"><button class="btn" id="arrangeBtn">Kacheln &amp; Sets anordnen</button><button class="btn" id="orderReset">↺ Zurücksetzen</button></div>
   <h3>Übergänge</h3>
   <label><span>Tonartwechsel überblenden <b id="v_xfade"></b></span><input type="range" id="s_xfade" min="0.5" max="10" step="0.5"></label>
   <label><span>Einblenden (aus der Stille) <b id="v_fadeIn"></b></span><input type="range" id="s_fadeIn" min="0" max="10" step="0.5"></label>
@@ -208,7 +217,7 @@
 
 <script>
 "use strict";
-const VERSION="1.6.0";
+const VERSION="1.7.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -280,8 +289,18 @@ const RCOLORS=["#7ed957","#f06292","#b388ff","#ffd54f","#4dd0e1","#ff8a65"];
 const isRemote=s=>String(s).startsWith("r/");
 const setName=s=>isRemote(s)?String(s).slice(2):S.names[s];
 const setColor=s=>isRemote(s)?RCOLORS[Math.max(0,remoteSets.indexOf(String(s).slice(2)))%RCOLORS.length]:SETCOLORS[s];
-const allSetKeys=()=>["0","1",...remoteSets.map(f=>"r/"+f)];
-function ensureSetArrays(){for(const k of allSetKeys())if(!pads[k])pads[k]=new Array(12).fill(null);}
+// Reihenfolge der Set-Knöpfe und ausgeblendete Sets (pro Gerät)
+let SETORDER=load("apl.setOrder",[]), HIDDEN=load("apl.hiddenSets",[]);
+const saveSetOrder=()=>store("apl.setOrder",SETORDER), saveHidden=()=>store("apl.hiddenSets",HIDDEN);
+const rawSetKeys=()=>["0","1",...remoteSets.map(f=>"r/"+f)];
+function allSetKeys(){
+  const raw=rawSetKeys().filter(k=>!HIDDEN.includes(k));
+  const ord=SETORDER.filter(k=>raw.includes(k));
+  for(const k of raw)if(!ord.includes(k))ord.push(k);
+  return ord;
+}
+const firstSet=()=>allSetKeys()[0]||"0";
+function ensureSetArrays(){for(const k of rawSetKeys())if(!pads[k])pads[k]=new Array(12).fill(null);}
 ensureSetArrays();
 const id=(set,k)=>set+":"+k;
 
@@ -546,7 +565,44 @@ function startArrange(el,k,e){
   };
   el.addEventListener("pointermove",move);el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);
 }
-function setArranging(on){arranging=on;document.body.classList.toggle("arranging",on);if(!on)saveOrder();}
+function setArranging(on){arranging=on;document.body.classList.toggle("arranging",on);if(!on)saveOrder();updateHiddenBtn();}
+// ---- Set-Knöpfe ziehen und entfernen ----
+function applySetOrder(){const keys=allSetKeys();document.querySelectorAll("#sets button").forEach(b=>{b.style.order=keys.indexOf(b.dataset.set);});}
+function startSetDrag(b,k,e){
+  e.preventDefault();b.classList.add("dragging");
+  try{b.setPointerCapture(e.pointerId);}catch(_){}
+  SETORDER=allSetKeys();
+  const move=ev=>{
+    const under=document.elementFromPoint(ev.clientX,ev.clientY);
+    const t=under&&under.closest&&under.closest("#sets button");
+    if(!t||t===b)return;
+    const from=SETORDER.indexOf(k),to=SETORDER.indexOf(t.dataset.set);if(from<0||to<0)return;
+    SETORDER.splice(from,1);SETORDER.splice(to,0,k);applySetOrder();
+  };
+  const end=()=>{b.classList.remove("dragging");saveSetOrder();b.removeEventListener("pointermove",move);b.removeEventListener("pointerup",end);b.removeEventListener("pointercancel",end);};
+  b.addEventListener("pointermove",move);b.addEventListener("pointerup",end);b.addEventListener("pointercancel",end);
+}
+async function removeSetButton(k){
+  if(allSetKeys().length<=1){toast("Mindestens ein Set muss sichtbar bleiben");return;}
+  const name=setName(k),b=document.querySelector(`#sets button[data-set="${CSS.escape(k)}"] .x`);
+  if(b&&b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="?";toast(`Nochmal auf × tippen, um „${name}“ zu entfernen`);setTimeout(()=>{if(b){b.dataset.confirm="";b.textContent="×";}},3000);return;}
+  if(current&&current.set===k)stopCurrent(0.5);
+  if(isRemote(k)){await removeRemoteSet(k.slice(2));toast(`„${name}“ vom Gerät gelöscht – kommt beim nächsten Abgleich wieder, solange der Ordner in OneDrive liegt`);}
+  else{
+    HIDDEN.push(k);saveHidden();
+    try{const c=await caches.open(PADCACHE);for(let i=0;i<12;i++)await c.delete(bundledUrl(k,i));offlineCount=Math.max(0,offlineCount-12);}catch(e){}
+    for(let i=0;i<12;i++)cache.delete(id(k,i));
+    toast(`„${name}“ ausgeblendet – zurückholen über ⚙︎ → Kacheln & Sets anordnen`);
+  }
+  if(S.set===k){S.set=firstSet();saveSettings();applySetColor();}
+  renderSetButtons();updateHiddenBtn();updateStorage();
+}
+function updateHiddenBtn(){
+  const btn=$("restoreSets");if(!btn)return;
+  btn.style.display=HIDDEN.length?"":"none";
+  btn.textContent=`Ausgeblendet zurückholen: ${HIDDEN.map(k=>setName(k)).join(", ")}`;
+}
+$("restoreSets").onclick=()=>{HIDDEN=[];saveHidden();renderSetButtons();updateHiddenBtn();cacheBundledPads();toast("Standard-Sets wieder sichtbar");};
 $("arrangeBtn").onclick=()=>{$("settingsSheet").classList.remove("open");setArranging(true);};
 $("arrangeDone").onclick=()=>{setArranging(false);toast("Anordnung gespeichert");};
 function resetOrder(){ORDER=ORDER_CHROM.slice();applyOrder();saveOrder();toast("Standard-Reihenfolge C, D♭, D … wiederhergestellt");}
@@ -558,8 +614,13 @@ function applySetColor(){ document.documentElement.style.setProperty("--setcolor
 function renderSetButtons(){
   const box=$("sets"); box.innerHTML="";
   for(const k of allSetKeys()){
-    const b=document.createElement("button"); b.dataset.set=k; b.textContent=setName(k);
-    b.onclick=()=>{unlockAudio();switchSet(k);};
+    const b=document.createElement("button"); b.dataset.set=k;
+    const lbl=document.createElement("span");lbl.className="lbl";lbl.textContent=setName(k);b.appendChild(lbl);
+    const x=document.createElement("span");x.className="x";x.textContent="×";x.setAttribute("aria-label",setName(k)+" entfernen");b.appendChild(x);
+    x.addEventListener("pointerdown",e=>e.stopPropagation());
+    x.addEventListener("click",e=>{e.stopPropagation();removeSetButton(k);});
+    b.onclick=()=>{if(arranging)return;unlockAudio();switchSet(k);};
+    b.addEventListener("pointerdown",e=>{if(arranging)startSetDrag(b,k,e);});
     dropTarget(b,async files=>{
       if(isRemote(k)){toast(`„${setName(k)}“ wird über deinen OneDrive-Ordner befüllt`);return;}
       if(k!==S.set)switchSet(k);
@@ -567,6 +628,7 @@ function renderSetButtons(){
     });
     box.appendChild(b);
   }
+  applySetOrder();
   render();
 }
 function render(){
@@ -579,7 +641,7 @@ function render(){
     el.classList.toggle("loading",loadingKey===id(set,i));
     el.querySelector(".name").textContent=p?p.name:"leer · halten zum Zuweisen";
   });
-  document.querySelectorAll("#sets button").forEach(b=>{const s=b.dataset.set;b.classList.toggle("on",s===set);b.textContent=setName(s);});
+  document.querySelectorAll("#sets button").forEach(b=>{const s=b.dataset.set;b.classList.toggle("on",s===set);const l=b.querySelector(".lbl");if(l)l.textContent=setName(s);});
   const on=document.querySelector("#sets button.on"); if(on&&on.scrollIntoView)try{on.scrollIntoView({block:"nearest",inline:"nearest"});}catch(e){}
   $("xfInfo").textContent="Überblenden "+S.xfade.toFixed(1).replace(".",",")+" s";
 }
@@ -905,7 +967,7 @@ async function removeRemoteSet(folder){
   if(current&&current.set===key)stopCurrent(0.5);
   for(let k=0;k<12;k++){cache.delete(id(key,k));try{await dbDel("files",id(key,k));await dbDel("meta",id(key,k));}catch(e){}}
   remoteSets=remoteSets.filter(f=>f!==folder);saveRemoteSets();delete pads[key];
-  if(S.set===key){S.set="0";saveSettings();applySetColor();}
+  if(S.set===key){S.set=firstSet();saveSettings();applySetColor();}
   renderSetButtons();updateStorage();
 }
 async function applySync(){
@@ -953,7 +1015,7 @@ window.addEventListener("online",()=>{if(msSessionValid())checkRemote(false);});
 let offlineCount=0;
 async function cacheBundledPads(){
   let c;try{c=await caches.open(PADCACHE);}catch(e){return;}
-  const urls=[];for(const s of ["0","1"])for(let k=0;k<12;k++)urls.push(bundledUrl(s,k));
+  const urls=[];for(const s of ["0","1"])if(!HIDDEN.includes(s))for(let k=0;k<12;k++)urls.push(bundledUrl(s,k));
   let have=0;for(const u of urls)if(await c.match(u))have++;
   offlineCount=have;updateOfflineInfo();
   if(have===urls.length||!navigator.onLine)return;
@@ -961,9 +1023,10 @@ async function cacheBundledPads(){
     if(await c.match(u))continue;
     try{const r=await fetch(u,{cache:"no-store"});if(r.ok){await c.put(u,r);offlineCount++;updateOfflineInfo();}}catch(e){}
   }
-  if(offlineCount===urls.length)toast("Alle Standard-Pads sind jetzt offline verfügbar ✓");
+  if(urls.length&&offlineCount===urls.length)toast("Alle Standard-Pads sind jetzt offline verfügbar ✓");
 }
-function updateOfflineInfo(){ const el=$("offlineInfo"); if(el)el.textContent=`Standard-Pads offline gespeichert: ${offlineCount} von 24${offlineCount===24?" ✓":" – bitte einmal mit Internet geöffnet lassen"}`; }
+function updateOfflineInfo(){ const el=$("offlineInfo"); if(!el)return; const total=["0","1"].filter(s=>!HIDDEN.includes(s)).length*12;
+  el.textContent=total?`Standard-Pads offline gespeichert: ${Math.min(offlineCount,total)} von ${total}${offlineCount>=total?" ✓":" – bitte einmal mit Internet geöffnet lassen"}`:"Standard-Sets ausgeblendet."; }
 
 // ================= Einstellungen =================
 const fmt=v=>v.toFixed(1).replace(".",",")+" s";
@@ -1040,7 +1103,7 @@ async function forceUpdate(){
 
 // ================= Start =================
 (async()=>{
-  if(!allSetKeys().includes(S.set))S.set="0";
+  if(!allSetKeys().includes(S.set))S.set=firstSet();
   applySetColor();renderSetButtons();updatePedalInfo();
   await openDB();
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
@@ -1053,7 +1116,7 @@ async function forceUpdate(){
     else if(v.bundled)pads[s][k]=Object.assign(bundledPad(s,k),{vol:v.vol??0.85});
     else pads[s][k]={name:v.name,vol:v.vol??0.9};
   }
-  if(!allSetKeys().includes(S.set))S.set="0";
+  if(!allSetKeys().includes(S.set))S.set=firstSet();
   applySetColor();renderSetButtons();
   cacheBundledPads();
   updateAccountInfo();
