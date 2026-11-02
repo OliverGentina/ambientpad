@@ -169,14 +169,16 @@
   <h3>Sets</h3>
   <label>Name Set 1 (Standard: Warm)<input type="text" id="name0" maxlength="20"></label>
   <label>Name Set 2 (Standard: Shimmer)<input type="text" id="name1" maxlength="20"></label>
-  <h3>Meine Pads (privater GitHub-Ordner)</h3>
-  <p>Jeder Unterordner von „Meine Pads“ in deinem privaten Repository wird ein eigenes Set. Die Tonart liest die App aus dem Dateinamen.</p>
-  <label>GitHub-Benutzer<input type="text" id="r_owner" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
-  <label>Repository<input type="text" id="r_repo" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
-  <label>Ordner<input type="text" id="r_folder" autocorrect="off" spellcheck="false"></label>
-  <label>Schlüssel (Token, nur Lesen)<input type="password" id="r_token" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
+  <h3>Meine Pads (OneDrive)</h3>
+  <p>Jeder Unterordner von „Meine Pads“ in deinem OneDrive wird ein eigenes Set. Die Tonart liest die App aus dem Dateinamen.</p>
+  <label>Ordner in OneDrive<input type="text" id="r_folder" autocorrect="off" spellcheck="false"></label>
+  <p id="msAccount"></p>
   <p id="remoteStatus"></p>
-  <div class="row"><button class="btn accent" id="r_check">Nach neuen Pads suchen</button><button class="btn" id="r_forget">Schlüssel entfernen</button></div>
+  <div class="row"><button class="btn accent" id="r_check">Nach neuen Pads suchen</button></div>
+  <div class="row"><button class="btn" id="r_login">Mit Microsoft anmelden</button><button class="btn" id="r_logout">Abmelden</button></div>
+  <details><summary style="color:var(--dim);font-size:14px">Erweitert</summary>
+    <label style="margin-top:8px">Microsoft-Anwendungs-ID<input type="text" id="r_client" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="z. B. 1a2b3c4d-…"></label>
+  </details>
   <h3>Speicher</h3>
   <p id="storageInfo">–</p>
   <p id="offlineInfo"></p>
@@ -205,7 +207,7 @@
 
 <script>
 "use strict";
-const VERSION="1.4.2";
+const VERSION="1.5.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -558,7 +560,7 @@ function renderSetButtons(){
     const b=document.createElement("button"); b.dataset.set=k; b.textContent=setName(k);
     b.onclick=()=>{unlockAudio();switchSet(k);};
     dropTarget(b,async files=>{
-      if(isRemote(k)){toast(`„${setName(k)}“ wird über deinen GitHub-Ordner befüllt`);return;}
+      if(isRemote(k)){toast(`„${setName(k)}“ wird über deinen OneDrive-Ordner befüllt`);return;}
       if(k!==S.set)switchSet(k);
       await importFiles(k,files);
     });
@@ -605,7 +607,7 @@ $("fileMulti").onchange=async e=>{
 // Mehrere Dateien: Tonart aus dem Dateinamen, sonst auf leere Tasten verteilen
 async function importFiles(set,files){
   if(!files.length)return;
-  if(isRemote(set)){toast(`„${setName(set)}“ wird über deinen GitHub-Ordner befüllt – dort Dateien ändern`);return;}
+  if(isRemote(set)){toast(`„${setName(set)}“ wird über deinen OneDrive-Ordner befüllt – dort Dateien ändern`);return;}
   toast(`Lade ${files.length} Datei(en) …`);
   let ok=0,auto=0,fail=0,skipped=0;const rest=[];
   for(const f of files){
@@ -632,7 +634,7 @@ function fillAssign(){
   $("assignPick").disabled=rem;
   $("assignRemove").disabled=!p||rem;
   $("assignRemove").textContent=!p?"Entfernen":(p.bundled?"Taste leeren":"Eigene Datei entfernen");
-  $("assignHint").textContent=rem?"Dieses Set kommt aus deinem GitHub-Ordner „Meine Pads“. Dateien dort ändern – hier nur die Lautstärke.":p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ das Set auf Standard zurücksetzen.");
+  $("assignHint").textContent=rem?"Dieses Set kommt aus deinem OneDrive-Ordner „Meine Pads“. Dateien dort ändern – hier nur die Lautstärke.":p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ das Set auf Standard zurücksetzen.");
 }
 $("assignPick").onclick=()=>{unlockAudio();$("fileOne").click();};
 $("fileOne").onchange=async e=>{
@@ -707,57 +709,103 @@ $("clearSetBtn").onclick=async()=>{
   render();updateStorage();toast(setName(set)+": Standard-Pads wiederhergestellt");
 };
 
-// ================= Pad-Ordner „Meine Pads“ (privates GitHub-Repository) =================
-const R=Object.assign({owner:"OliverGentina",repo:"meine-pads",folder:"Meine Pads",token:"",ref:""},load("apl.remote",{}));
-const saveRemote=()=>store("apl.remote",R);
+// ================= Pad-Ordner „Meine Pads“ in OneDrive =================
+// Anmeldung: OAuth 2.0 Authorization Code + PKCE direkt bei Microsoft (ohne Server, ohne Bibliothek).
+// Microsoft begrenzt die Anmeldung von Web-Apps auf 24 Stunden – Abspielen geht immer, nur zum Suchen
+// nach neuen Pads ist dann eine neue Anmeldung nötig (meist ein Tipp, ohne Passwort).
+const MS_DEFAULT_CLIENT_ID="";            // Anwendungs-ID aus der Microsoft-Registrierung
+const MS_AUTH="https://login.microsoftonline.com/consumers/oauth2/v2.0";
+const MS_SCOPES="openid profile offline_access Files.Read";
+const GRAPH="https://graph.microsoft.com/v1.0";
+const OD=Object.assign({folder:"Meine Pads",clientId:""},load("apl.onedrive",{}));
+const saveOD=()=>store("apl.onedrive",OD);
+let MST=load("apl.mstoken",null);       // {at, atExp, rt, rtExp, user}
+const saveMST=()=>store("apl.mstoken",MST);
+const msClientId=()=>(OD.clientId||MS_DEFAULT_CLIENT_ID||"").trim();
+const redirectUri=()=>location.origin+location.pathname.replace(/index\.html$/,"");
 const AUDIO_EXT=/\.(mp3|m4a|aac|wav|wave|aif|aiff|caf|flac|ogg)$/i;
 let remotePlan=null, syncing=false;
-const encPath=p=>p.split("/").map(encodeURIComponent).join("/");
-async function ghApi(sub,raw){
-  const url=`https://api.github.com/repos/${encodeURIComponent(R.owner.trim())}/${encodeURIComponent(R.repo.trim())}${sub}`;
-  const res=await fetch(url,{cache:"no-store",headers:{"Authorization":"Bearer "+R.token.trim(),"Accept":raw?"application/vnd.github.raw":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}});
-  if(!res.ok){const e=new Error("HTTP "+res.status);e.status=res.status;throw e;}
-  return raw?res.arrayBuffer():res.json();
+const encPath=p=>p.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+const b64url=bytes=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const msSessionValid=()=>!!(MST&&MST.rt&&Date.now()<MST.rtExp);
+function jwtName(t){try{const p=JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));return p.preferred_username||p.email||p.name||"";}catch(e){return "";}}
+
+async function msLogin(afterwards="check"){
+  const cid=msClientId();
+  if(!cid){showInfoSheet("App noch nicht bei Microsoft registriert",["Für den OneDrive-Zugriff braucht die App eine Anwendungs-ID von Microsoft.","Sobald sie eingetragen ist, funktioniert „Mit Microsoft anmelden“."]);return;}
+  if(current)fadeAll(1);
+  const verifier=b64url(crypto.getRandomValues(new Uint8Array(48)));
+  const challenge=b64url(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier))));
+  const state=b64url(crypto.getRandomValues(new Uint8Array(16)));
+  store("apl.pkce",{verifier,state,afterwards,t:Date.now()});
+  const q=new URLSearchParams({client_id:cid,response_type:"code",redirect_uri:redirectUri(),response_mode:"query",scope:MS_SCOPES,state,code_challenge:challenge,code_challenge_method:"S256"});
+  if(MST&&MST.user)q.set("login_hint",MST.user);
+  location.href=`${MS_AUTH}/authorize?${q}`;
 }
-const refQ=ref=>ref?`?ref=${encodeURIComponent(ref)}`:"";
-const gh=(path,raw,ref=R.ref)=>ghApi(`/contents/${encPath(path)}${refQ(ref)}`,raw);
-const norm=t=>t.normalize("NFC").trim().toLowerCase();
-// Findet den Pad-Ordner – auch bei anderer Schreibweise oder in einem anderen Zweig.
-// Gibt {ok:true} zurück oder {ok:false, title, lines} mit einer verständlichen Erklärung.
-async function locateFolder(){
-  let info;
-  try{info=await ghApi("");}
-  catch(e){
-    if(e.status===401)return {ok:false,title:"Schlüssel ungültig",lines:["GitHub lehnt den Schlüssel ab – er ist falsch kopiert, abgelaufen oder gelöscht.","Bitte einen neuen Schlüssel erstellen und einfügen."]};
-    if(e.status===404||e.status===403)return {ok:false,title:"Repository nicht erreichbar",lines:[`„${R.owner}/${R.repo}“ wurde nicht gefunden – oder der Schlüssel darf es nicht lesen (GitHub meldet dann ebenfalls „nicht gefunden“).`,"Prüfe beim Schlüssel auf github.com:","• Resource owner: dein Konto","• Repository access: „Only select repositories“ → meine-pads","• Repository permissions → Contents: „Read-only“","Und in ⚙︎: Benutzer und Repository genau so geschrieben wie auf GitHub."]};
-    return {ok:false,title:"Keine Verbindung",lines:["GitHub ist gerade nicht erreichbar. Internetverbindung prüfen und erneut suchen."]};
-  }
-  const want=norm(R.folder);
-  const branches=[info.default_branch];
-  try{for(const b of await ghApi("/branches?per_page=50"))if(!branches.includes(b.name))branches.push(b.name);}catch(e){}
-  let rootNames=null,noContents=false;
-  for(const br of branches){
-    let root;try{root=await gh("",false,br);}catch(e){if(e.status===403||e.status===404)noContents=true;continue;}
-    if(br===info.default_branch)rootNames=root.map(x=>x.type==="dir"?x.name+"/":x.name);
-    const hit=root.find(x=>x.type==="dir"&&norm(x.name)===want);
-    if(hit){
-      const notes=[];
-      if(hit.name!==R.folder.trim())notes.push(`Ordnername angepasst: „${hit.name}“`);
-      if(br!==info.default_branch)notes.push(`Ordner liegt im Zweig „${br}“ – wird ab jetzt verwendet`);
-      R.folder=hit.name;R.ref=br===info.default_branch?"":br;saveRemote();
-      if($("r_folder"))$("r_folder").value=R.folder;
-      return {ok:true,notes};
-    }
-  }
-  if(rootNames===null&&noContents)return {ok:false,title:"Schlüssel darf keine Dateien lesen",lines:[
-    `Das Repository „${R.owner}/${R.repo}“ ist erreichbar, aber der Schlüssel hat keine Leserechte für die Dateien.`,
-    "Auf github.com: Settings → Developer settings → Fine-grained tokens → Schlüssel antippen → „Edit“.",
-    "Unter „Permissions“ bei „Contents“ „Read-only“ wählen und speichern. In der App muss nichts geändert werden – danach einfach erneut suchen."]};
-  return {ok:false,title:`Ordner „${R.folder}“ nicht gefunden`,lines:[
-    `Das Repository „${R.owner}/${R.repo}“ ist erreichbar, aber der Ordner fehlt${branches.length>1?` (gesucht in: ${branches.join(", ")})`:""}.`,
-    rootNames&&rootNames.length?`Ganz oben im Repository liegt: ${rootNames.join(", ")}`:"Das Repository ist leer – wurde in GitHub Desktop „Push origin“ geklickt?",
-    "Entweder den Ordner auf GitHub umbenennen oder in ⚙︎ bei „Ordner“ den richtigen Namen eintragen (bei Unterordnern mit „/“, z. B. Audio/Meine Pads)."]};
+function storeTokens(j,sessionStart){
+  const now=Date.now();
+  MST={at:j.access_token,atExp:now+(j.expires_in||3600)*1000-60000,rt:j.refresh_token||(MST&&MST.rt),
+       rtExp:sessionStart?now+24*3600*1000-10*60000:(MST?MST.rtExp:now),
+       user:(j.id_token&&jwtName(j.id_token))||(MST&&MST.user)||""};
+  saveMST();
 }
+// Rückkehr von der Microsoft-Anmeldung (…/ambientpad/?code=…&state=…)
+async function handleAuthRedirect(){
+  const q=new URLSearchParams(location.search);
+  if(!q.has("code")&&!q.has("error"))return null;
+  history.replaceState(null,"",location.pathname);
+  const pk=load("apl.pkce",null);try{localStorage.removeItem("apl.pkce");}catch(e){}
+  if(q.has("error")){toast("Anmeldung abgebrochen");return null;}
+  if(!pk||pk.state!==q.get("state")){toast("Anmeldung ungültig – bitte erneut anmelden");return null;}
+  try{
+    const res=await fetch(`${MS_AUTH}/token`,{method:"POST",body:new URLSearchParams({client_id:msClientId(),grant_type:"authorization_code",code:q.get("code"),redirect_uri:redirectUri(),code_verifier:pk.verifier,scope:MS_SCOPES})});
+    const j=await res.json();
+    if(!res.ok||!j.access_token)throw new Error(j.error_description||j.error||res.status);
+    storeTokens(j,true);toast("Mit Microsoft angemeldet"+(MST.user?` (${MST.user})`:""));
+    return pk.afterwards||"check";
+  }catch(e){showInfoSheet("Anmeldung fehlgeschlagen",[String(e.message||e).slice(0,300),"Ist in der Microsoft-Registrierung die Umleitungs-URI genau „"+redirectUri()+"“ als „Single-page application“ eingetragen?"]);return null;}
+}
+async function getToken(){
+  if(!MST)return null;
+  if(MST.at&&Date.now()<MST.atExp)return MST.at;
+  if(!msSessionValid())return null;
+  try{
+    const res=await fetch(`${MS_AUTH}/token`,{method:"POST",body:new URLSearchParams({client_id:msClientId(),grant_type:"refresh_token",refresh_token:MST.rt,scope:MS_SCOPES})});
+    const j=await res.json();if(!res.ok||!j.access_token)throw 0;
+    storeTokens(j,false);return MST.at;
+  }catch(e){MST.rtExp=0;saveMST();return null;}
+}
+async function graph(path){
+  const t=await getToken();
+  if(!t)throw Object.assign(new Error("Anmeldung nötig"),{status:401});
+  const res=await fetch(path.startsWith("http")?path:GRAPH+path,{cache:"no-store",headers:{Authorization:"Bearer "+t}});
+  if(!res.ok)throw Object.assign(new Error("HTTP "+res.status),{status:res.status});
+  return res.json();
+}
+async function listChildren(path){
+  const p=encPath(path);
+  let url=p?`/me/drive/root:/${p}:/children?$select=id,name,size,folder,file,cTag,eTag&$top=200`:`/me/drive/root/children?$select=id,name,folder,file&$top=200`;
+  const out=[];
+  while(url){const j=await graph(url);out.push(...(j.value||[]));url=j["@odata.nextLink"]||null;}
+  return out;
+}
+async function downloadItem(itemId){
+  const j=await graph(`/me/drive/items/${encodeURIComponent(itemId)}?select=id,@microsoft.graph.downloadUrl`);
+  const url=j["@microsoft.graph.downloadUrl"];if(!url)throw new Error("Kein Download-Link");
+  const res=await fetch(url);                     // vorab freigegeben → ohne Anmelde-Header
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  return res.arrayBuffer();
+}
+function setRemoteStatus(t){const el=$("remoteStatus");if(el)el.textContent=t;}
+function updateAccountInfo(){
+  const el=$("msAccount");if(!el)return;
+  if(!msClientId())el.textContent="Noch keine Microsoft-Anwendungs-ID eingetragen (siehe „Erweitert“).";
+  else if(msSessionValid())el.textContent=`Angemeldet${MST.user?" als "+MST.user:""} · gültig bis ${new Date(MST.rtExp).toLocaleString("de-DE",{weekday:"short",hour:"2-digit",minute:"2-digit"})}`;
+  else el.textContent=MST&&MST.user?`Anmeldung abgelaufen (${MST.user}) – beim Suchen wirst du neu angemeldet.`:"Nicht angemeldet.";
+  $("r_logout").disabled=!MST;
+}
+const hhmm=()=>new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+const mb=b=>(b/1048576).toFixed(b>10485760?0:1).replace(".",",")+" MB";
 function showInfoSheet(title,lines){
   $("syncTitle").textContent=title;
   const list=$("syncList");list.innerHTML="";
@@ -766,43 +814,46 @@ function showInfoSheet(title,lines){
   $("syncGo").style.display="none";$("syncLater").textContent="OK";$("syncLater").disabled=false;
   $("syncSheet").classList.add("open");
 }
-function remoteError(e){
-  if(e.status===401)return "Schlüssel ungültig oder abgelaufen.";
-  if(e.status===403)return "Zugriff verweigert – hat der Schlüssel Leserechte für das Repository?";
-  if(e.status===404)return `„${R.owner}/${R.repo}“ oder Ordner „${R.folder}“ nicht gefunden – Namen und Schlüssel prüfen.`;
-  return "Pad-Ordner nicht erreichbar (Internet?).";
-}
-function setRemoteStatus(t){const el=$("remoteStatus");if(el)el.textContent=t;}
-const hhmm=()=>new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
-const mb=b=>(b/1048576).toFixed(b>10485760?0:1).replace(".",",")+" MB";
 async function checkRemote(interactive){
   if(syncing)return;
-  if(!R.token.trim()){if(interactive)toast("Bitte zuerst den Schlüssel eintragen");setRemoteStatus("Noch kein Schlüssel eingetragen.");return;}
+  if(!msClientId()){setRemoteStatus("");if(interactive)msLogin();return;}
   if(!navigator.onLine){if(interactive)toast("Kein Internet");return;}
-  setRemoteStatus("Prüfe Pad-Ordner …");
-  let dirs,notes=[];
-  try{const list=await gh(R.folder.trim());if(!Array.isArray(list))throw Object.assign(new Error("kein Ordner"),{status:404});dirs=list.filter(x=>x.type==="dir");}
-  catch(e){
-    // Ursache genau ermitteln (und Schreibweise/Zweig ggf. selbst korrigieren)
-    const loc=await locateFolder();
-    if(!loc.ok){setRemoteStatus(loc.title);if(interactive)showInfoSheet(loc.title,loc.lines);return;}
-    notes=loc.notes;
-    try{dirs=(await gh(R.folder)).filter(x=>x.type==="dir");}catch(e2){setRemoteStatus(remoteError(e2));if(interactive)toast(remoteError(e2));return;}
+  if(!msSessionValid()){
+    setRemoteStatus("Zum Suchen bitte mit Microsoft anmelden.");
+    if(interactive)msLogin("check");          // nur auf Knopfdruck – nie automatisch mitten im Gottesdienst
+    return;
   }
-  if(!dirs.length){const t=`Ordner „${R.folder}“ gefunden, aber ohne Unterordner`;setRemoteStatus(t);
-    if(interactive)showInfoSheet(t,["Die App macht aus jedem Unterordner ein Set. Lege z. B. „"+R.folder+"/Ambient Swells“ an und lege die MP3s dort hinein."]);return;}
+  setRemoteStatus("Prüfe OneDrive-Ordner …");
+  const folder=OD.folder.trim().replace(/^\/+|\/+$/g,"");
+  let dirs;
+  try{dirs=(await listChildren(folder)).filter(x=>x.folder);}
+  catch(e){
+    if(e.status===401){setRemoteStatus("Anmeldung abgelaufen.");if(interactive)msLogin("check");return;}
+    if(e.status===404){
+      let root=[];try{root=(await listChildren("")).filter(x=>x.folder).map(x=>x.name);}catch(_){}
+      const t=`Ordner „${folder}“ nicht in deinem OneDrive gefunden`;setRemoteStatus(t);
+      if(interactive)showInfoSheet(t,[root.length?`Ganz oben in deinem OneDrive liegen die Ordner: ${root.slice(0,15).join(", ")}${root.length>15?" …":""}`:"Dein OneDrive scheint leer zu sein – ist der Ordner schon hochgeladen (OneDrive-Symbol am PC zeigt einen grünen Haken)?",
+        "Liegt „Meine Pads“ in einem Unterordner, trage in ⚙︎ bei „Ordner in OneDrive“ den ganzen Pfad ein, z. B. Musik/Meine Pads.",
+        MST&&MST.user?`Angemeldet ist: ${MST.user} – ist das das richtige Konto?`:""].filter(Boolean));
+      return;
+    }
+    const t="OneDrive gerade nicht erreichbar.";setRemoteStatus(t);if(interactive)toast(t);return;
+  }
+  if(!dirs.length){const t=`Ordner „${folder}“ gefunden, aber ohne Unterordner`;setRemoteStatus(t);
+    if(interactive)showInfoSheet(t,[`Die App macht aus jedem Unterordner ein Set. Lege z. B. „${folder}/Ambient Swells“ an und lege die MP3s dort hinein.`]);return;}
   const plan={sets:[],downloads:[],removals:[],removeSets:[],bytes:0,unknown:[],dupes:[]};
   const seen=new Set();
   for(const d of dirs){
-    let files;try{files=(await gh(d.path)).filter(x=>x.type==="file"&&AUDIO_EXT.test(x.name)).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true}));}catch(e){continue;}
+    let files;
+    try{files=(await listChildren(`${folder}/${d.name}`)).filter(x=>x.file&&AUDIO_EXT.test(x.name)).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true}));}catch(e){continue;}
     seen.add(d.name);
     const setKey="r/"+d.name,byKey=new Array(12).fill(null);
     for(const f of files){const k=parseKey(f.name);if(k===null){plan.unknown.push(`${d.name}/${f.name}`);continue;}if(byKey[k]){plan.dupes.push(`${d.name}/${f.name}`);continue;}byKey[k]=f;}
     const local=pads[setKey]||new Array(12).fill(null);
     let nNew=0,nChg=0,nDel=0;
     for(let k=0;k<12;k++){
-      const f=byKey[k],l=local[k];
-      if(f&&(!l||l.sha!==f.sha)){plan.downloads.push({setKey,folder:d.name,k,file:f});plan.bytes+=f.size||0;l?nChg++:nNew++;}
+      const f=byKey[k],l=local[k],tag=f&&(f.cTag||f.eTag);
+      if(f&&(!l||l.sha!==tag)){plan.downloads.push({setKey,folder:d.name,k,file:{name:f.name,id:f.id,size:f.size||0,tag}});plan.bytes+=f.size||0;l?nChg++:nNew++;}
       else if(!f&&l){plan.removals.push({setKey,k});nDel++;}
     }
     if(nNew||nChg||nDel)plan.sets.push({name:d.name,nNew,nChg,nDel,isNew:!remoteSets.includes(d.name)});
@@ -810,20 +861,20 @@ async function checkRemote(interactive){
   for(const f of remoteSets)if(!seen.has(f)){plan.removeSets.push(f);plan.sets.push({name:f,gone:true});}
   if(!plan.sets.length){
     remotePlan=null;$("settingsBtn").classList.remove("badge");
-    setRemoteStatus(`Alles aktuell (${remoteSets.length} Set${remoteSets.length===1?"":"s"}) · geprüft ${hhmm()}`+(plan.unknown.length?` · ${plan.unknown.length} Datei(en) ohne erkennbare Tonart`:"")+(notes.length?" · "+notes.join(" · "):""));
+    setRemoteStatus(`Alles aktuell (${remoteSets.length} Set${remoteSets.length===1?"":"s"}) · geprüft ${hhmm()}`+(plan.unknown.length?` · ${plan.unknown.length} Datei(en) ohne erkennbare Tonart`:""));
     if(interactive){
       if(plan.unknown.length&&!remoteSets.length)showInfoSheet("Keine Tonart erkannt",["Die Dateien wurden gefunden, aber in keinem Namen eine Tonart erkannt:",...plan.unknown.slice(0,8),"Namen bitte nach dem Schema „Key of A Pads.mp3“ vergeben."]);
-      else toast("Pad-Ordner: alles aktuell"+(notes.length?" · "+notes.join(" · "):""));
+      else toast("OneDrive-Ordner: alles aktuell");
     }
     return;
   }
-  remotePlan=plan;plan.notes=notes;
-  setRemoteStatus(`Neues im Pad-Ordner gefunden · geprüft ${hhmm()}`);
+  remotePlan=plan;
+  setRemoteStatus(`Neues im OneDrive-Ordner gefunden · geprüft ${hhmm()}`);
   // Nie mitten in der Wiedergabe aufpoppen – dann nur ein Punkt am ⚙︎-Knopf
   if(interactive||!current)showSyncSheet(plan); else $("settingsBtn").classList.add("badge");
 }
 function showSyncSheet(plan){
-  $("syncTitle").textContent="Neues im Pad-Ordner";$("syncGo").style.display="";$("syncLater").textContent="Später";
+  $("syncTitle").textContent="Neues im OneDrive-Ordner";$("syncGo").style.display="";$("syncLater").textContent="Später";
   const list=$("syncList");list.innerHTML="";
   for(const st of plan.sets){
     const d=document.createElement("div");
@@ -835,7 +886,6 @@ function showSyncSheet(plan){
   const info=[];
   if(plan.downloads.length)info.push(`Download: ${plan.downloads.length} Datei(en), ${mb(plan.bytes)}. Danach offline verfügbar.`);
   if(plan.unknown.length)info.push(`Übersprungen (keine Tonart im Namen erkannt): ${plan.unknown.slice(0,4).join(", ")}${plan.unknown.length>4?" …":""}`);
-  if(plan.notes&&plan.notes.length)info.push(plan.notes.join(". ")+".");
   if(plan.dupes.length)info.push(`Doppelt belegt, übersprungen: ${plan.dupes.slice(0,3).join(", ")}${plan.dupes.length>3?" …":""}`);
   $("syncInfo").textContent=info.join(" ");
   $("syncGo").disabled=false;$("syncGo").textContent=plan.downloads.length?"Jetzt laden":"Übernehmen";
@@ -853,7 +903,7 @@ async function removeRemoteSet(folder){
 async function applySync(){
   const plan=remotePlan;if(!plan||syncing)return;
   syncing=true;$("syncGo").disabled=true;$("syncLater").disabled=true;
-  let done=0,fail=0,quota=false;
+  let done=0,fail=0,quota=false,auth=false;
   for(const f of plan.removeSets)await removeRemoteSet(f);
   for(const r of plan.removals){
     if(!pads[r.setKey])continue;
@@ -865,30 +915,30 @@ async function applySync(){
     $("syncGo").textContent=`Lade ${done+fail+1}/${plan.downloads.length} …`;
     $("syncInfo").textContent=`${d.folder} – ${d.file.name}`;
     try{
-      const data=await gh(d.file.path,true);
+      const data=await downloadItem(d.file.id);
       if(!remoteSets.includes(d.folder)){remoteSets.push(d.folder);saveRemoteSets();ensureSetArrays();renderSetButtons();}
       const old=pads[d.setKey][d.k];
-      const meta={name:d.file.name.replace(/\.[^.]+$/,""),vol:old?.vol??0.85,remote:true,sha:d.file.sha,path:d.file.path};
+      const meta={name:d.file.name.replace(/\.[^.]+$/,""),vol:old?.vol??0.85,remote:true,sha:d.file.tag,path:d.file.id};
       await dbPut("files",id(d.setKey,d.k),data);
       await dbPut("meta",id(d.setKey,d.k),meta);
       if(current&&current.id===id(d.setKey,d.k))stopCurrent(0.5);
       pads[d.setKey][d.k]=meta;cache.delete(id(d.setKey,d.k));done++;render();
-    }catch(e){fail++;if(e&&e.name==="QuotaExceededError"){quota=true;break;}}
+    }catch(e){fail++;if(e&&e.name==="QuotaExceededError"){quota=true;break;}if(e&&e.status===401){auth=true;break;}}
   }
   syncing=false;remotePlan=null;$("settingsBtn").classList.remove("badge");
   $("syncSheet").classList.remove("open");
   renderSetButtons();updateStorage();
   setRemoteStatus(`Abgeglichen ${hhmm()} · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}`);
-  toast(quota?"Speicher voll – nicht alle Pads geladen":fail?`${done} geladen, ${fail} fehlgeschlagen – später erneut suchen`:`Pad-Ordner abgeglichen${done?` · ${done} Pad(s) geladen`:""}`);
+  toast(quota?"Speicher voll – nicht alle Pads geladen":auth?"Anmeldung abgelaufen – bitte erneut suchen":fail?`${done} geladen, ${fail} fehlgeschlagen – später erneut suchen`:`OneDrive abgeglichen${done?` · ${done} Pad(s) geladen`:""}`);
 }
 $("syncGo").onclick=applySync;
 $("syncLater").onclick=()=>{$("syncSheet").classList.remove("open");if(remotePlan)$("settingsBtn").classList.add("badge");};
-for(const [f,el] of [["owner","r_owner"],["repo","r_repo"],["folder","r_folder"],["token","r_token"]]){
-  $(el).value=R[f];$(el).onchange=()=>{R[f]=$(el).value.trim();saveRemote();};
-}
-$("r_check").onclick=()=>{for(const [f,el] of [["owner","r_owner"],["repo","r_repo"],["folder","r_folder"],["token","r_token"]])R[f]=$(el).value.trim();saveRemote();$("settingsSheet").classList.remove("open");checkRemote(true);};
-$("r_forget").onclick=()=>{R.token="";saveRemote();$("r_token").value="";setRemoteStatus("Schlüssel entfernt. Bereits geladene Sets bleiben auf dem Gerät.");};
-window.addEventListener("online",()=>{if(R.token)checkRemote(false);});
+$("r_folder").value=OD.folder;$("r_folder").onchange=()=>{OD.folder=$("r_folder").value.trim()||"Meine Pads";saveOD();};
+$("r_client").value=OD.clientId;$("r_client").onchange=()=>{OD.clientId=$("r_client").value.trim();saveOD();updateAccountInfo();};
+$("r_check").onclick=()=>{OD.folder=$("r_folder").value.trim()||"Meine Pads";OD.clientId=$("r_client").value.trim();saveOD();$("settingsSheet").classList.remove("open");checkRemote(true);};
+$("r_login").onclick=()=>{OD.clientId=$("r_client").value.trim();saveOD();msLogin("check");};
+$("r_logout").onclick=()=>{MST=null;try{localStorage.removeItem("apl.mstoken");}catch(e){}updateAccountInfo();setRemoteStatus("Abgemeldet. Bereits geladene Sets bleiben auf dem Gerät.");};
+window.addEventListener("online",()=>{if(msSessionValid())checkRemote(false);});
 
 // ================= Standard-Pads offline speichern =================
 let offlineCount=0;
@@ -913,7 +963,7 @@ for(const key of ["xfade","fadeIn","fadeOut","loopX"]){
   el.oninput=()=>{S[key]=+el.value;lab.textContent=fmt(S[key]);saveSettings();render();};
 }
 [0,1].forEach(s=>{const el=$("name"+s);el.value=S.names[s];el.oninput=()=>{S.names[s]=el.value.trim()||("Set "+(s+1));saveSettings();render();};});
-$("settingsBtn").onclick=()=>{updatePedalInfo();updateStorage();updateOfflineInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
+$("settingsBtn").onclick=()=>{updatePedalInfo();updateStorage();updateOfflineInfo();updateAccountInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
 $("settingsClose").onclick=()=>$("settingsSheet").classList.remove("open");
 for(const sh of ["assignSheet","settingsSheet"])$(sh).addEventListener("click",e=>{if(e.target===$(sh))$(sh).classList.remove("open");});
 const masterEl=$("master");masterEl.value=S.master;
@@ -997,7 +1047,11 @@ async function forceUpdate(){
   if(!allSetKeys().includes(S.set))S.set="0";
   applySetColor();renderSetButtons();
   cacheBundledPads();
-  if(R.token)checkRemote(false); else setRemoteStatus("Noch kein Schlüssel eingetragen.");
+  updateAccountInfo();
+  const after=await handleAuthRedirect();
+  if(after==="check")checkRemote(true);
+  else if(msSessionValid())checkRemote(false);
+  else setRemoteStatus(msClientId()?"Zum Suchen nach neuen Pads mit Microsoft anmelden.":"");
   registerSW();
 })();
 </script>

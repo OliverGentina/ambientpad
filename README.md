@@ -9,11 +9,13 @@ Pad-Sounds in allen 12 Tonarten für Worship. Läuft offline als Web-App auf iPh
 - Steuerung per Bluetooth-Umblätter-Pedal (2 Tasten): links kurz = nächste Tonart, lang = zurück;
   rechts kurz = Start/Stopp, lang = alles ausblenden
 
-## Meine Pads (privat)
+## Meine Pads (OneDrive)
 
-Eigene, gekaufte Pads liegen in einem separaten **privaten** Repository (Standard: `meine-pads`, Ordner `Meine Pads/<Set-Name>/`).
+Eigene, gekaufte Pads liegen im persönlichen OneDrive im Ordner `Meine Pads/<Set-Name>/`.
 Jeder Unterordner erscheint in der App als eigenes Set; die Tonart wird aus dem Dateinamen gelesen (z. B. „01 - Key of A Pads.mp3“).
-Zugriff per fein abgestuftem GitHub-Token (nur Lesen, nur dieses Repository), einmal pro Gerät in ⚙︎ eintragen.
+Zugriff per Microsoft-Anmeldung (OAuth 2.0 mit PKCE, Berechtigung `Files.Read`), einmal pro Gerät.
+Microsoft begrenzt die Anmeldung von Web-Apps auf 24 Stunden – Abspielen geht immer offline, nur zum Suchen nach neuen Pads wird neu angemeldet.
+Die Microsoft-Anwendungs-ID steht in `index.html` (`MS_DEFAULT_CLIENT_ID`) oder in der App unter ⚙︎ → Erweitert.
 
 ## Standard-Pads
 
