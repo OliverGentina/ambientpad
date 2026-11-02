@@ -207,7 +207,7 @@
 
 <script>
 "use strict";
-const VERSION="1.5.0";
+const VERSION="1.5.1";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -713,7 +713,7 @@ $("clearSetBtn").onclick=async()=>{
 // Anmeldung: OAuth 2.0 Authorization Code + PKCE direkt bei Microsoft (ohne Server, ohne Bibliothek).
 // Microsoft begrenzt die Anmeldung von Web-Apps auf 24 Stunden – Abspielen geht immer, nur zum Suchen
 // nach neuen Pads ist dann eine neue Anmeldung nötig (meist ein Tipp, ohne Passwort).
-const MS_DEFAULT_CLIENT_ID="";            // Anwendungs-ID aus der Microsoft-Registrierung
+const MS_DEFAULT_CLIENT_ID="af1d903a-5c9a-41e2-a6cf-892f2ee5aa98";            // Anwendungs-ID aus der Microsoft-Registrierung
 const MS_AUTH="https://login.microsoftonline.com/consumers/oauth2/v2.0";
 const MS_SCOPES="openid profile offline_access Files.Read";
 const GRAPH="https://graph.microsoft.com/v1.0";
