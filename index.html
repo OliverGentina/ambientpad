@@ -85,7 +85,7 @@
   body.arranging #arrangeBar{display:flex}
   body.arranging #mainFooter{display:none}
   #arrangeBar p{margin:0;text-align:center;color:var(--dim);font-size:14px}
-  #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 140px);transform:translateX(-50%);background:rgba(40,46,60,.97);
+  #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 58px);transform:translateX(-50%);background:rgba(40,46,60,.97);
     padding:10px 16px;border-radius:22px;font-size:14px;font-weight:600;max-width:90vw;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
   #toast.show{opacity:1}
   .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:10}
@@ -99,6 +99,25 @@
   .sheet p{margin:0;color:var(--dim);font-size:14px}
   .sheet .row .btn{flex:1}
   #settingsBtn{position:relative}
+  .sheet-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:-4px 0 2px}
+  .sheet-head h2{text-align:center;font-size:18px;white-space:nowrap}
+  .linkbtn{appearance:none;border:0;background:none;color:var(--accent);font:inherit;font-size:16px;padding:8px 4px;cursor:pointer;justify-self:start}
+  .linkbtn.strong{font-weight:700;justify-self:end}
+  .spage{display:none;flex-direction:column;gap:13px}
+  .spage.on{display:flex}
+  .menu{display:flex;flex-direction:column;background:var(--empty);border-radius:14px;overflow:hidden}
+  .mrow{appearance:none;border:0;background:none;color:#fff;font:inherit;display:flex;align-items:center;gap:12px;padding:13px 14px;text-align:left;cursor:pointer;min-height:58px}
+  .mrow+.mrow{border-top:1px solid var(--line)}
+  .mrow:active{background:#1b2030}
+  .mi{width:30px;height:30px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+  .mt{flex:1;min-width:0;display:flex;flex-direction:column}
+  .mt small{color:var(--dim);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mc{color:var(--dim);font-size:22px}
+  .mrow.badge .mi{box-shadow:0 0 0 2px var(--ok)}
+  .group{background:var(--empty);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:12px}
+  .hint{font-size:13px!important}
+  .sheet select{background:var(--surface);color:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+  .sheet details summary{color:var(--dim);font-size:14px;cursor:pointer}
   #settingsBtn.badge::after{content:"";position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:var(--ok)}
   .synclist{display:flex;flex-direction:column;gap:6px;font-size:15px}
   .synclist div{background:var(--empty);border-radius:10px;padding:9px 12px}
@@ -163,45 +182,87 @@
 
 <!-- Einstellungen -->
 <div class="sheet-bg" id="settingsSheet"><div class="sheet">
-  <h2>Einstellungen</h2>
-  <h3>Pedal</h3>
-  <p id="pedalInfo"></p>
-  <div class="row"><button class="btn accent" id="learnBtn">Pedal lernen</button><button class="btn" id="pedalReset">Standard</button></div>
-  <h3>Anordnung</h3>
-  <p>Reihenfolge der Tonart-Kacheln (das Pedal folgt ihr, gilt für alle Sets) sowie Reihenfolge und Auswahl der Set-Knöpfe.</p>
-  <div class="row"><button class="btn" id="arrangeBtn">Kacheln &amp; Sets anordnen</button><button class="btn" id="orderReset">↺ Zurücksetzen</button></div>
-  <h3>Übergänge</h3>
-  <label><span>Tonartwechsel überblenden <b id="v_xfade"></b></span><input type="range" id="s_xfade" min="0.5" max="10" step="0.5"></label>
-  <label><span>Einblenden (aus der Stille) <b id="v_fadeIn"></b></span><input type="range" id="s_fadeIn" min="0" max="10" step="0.5"></label>
-  <label><span>Ausblenden / Fade Out <b id="v_fadeOut"></b></span><input type="range" id="s_fadeOut" min="0.5" max="15" step="0.5"></label>
-  <label><span>Loop-Überblendung am Dateiende <b id="v_loopX"></b></span><input type="range" id="s_loopX" min="0" max="8" step="0.5"></label>
-  <label><span>Länge langer Pads im Speicher</span>
-    <select id="s_maxLoop" style="background:var(--empty);color:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit">
-      <option value="90">1½ Minuten – am schnellsten</option><option value="150">2½ Minuten – empfohlen</option><option value="240">4 Minuten</option><option value="0">ganze Datei – langsam, viel Speicher</option>
-    </select></label>
-  <p>Lange Pads werden als nahtlose Schleife aus diesem Ausschnitt gespielt. Kürzer = schnellerer Tonartwechsel und weniger Knackser durch Speicherdruck.</p>
-  <h3>Sets</h3>
-  <label>Name Set 1 (Standard: Warm)<input type="text" id="name0" maxlength="20"></label>
-  <label>Name Set 2 (Standard: Shimmer)<input type="text" id="name1" maxlength="20"></label>
-  <h3>Meine Pads (OneDrive)</h3>
-  <p>Jeder Unterordner von „Meine Pads“ in deinem OneDrive wird ein eigenes Set. Die Tonart liest die App aus dem Dateinamen.</p>
-  <label>Ordner in OneDrive<input type="text" id="r_folder" autocorrect="off" spellcheck="false"></label>
-  <p id="msAccount"></p>
-  <p id="remoteStatus"></p>
-  <div class="row"><button class="btn accent" id="r_check">Nach neuen Pads suchen</button></div>
-  <div class="row"><button class="btn" id="r_login">Mit Microsoft anmelden</button><button class="btn" id="r_logout">Abmelden</button></div>
-  <details><summary style="color:var(--dim);font-size:14px">Erweitert</summary>
-    <label style="margin-top:8px">Microsoft-Anwendungs-ID<input type="text" id="r_client" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="fest eingetragen"></label>
-    <label style="margin-top:8px">Verzeichnis-ID (Mandant)<input type="text" id="r_tenant" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="fest eingetragen"></label>
-  </details>
-  <h3>Speicher</h3>
-  <p id="storageInfo">–</p>
-  <p id="offlineInfo"></p>
-  <div class="row"><button class="btn" id="clearSetBtn">Set auf Standard zurücksetzen</button></div>
-  <p>Tipps: Stummmodus aus, Lautstärke hoch. Die App spielt nur, solange sie im Vordergrund ist – Display nicht sperren. MP3 oder M4A sparen Speicher gegenüber WAV.</p>
-  <p id="versionInfo"></p>
-  <div class="row"><button class="btn" id="updateBtn">App aktualisieren</button></div>
-  <div class="row"><button class="btn accent" id="settingsClose">Fertig</button></div>
+  <div class="sheet-head">
+    <button class="linkbtn" id="setBack">‹ Zurück</button>
+    <h2 id="setTitle">Einstellungen</h2>
+    <button class="linkbtn strong" id="settingsClose">Fertig</button>
+  </div>
+
+  <!-- Übersicht -->
+  <section class="spage" data-page="main">
+    <div class="menu">
+      <button class="mrow" data-go="pedal"><span class="mi">🦶</span><span class="mt"><b>Pedal</b><small id="sum_pedal"></small></span><span class="mc">›</span></button>
+      <button class="mrow" data-go="sound"><span class="mi">🎚</span><span class="mt"><b>Übergänge &amp; Klang</b><small id="sum_sound"></small></span><span class="mc">›</span></button>
+      <button class="mrow" data-go="onedrive"><span class="mi">☁️</span><span class="mt"><b>Meine Pads (OneDrive)</b><small id="sum_onedrive"></small></span><span class="mc">›</span></button>
+      <button class="mrow" data-go="sets"><span class="mi">▦</span><span class="mt"><b>Sets &amp; Anordnung</b><small id="sum_sets"></small></span><span class="mc">›</span></button>
+      <button class="mrow" data-go="app"><span class="mi">ⓘ</span><span class="mt"><b>App &amp; Speicher</b><small id="sum_app"></small></span><span class="mc">›</span></button>
+    </div>
+  </section>
+
+  <!-- Pedal -->
+  <section class="spage" data-page="pedal" data-title="Pedal">
+    <p id="pedalInfo"></p>
+    <div class="row"><button class="btn accent" id="learnBtn">Pedal lernen</button><button class="btn" id="pedalReset">Standard</button></div>
+    <p class="hint">Am Pedal einen Modus mit Pfeiltasten oder Bild↑/↓ wählen und den Repeat-Modus ausschalten.</p>
+  </section>
+
+  <!-- Übergänge & Klang -->
+  <section class="spage" data-page="sound" data-title="Übergänge & Klang">
+    <div class="group">
+      <label><span>Tonartwechsel überblenden <b id="v_xfade"></b></span><input type="range" id="s_xfade" min="0.5" max="10" step="0.5"></label>
+      <label><span>Einblenden (aus der Stille) <b id="v_fadeIn"></b></span><input type="range" id="s_fadeIn" min="0" max="10" step="0.5"></label>
+      <label><span>Ausblenden / Fade Out <b id="v_fadeOut"></b></span><input type="range" id="s_fadeOut" min="0.5" max="15" step="0.5"></label>
+    </div>
+    <div class="group">
+      <label><span>Loop-Überblendung <b id="v_loopX"></b></span><input type="range" id="s_loopX" min="0" max="8" step="0.5"></label>
+      <label><span>Länge langer Pads</span>
+        <select id="s_maxLoop">
+          <option value="90">1½ Minuten – am schnellsten</option><option value="150">2½ Minuten – empfohlen</option><option value="240">4 Minuten</option><option value="0">ganze Datei – langsam, viel Speicher</option>
+        </select></label>
+      <p class="hint">Lange Pads werden als nahtlose Schleife aus einem Ausschnitt gespielt. Kürzer = schnellerer Tonartwechsel, weniger Speicher.</p>
+    </div>
+  </section>
+
+  <!-- Meine Pads (OneDrive) -->
+  <section class="spage" data-page="onedrive" data-title="Meine Pads">
+    <p id="msAccount"></p>
+    <p id="remoteStatus"></p>
+    <div class="row"><button class="btn accent" id="r_check">Nach neuen Pads suchen</button></div>
+    <div class="row"><button class="btn" id="r_login">Mit Microsoft anmelden</button><button class="btn" id="r_logout">Abmelden</button></div>
+    <div class="group">
+      <label>Ordner in OneDrive<input type="text" id="r_folder" autocorrect="off" spellcheck="false"></label>
+      <p class="hint">Jeder Unterordner wird ein eigenes Set. Die Tonart liest die App aus dem Dateinamen, z. B. „Key of A Pads.mp3“.</p>
+    </div>
+    <details><summary>Erweitert</summary>
+      <label style="margin-top:8px">Microsoft-Anwendungs-ID<input type="text" id="r_client" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="fest eingetragen"></label>
+      <label style="margin-top:8px">Verzeichnis-ID (Mandant)<input type="text" id="r_tenant" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="fest eingetragen"></label>
+    </details>
+  </section>
+
+  <!-- Sets & Anordnung -->
+  <section class="spage" data-page="sets" data-title="Sets & Anordnung">
+    <p class="hint">Kacheln und Set-Knöpfe per Drag &amp; Drop sortieren, Sets ausblenden. Das Pedal folgt der Reihenfolge der Kacheln.</p>
+    <div class="row"><button class="btn accent" id="arrangeBtn">Kacheln &amp; Sets anordnen</button></div>
+    <div class="row"><button class="btn" id="orderReset">↺ Kachel-Reihenfolge zurücksetzen</button></div>
+    <div class="group">
+      <label>Name Set 1 (Standard: Warm)<input type="text" id="name0" maxlength="20"></label>
+      <label>Name Set 2 (Standard: Shimmer)<input type="text" id="name1" maxlength="20"></label>
+    </div>
+    <div class="row"><button class="btn" id="clearSetBtn">Set auf Standard zurücksetzen</button></div>
+  </section>
+
+  <!-- App & Speicher -->
+  <section class="spage" data-page="app" data-title="App & Speicher">
+    <div class="group">
+      <p id="versionInfo"></p>
+      <div class="row"><button class="btn" id="updateBtn">App aktualisieren</button></div>
+    </div>
+    <div class="group">
+      <p id="storageInfo">–</p>
+      <p id="offlineInfo"></p>
+    </div>
+    <p class="hint">Tipps für die Bühne: Stummmodus aus, Lautstärke hoch, Display nicht sperren – die App spielt nur, solange sie im Vordergrund ist. MP3 oder M4A sparen Speicher gegenüber WAV.</p>
+  </section>
 </div></div>
 
 <!-- Abgleich Pad-Ordner -->
@@ -222,7 +283,7 @@
 
 <script>
 "use strict";
-const VERSION="1.8.0";
+const VERSION="1.9.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -662,7 +723,7 @@ async function removeSetButton(k){
     HIDDEN.push(k);saveHidden();
     try{const c=await caches.open(PADCACHE);for(let i=0;i<12;i++)await c.delete(bundledUrl(k,i));offlineCount=Math.max(0,offlineCount-12);}catch(e){}
     for(let i=0;i<12;i++)cache.delete(id(k,i));
-    toast(`„${name}“ ausgeblendet – zurückholen über ⚙︎ → Kacheln & Sets anordnen`);
+    toast(`„${name}“ ausgeblendet – zurückholen über ⚙︎ → Sets & Anordnung`);
   }
   if(S.set===k){S.set=firstSet();saveSettings();applySetColor();}
   renderSetButtons();updateHiddenBtn();updateStorage();
@@ -767,7 +828,7 @@ function fillAssign(){
   $("assignPick").disabled=rem;
   $("assignRemove").disabled=!p||rem;
   $("assignRemove").textContent=!p?"Entfernen":(p.bundled?"Taste leeren":"Eigene Datei entfernen");
-  $("assignHint").textContent=rem?"Dieses Set kommt aus deinem OneDrive-Ordner „Meine Pads“. Dateien dort ändern – hier nur die Lautstärke.":p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ das Set auf Standard zurücksetzen.");
+  $("assignHint").textContent=rem?"Dieses Set kommt aus deinem OneDrive-Ordner „Meine Pads“. Dateien dort ändern – hier nur die Lautstärke.":p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ → Sets & Anordnung das Set auf Standard zurücksetzen.");
 }
 $("assignPick").onclick=()=>{unlockAudio();$("fileOne").click();};
 $("fileOne").onchange=async e=>{
@@ -973,7 +1034,7 @@ async function checkRemote(interactive){
       let root=[];try{root=(await listChildren("")).filter(x=>x.folder).map(x=>x.name);}catch(_){}
       const t=`Ordner „${folder}“ nicht in deinem OneDrive gefunden`;setRemoteStatus(t);
       if(interactive)showInfoSheet(t,[root.length?`Ganz oben in deinem OneDrive liegen die Ordner: ${root.slice(0,15).join(", ")}${root.length>15?" …":""}`:"Dein OneDrive scheint leer zu sein – ist der Ordner schon hochgeladen (OneDrive-Symbol am PC zeigt einen grünen Haken)?",
-        "Liegt „Meine Pads“ in einem Unterordner, trage in ⚙︎ bei „Ordner in OneDrive“ den ganzen Pfad ein, z. B. Musik/Meine Pads.",
+        "Liegt „Meine Pads“ in einem Unterordner, trage in ⚙︎ → Meine Pads bei „Ordner in OneDrive“ den ganzen Pfad ein, z. B. Musik/Meine Pads.",
         MST&&MST.user?`Angemeldet ist: ${MST.user} – ist das das richtige Konto?`:""].filter(Boolean));
       return;
     }
@@ -1106,7 +1167,28 @@ for(const key of ["xfade","fadeIn","fadeOut","loopX"]){
 }
 $("s_maxLoop").value=String(S.maxLoop);$("s_maxLoop").onchange=()=>{S.maxLoop=+$("s_maxLoop").value;saveSettings();toast("Gilt beim nächsten Laden eines Pads");};
 [0,1].forEach(s=>{const el=$("name"+s);el.value=S.names[s];el.oninput=()=>{S.names[s]=el.value.trim()||("Set "+(s+1));saveSettings();render();};});
-$("settingsBtn").onclick=()=>{updatePedalInfo();updateStorage();updateOfflineInfo();updateAccountInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
+function settingsSummaries(){
+  const f=v=>v.toFixed(1).replace(".",",")+" s";
+  const isStd=P.left.length>1;
+  $("sum_pedal").textContent=isStd?"Standard (Pfeiltasten, Bild↑/↓) · noch nicht gelernt":`Links ${keyName(P.left[0])} · Rechts ${keyName(P.right[0])} · ${P.hold?"lang drücken erkannt":"Doppeltipp-Modus"}`;
+  $("sum_sound").textContent=`Wechsel ${f(S.xfade)} · Fade Out ${f(S.fadeOut)} · Pads ${({90:"1½ Min.",150:"2½ Min.",240:"4 Min.",0:"ganz"})[S.maxLoop]||""}`;
+  $("sum_onedrive").textContent=!msClientId()?"Nicht eingerichtet":msSessionValid()?`Angemeldet · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}${remotePlan?" · Neues verfügbar":""}`:`${remoteSets.length} Set${remoteSets.length===1?"":"s"} auf dem Gerät · nicht angemeldet`;
+  document.querySelector('.mrow[data-go="onedrive"]').classList.toggle("badge",!!remotePlan);
+  $("sum_sets").textContent=allSetKeys().map(setName).join(", ")+(HIDDEN.length?` · ${HIDDEN.length} ausgeblendet`:"");
+  $("sum_app").textContent="Version "+VERSION;
+  try{navigator.storage.estimate().then(e=>{$("sum_app").textContent=`Version ${VERSION} · ${(e.usage/1048576).toFixed(0)} MB belegt`;});}catch(e){}
+}
+function showSettingsPage(name){
+  document.querySelectorAll("#settingsSheet .spage").forEach(sec=>sec.classList.toggle("on",sec.dataset.page===name));
+  const sec=document.querySelector(`#settingsSheet .spage[data-page="${name}"]`);
+  $("setTitle").textContent=name==="main"?"Einstellungen":sec.dataset.title;
+  $("setBack").style.visibility=name==="main"?"hidden":"visible";
+  if(name==="main")settingsSummaries();
+  $("settingsSheet").querySelector(".sheet").scrollTop=0;
+}
+document.querySelectorAll("#settingsSheet .mrow").forEach(r=>r.onclick=()=>showSettingsPage(r.dataset.go));
+$("setBack").onclick=()=>showSettingsPage("main");
+$("settingsBtn").onclick=()=>{showSettingsPage("main");updatePedalInfo();updateStorage();updateOfflineInfo();updateAccountInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
 $("settingsClose").onclick=()=>$("settingsSheet").classList.remove("open");
 for(const sh of ["assignSheet","settingsSheet"])$(sh).addEventListener("click",e=>{if(e.target===$(sh))$(sh).classList.remove("open");});
 const masterEl=$("master");masterEl.value=S.master;
