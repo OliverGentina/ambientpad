@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="AmbientPad">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0d14">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
@@ -183,6 +183,144 @@
   #unlock.hidden{display:none}
   #unlock .big{font-size:22px;padding:22px 34px;border-radius:18px}
   #unlock p{color:var(--dim);max-width:420px;margin:0}
+
+/* ================= Apple-Design (HIG) ================= */
+/* ===== Vorschau: Apple Human Interface Guidelines (Dark Mode) =====
+   Grundlage: Skill „apple-hig-designer“ – iOS-Systemfarben, SF-Typografie,
+   8-pt-Raster, 44-pt-Tippflächen, Kapsel-Knöpfe, Inset-Grouped-Listen, Sheets mit Grabber. */
+:root{
+  --sys-orange:#FF9F0A; --sys-red:#FF453A; --sys-green:#30D158; --sys-blue:#0A84FF; --sys-teal:#64D2FF;
+  --sys-indigo:#5E5CE6; --sys-pink:#FF375F; --sys-purple:#BF5AF2; --sys-gray:#8E8E93; --sys-yellow:#FFD60A;
+  --gray3:#48484A; --gray4:#3A3A3C; --gray5:#2C2C2E; --gray6:#1C1C1E;
+  --label:#fff; --label2:rgba(235,235,245,.6); --label3:rgba(235,235,245,.3);
+  --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.18);
+  --sep:rgba(84,84,88,.6);
+  --bg:#000; --surface:var(--gray6); --empty:var(--gray6); --line:var(--sep);
+  --text:#fff; --dim:var(--label2); --accent:var(--sys-orange); --danger:var(--sys-red); --ok:var(--sys-green);
+  --ease:cubic-bezier(.25,.1,.25,1);
+}
+html,body{background:#000;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:17px;letter-spacing:-.01em}
+body{gap:12px;padding:calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 16px)}
+.ico{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ico.f{fill:currentColor;stroke:none}
+
+/* ---- Knöpfe: Kapseln, 44 pt ---- */
+.btn{border-radius:999px;background:var(--fill);color:var(--accent);font-weight:600;font-size:17px;min-height:44px;padding:10px 18px;transition:transform .1s var(--ease),opacity .2s}
+.btn:active{filter:none;transform:scale(.97);opacity:.8}
+.btn.accent{background:var(--accent);color:#000}
+.btn.danger{background:var(--danger);color:#fff}
+
+/* ---- Kopf: Segmented Control + runde Symbolknöpfe ---- */
+header{gap:10px}
+.sets{background:var(--fill);border-radius:10px;padding:2px;gap:0}
+.sets button{border-radius:8px;min-height:36px;font-size:15px;font-weight:600;color:var(--label);opacity:.85;padding:6px 10px}
+.sets button.on{background:#636366;opacity:1;box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04)}
+.sets button+button:not(.on)::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:1px;background:var(--sep)}
+.sets button.on+button::before{display:none}
+#importBtn,#settingsBtn{min-width:40px;width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--fill);color:var(--accent)}
+#status{font-size:13px;color:var(--label2);margin-top:-6px;padding:0 4px}
+
+/* ---- Kacheln: Inset-Karten, SF Pro Display ---- */
+#grid{gap:10px}
+.pad{border-radius:16px;background:var(--gray6);border:0;transition:transform .1s var(--ease),background .25s var(--ease)}
+.pad.assigned{background:var(--gray6)}
+.pad .k{font-family:-apple-system,"SF Pro Display",BlinkMacSystemFont,sans-serif;font-weight:600;letter-spacing:-.02em;color:var(--label3)}
+.pad.assigned .k{color:var(--label)}
+.pad .alt{font-size:13px;font-weight:500;color:var(--label2);opacity:1}
+.pad .name{font-size:11px;color:var(--label2);opacity:1;bottom:7px}
+.pad.selected{box-shadow:inset 0 0 0 2px var(--label)}
+.pad.playing{background:var(--setcolor)}
+.pad.playing .k,.pad.playing .alt,.pad.playing .name{color:#000}
+.pad.playing .alt,.pad.playing .name{opacity:.7}
+.pad.playing::after{top:10px;left:auto;right:11px;width:16px;height:12px;border-radius:0;background:none;animation:none;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 12'%3E%3Crect x='0' y='4' width='2.5' height='4' rx='1.2'/%3E%3Crect x='4.5' y='1' width='2.5' height='10' rx='1.2'/%3E%3Crect x='9' y='3' width='2.5' height='6' rx='1.2'/%3E%3Crect x='13.5' y='0' width='2.5' height='12' rx='1.2'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 12'%3E%3Crect x='0' y='4' width='2.5' height='4' rx='1.2'/%3E%3Crect x='4.5' y='1' width='2.5' height='10' rx='1.2'/%3E%3Crect x='9' y='3' width='2.5' height='6' rx='1.2'/%3E%3Crect x='13.5' y='0' width='2.5' height='12' rx='1.2'/%3E%3C/svg%3E") center/contain no-repeat;
+  background:#000}
+
+/* ---- Unten: Slider + Fade Out + Stopp ---- */
+footer{gap:12px}
+input[type=range]{accent-color:var(--accent)}
+#fadeAllBtn{background:var(--fill);color:var(--accent);font-size:17px!important;min-height:50px!important}
+#stopBtn{width:50px;min-width:50px!important;min-height:50px!important;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--sys-red);color:#fff}
+.vol{color:var(--label2);display:flex}
+
+/* ---- Hinweis (HUD-Kapsel) ---- */
+#toast{background:var(--gray5);border-radius:999px;font-size:15px;font-weight:600;padding:10px 18px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+
+/* ---- Sheets: Grabber, Titelzeile, grauer Grund ---- */
+.sheet-bg{background:rgba(0,0,0,.4)}
+.sheet{background:var(--gray6);border-radius:12px 12px 0 0;padding:8px 16px calc(env(safe-area-inset-bottom) + 20px);gap:16px}
+.sheet::before{content:"";align-self:center;flex:none;width:36px;height:5px;border-radius:3px;background:var(--gray3);margin-bottom:2px}
+.sheet h2{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.sheet-head h2{font-size:17px;font-weight:600}
+.sheet h3{font-size:13px;font-weight:400;text-transform:uppercase;letter-spacing:0;color:var(--label2);margin:4px 0 -8px 16px}
+.sheet p{color:var(--label2);font-size:15px}
+.hint{font-size:13px!important;color:var(--label2)}
+.linkbtn{color:var(--accent);font-size:17px}
+.linkbtn.strong{font-weight:600}
+
+/* Inset-Grouped-Listen */
+.menu,.group{background:var(--gray5);border-radius:10px}
+.mrow{min-height:44px;padding:9px 16px;gap:14px;position:relative}
+.mrow+.mrow{border-top:0}
+.mrow+.mrow::before{content:"";position:absolute;top:0;left:60px;right:0;height:.5px;background:var(--sep)}
+.mrow:active{background:var(--gray4)}
+.mi{width:29px;height:29px;border-radius:7px;color:#fff;font-size:0}
+.mi .ico{width:18px;height:18px}
+.mt b{font-weight:400;font-size:17px}
+.mt small{font-size:13px;color:var(--label2)}
+.mc{display:flex;color:var(--label3)}
+.mc .ico{width:14px;height:14px;stroke-width:3}
+/* Planning Center: bleibt bewusst auffällig (oranger Verlauf), mit neuem Symbol */
+.mrow.feature{border-radius:12px;min-height:66px;margin-bottom:0;background:linear-gradient(135deg,#FFB340,#FF7A1A);color:#1a1205;box-shadow:0 8px 22px rgba(255,140,30,.35)}
+.mrow.feature:active{transform:scale(.98);filter:brightness(.97);background:linear-gradient(135deg,#FFB340,#FF7A1A)}
+.mrow.feature .mi{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.95)!important;color:#FF7A1A}
+.mrow.feature .mi .ico{width:24px;height:24px}
+.mrow.feature b{font-size:17px;font-weight:700}
+.mrow.feature small{color:rgba(26,18,5,.72)}
+.mrow.feature .mc{color:#1a1205;opacity:.6}
+.featfoot{font-size:13px;color:var(--label2);margin:-8px 16px 4px}
+
+/* Felder */
+.sheet input[type=text],#pcoLink{background:var(--gray4)!important;border:0!important;border-radius:10px!important;min-height:44px;font-size:17px!important;color:#fff}
+.sheet select{background:var(--gray4);border:0;border-radius:10px;min-height:44px}
+
+/* Segmented Controls in Einstellungen */
+.seg{background:var(--fill);border-radius:9px;padding:2px;gap:0}
+.segbtn{border-radius:7px;color:#fff;font-size:13px;font-weight:500;min-height:32px}
+.segbtn.on{background:#636366;font-weight:600}
+.shape{background:var(--gray4);border-radius:10px}
+.shape.on{background:var(--gray3);box-shadow:0 0 0 2px var(--accent)}
+
+/* Listen in Sheets (Abgleich, Team, Setlist) */
+.synclist{gap:0;background:var(--gray5);border-radius:10px;overflow:hidden}
+.synclist>*{border-radius:0!important;background:transparent!important;position:relative}
+.synclist>*+*::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
+.slrow{min-height:44px;padding:11px 16px}
+.slrow .n{color:var(--label2);font-weight:400;width:20px}
+.slrow .k{color:var(--accent);font-weight:600}
+.slrow.on{box-shadow:none!important;background:rgba(255,159,10,.14)!important}
+.slrow.on .t{font-weight:600}
+.trow{padding:11px 16px!important}
+.trow input{accent-color:var(--accent)}
+#slSheet .slnav button{background:var(--fill);color:var(--accent);font-size:15px;min-height:34px;padding:7px 14px}
+
+/* Setlist-Leiste über den Kacheln */
+#slBar{gap:8px}
+#slBar .btn{width:44px;min-width:44px;height:auto;border-radius:12px;padding:0;display:flex;align-items:center;justify-content:center;color:var(--accent)}
+#slMid{background:var(--gray6);border-radius:12px;box-shadow:none;padding:8px 14px;position:relative}
+#slMid::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;background:var(--setcolor)}
+#slMid b{font-size:17px;font-weight:600}
+#slKey{font-size:17px;font-weight:700}
+#slMid small{font-size:13px;color:var(--label2)}
+
+/* Start-Bildschirm */
+#unlock{background:#000!important}
+#unlockBtn{border-radius:999px;min-height:56px;padding:14px 34px;font-size:20px;display:inline-flex;gap:10px;align-items:center}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.sheet .row .btn{white-space:nowrap;font-size:16px;padding-left:12px;padding-right:12px}
+#slSheet .slnav button{font-size:14px;padding:7px 10px}
 </style>
 </head>
 <body>
@@ -405,7 +543,7 @@
 
 <script>
 "use strict";
-const VERSION="2.4.0";
+const VERSION="2.5.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1816,6 +1954,43 @@ async function forceUpdate(){
   else if(msSessionValid())checkRemote(false,"auto");
   else setRemoteStatus(msClientId()?"Zum Suchen nach neuen Pads mit Microsoft anmelden.":"");
   registerSW();
+})();
+</script>
+<script>
+// Vorschau: SF-Symbol-ähnliche Symbole statt Emoji/Textzeichen (nur Darstellung, keine Funktion geändert)
+(function(){
+  const P={
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    left:'<path d="M15 5l-7 7 7 7"/>', right:'<path d="M9 5l7 7-7 7"/>',
+    music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+    pedal:'<path d="M4 20h16M6 20l2.5-11h7L18 20"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/>',
+    sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+    cloud:'<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+    team:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+    grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
+    book:'<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2zM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
+    info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+    vol1:'<path d="M11 5L6 9H2v6h4l5 4V5z"/>',
+    vol3:'<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'
+  };
+  const ic=(n,cls="")=>`<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+  const $=id=>document.getElementById(id);
+  $("importBtn").innerHTML=ic("plus");
+  $("settingsBtn").innerHTML=ic("gear");
+  $("stopBtn").innerHTML='<svg class="ico f" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>';
+  $("slPrev").innerHTML=ic("left"); $("slFwd").innerHTML=ic("right");
+  const r=$("master").parentElement.children; r[0].outerHTML=`<span class="vol">${ic("vol1")}</span>`; r[r.length-1].outerHTML=`<span class="vol">${ic("vol3")}</span>`;
+  $("unlockBtn").innerHTML=ic("vol3")+"Start";
+  const MAP={pco:["music",""],pedal:["pedal","var(--sys-gray)"],sound:["sliders","var(--sys-pink)"],onedrive:["cloud","var(--sys-blue)"],
+             team:["team","var(--sys-teal)"],sets:["grid","var(--sys-indigo)"],app:["info","var(--sys-gray)"]};
+  document.querySelectorAll(".mrow").forEach(row=>{
+    const k=row.dataset.go||(row.id==="guideLink"?"guide":"");const m=k==="guide"?["book","var(--sys-green)"]:MAP[k];
+    const mi=row.querySelector(".mi");if(m&&mi){mi.innerHTML=ic(m[0]);if(m[1])mi.style.background=m[1];}
+    const mc=row.querySelector(".mc");if(mc)mc.innerHTML=ic("right");
+  });
+  const feat=document.querySelector(".mrow.feature");
+  if(feat){const f=document.createElement("p");f.className="featfoot";f.textContent="Lieder und Tonarten aus eurem Plan – das Pedal klickt von Lied zu Lied.";feat.after(f);}
 })();
 </script>
 </body>
