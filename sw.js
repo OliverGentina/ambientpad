@@ -1,9 +1,10 @@
 // Offline-Speicher für AmbientPad Live.
 // Bei jeder neuen Version VERSION erhöhen.
-const VERSION = "2.1.1";
+const VERSION = "2.2.0";
 const CACHE = "ambientpad-" + VERSION;
 const PADCACHE = "ambientpad-pads-v1";   // Standard-Pads: bleiben über App-Updates hinweg erhalten
-const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
+const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "anleitung.html",
+  "anleitung/anordnen.webp", "anleitung/auswahl.webp", "anleitung/einstellungen.webp", "anleitung/ipad.webp", "anleitung/leiste.webp", "anleitung/leiste_symbol.webp", "anleitung/onedrive.webp", "anleitung/pedal.webp", "anleitung/spielen.webp", "anleitung/start.webp", "anleitung/symbole.webp", "anleitung/team.webp", "anleitung/zuweisen.webp"];
 
 self.addEventListener("install", e => {
   // cache:"reload" umgeht den Browser-Zwischenspeicher → wirklich die neuen Dateien
@@ -41,6 +42,21 @@ self.addEventListener("fetch", e => {
 
   // Die App selbst (HTML): zuerst aus dem Netz (max. 4 s), sonst offline aus dem Speicher
   // → Updates sind beim nächsten Start sofort da.
+  // Weitere Seiten (Anleitung) und Bilder der Anleitung: ebenso zuerst aus dem Netz, offline aus dem Speicher
+  const isGuide = url.pathname.endsWith("/anleitung.html") || url.pathname.includes("/anleitung/");
+  if (isGuide) {
+    e.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      try {
+        const res = await withTimeout(fetch(req, { cache: "no-store" }), 4000);
+        if (res && res.ok) { c.put(req, res.clone()); return res; }
+        throw new Error("HTTP " + (res && res.status));
+      } catch (err) {
+        return (await c.match(req, { ignoreSearch: true })) || Response.error();
+      }
+    })());
+    return;
+  }
   if (req.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith("/index.html")) {
     e.respondWith((async () => {
       const c = await caches.open(CACHE);

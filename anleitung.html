@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f4f0">
+<title>AmbientPad Live – Anleitung fürs Lobpreis-Team</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root{--bg:#f6f4f0;--card:#fff;--ink:#1d1d1f;--dim:#6b6b70;--line:#e6e2da;--accent:#f28c1c;--accent-soft:#fff1e0;--team:#22a7bd;--ok:#2e9d57;--warn:#c4581b;
+    --r:18px;--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-text-size-adjust:100%}
+  body{display:flex;flex-direction:column;overflow:hidden}
+  a{color:var(--accent)}
+  /* Kopf */
+  header{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+  header img{width:30px;height:30px;border-radius:8px}
+  header .t{flex:1;min-width:0;line-height:1.15}
+  header .t b{display:block;font-size:15px}
+  header .t small{color:var(--dim);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .hbtn{border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px var(--font);border-radius:999px;padding:8px 13px;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .hbtn.acc{background:var(--accent);border-color:var(--accent);color:#fff}
+  .progress{height:3px;background:var(--line)} .progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+  /* Seiten */
+  #deck{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+  #deck::-webkit-scrollbar{display:none}
+  .page{flex:0 0 100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 18px 30px}
+  .inner{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:22px;align-items:start}
+  @media(min-width:760px){.inner{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:40px;padding-top:12px}.inner.wide{grid-template-columns:1fr}.page{padding:30px 32px 40px}}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+  h1{font-size:clamp(26px,5vw,38px);line-height:1.1;margin:0 0 12px;letter-spacing:-.01em}
+  h2{font-size:clamp(23px,4.2vw,30px);line-height:1.15;margin:0 0 12px;letter-spacing:-.01em}
+  h3{font-size:16px;margin:20px 0 8px}
+  p{font-size:16.5px;line-height:1.55;margin:0 0 12px}
+  .lead{font-size:18px;color:#3a3a3e}
+  /* Schritte */
+  ol.steps{list-style:none;counter-reset:s;padding:0;margin:14px 0}
+  ol.steps>li{counter-increment:s;position:relative;padding:0 0 14px 46px;font-size:16.5px;line-height:1.5}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:-2px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:15px}
+  ol.steps>li:not(:last-child)::after{content:"";position:absolute;left:15.5px;top:34px;bottom:2px;width:1px;background:var(--line)}
+  ul.dots{padding-left:20px;margin:8px 0 12px} ul.dots li{font-size:16.5px;line-height:1.5;margin-bottom:6px}
+  .ui{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:0 7px;font-weight:600;font-size:.94em;white-space:nowrap}
+  .ui.o{background:var(--accent);border-color:var(--accent);color:#fff}
+  .ico{display:inline-block;vertical-align:-4px;width:20px;height:20px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:#efebe4;border-radius:5px;padding:1px 5px}
+  /* Hinweiskästen */
+  .box{border-radius:14px;padding:13px 15px;margin:14px 0;font-size:15.5px;line-height:1.5;background:var(--card);border:1px solid var(--line)}
+  .box b:first-child{display:block;margin-bottom:3px}
+  .box.tip{background:var(--accent-soft);border-color:#f8d5ab}
+  .box.warn{background:#fdecea;border-color:#f3c3bd}
+  .box.team{background:#e5f6f8;border-color:#b6e3ea}
+  .box p{font-size:15.5px;margin:0}
+  /* Tabelle */
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--line);font-size:15.5px;margin:10px 0}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#faf8f4;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--dim)}
+  tr:last-child td{border-bottom:0}
+  /* Screenshots */
+  .shots{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  figure{margin:0;text-align:center;flex:0 1 300px;min-width:0}
+  .phone{display:block;width:100%;max-width:300px;margin:0 auto;border-radius:30px;border:8px solid #1d1d1f;background:#0e1014;box-shadow:0 14px 34px rgba(0,0,0,.16)}
+  .tablet{display:block;width:100%;max-width:520px;margin:0 auto;border-radius:22px;border:10px solid #1d1d1f;box-shadow:0 14px 34px rgba(0,0,0,.16)}
+  .strip{display:block;width:100%;max-width:420px;margin:0 auto;border-radius:14px;border:1px solid #2a2d33;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+  .shots.two{flex-wrap:nowrap} .shots.two figure{flex:1 1 0;max-width:260px}
+  @media(max-width:420px){.shots.two{gap:10px} .shots.two .phone{border-width:5px;border-radius:20px}}
+  figcaption{font-size:13.5px;color:var(--dim);margin-top:9px;line-height:1.4}
+  /* Titelseite & Inhalt */
+  .cover{display:flex;flex-direction:column;justify-content:center;min-height:100%}
+  .toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:9px;margin-top:18px}
+  .toc button{display:flex;gap:11px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 13px;font:600 15px var(--font);color:var(--ink);cursor:pointer}
+  .toc button span{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .toc button:hover{border-color:var(--accent)}
+  .tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e5f6f8;color:#167c8c;vertical-align:3px;margin-left:6px}
+  .account{display:inline-block;font:600 17px ui-monospace,Menlo,monospace;background:var(--card);border:1px dashed var(--accent);border-radius:10px;padding:6px 11px;margin:2px 0 4px;word-break:break-all}
+  /* Fuß */
+  footer{display:flex;align-items:center;gap:10px;padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);border-top:1px solid var(--line);background:var(--bg)}
+  .nav{border:0;border-radius:999px;font:700 15px var(--font);padding:12px 18px;cursor:pointer;background:var(--card);color:var(--ink);border:1px solid var(--line);min-width:52px}
+  .nav.next{background:var(--accent);color:#fff;border-color:var(--accent);flex:0 0 auto}
+  .nav:disabled{opacity:.35;cursor:default}
+  .pos{flex:1;text-align:center;font-size:14px;color:var(--dim);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pos b{color:var(--ink)}
+  /* Inhaltsverzeichnis-Overlay */
+  #tocSheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center;z-index:10}
+  #tocSheet.open{display:flex}
+  #tocSheet .sh{background:var(--bg);width:100%;max-width:640px;max-height:85vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px)}
+  @media(min-width:760px){#tocSheet{align-items:center}#tocSheet .sh{border-radius:22px}}
+  #tocSheet .toc{grid-template-columns:1fr}
+  .shhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .shhead h2{margin:0;font-size:21px}
+  @media print{body{overflow:visible;display:block;height:auto}#deck{display:block;overflow:visible}.page{overflow:visible;page-break-after:always}header,footer,.progress{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <img src="icon-192.png" alt="">
+  <div class="t"><b>AmbientPad Live</b><small>Anleitung fürs Lobpreis-Team</small></div>
+  <button class="hbtn" id="tocBtn">Inhalt</button>
+  <a class="hbtn acc" href="./" id="appLink">Zur App</a>
+</header>
+<div class="progress"><i id="bar"></i></div>
+
+<main id="deck">
+
+<!-- 0 Titel -->
+<section class="page" data-title="Start">
+  <div class="inner wide cover">
+    <div>
+      <p class="kicker">Gemeinschaft Chara · Lobpreis</p>
+      <h1>AmbientPad Live<br>Kurzanleitung für iPhone &amp; iPad</h1>
+      <p class="lead">Teppich-Sounds (Pads) in allen 12 Tonarten, per Fingertipp oder Fußpedal. Die gemeinsamen Team-Pads liegen in SharePoint und kommen mit einem Tipp aufs Gerät. Danach laufen sie auch ohne Internet.</p>
+      <p style="color:var(--dim);font-size:15px">Zum Blättern wischen, die Pfeile unten antippen oder die Pfeiltasten benutzen. Ca. 10 Minuten.</p>
+      <div class="toc" id="tocCover"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 1 Überblick -->
+<section class="page" data-title="Was die App kann">
+  <div class="inner">
+    <div>
+      <p class="kicker">Überblick</p>
+      <h2>Was die App kann</h2>
+      <ul class="dots">
+        <li><b>12 Kacheln = 12 Tonarten.</b> Antippen startet das Pad als endlose, nahtlose Schleife.</li>
+        <li><b>Weiche Übergänge.</b> Eine andere Tonart wird sanft übergeblendet. Tippst du dieselbe Tonart noch einmal, blendet das Pad aus.</li>
+        <li><b>Mehrere Sound-Sets.</b> <i>Warm</i> und <i>Shimmer</i> sind schon dabei. Dazu kommen die <b>Team-Pads</b> aus SharePoint und auf Wunsch <b>eigene Pads</b> aus deinem OneDrive.</li>
+        <li><b>Offline.</b> Was einmal geladen ist, spielt auch im Flugmodus.</li>
+        <li><b>Fußpedal.</b> Mit einem Bluetooth-Umblätterpedal (z. B. Tavsou) bleiben beide Hände am Instrument.</li>
+      </ul>
+      <div class="box tip"><b>Was du brauchst</b><p>iPhone oder iPad mit Safari, dein Gemeindekonto <b>vorname.nachname@chara.church</b> und für den Gottesdienst einen Lautsprecher oder ein Kabel zum Mischpult.</p></div>
+    </div>
+    <div class="shots"><figure style="flex-basis:520px"><img class="tablet" src="anleitung/ipad.webp" alt="AmbientPad Live auf dem iPad mit 12 Tonart-Kacheln" loading="lazy"><figcaption>So sieht die App auf dem iPad aus. Auf dem iPhone ist es dasselbe Raster.</figcaption></figure></div>
+  </div>
+</section>
+
+<!-- 2 Installieren -->
+<section class="page" data-title="Installieren">
+  <div class="inner">
+    <div>
+      <p class="kicker">Schritt 1</p>
+      <h2>App installieren</h2>
+      <p>Die App kommt nicht aus dem App Store. Du legst sie über Safari auf den Home-Bildschirm. Das dauert eine Minute und kostet nichts.</p>
+      <ol class="steps">
+        <li>Öffne <b>Safari</b> (nicht Chrome) und rufe diese Adresse auf:<br><a href="https://olivergentina.github.io/ambientpad/"><b>olivergentina.github.io/ambientpad</b></a></li>
+        <li>Tippe auf das Teilen-Symbol
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>.
+          Am iPhone ist es unten, am iPad oben rechts.</li>
+        <li>Scrolle nach unten und wähle <span class="ui">Zum Home-Bildschirm</span>.</li>
+        <li>Tippe oben rechts auf <span class="ui">Hinzufügen</span>.</li>
+        <li>Starte die App ab jetzt immer über das neue Symbol <b>AmbientPad</b> auf dem Home-Bildschirm.</li>
+      </ol>
+      <div class="box warn"><b>Wichtig</b><p>Öffne die App über das Symbol auf dem Home-Bildschirm und nicht im Safari-Tab. Nur so bleiben deine Pads dauerhaft gespeichert.</p></div>
+    </div>
+    <div>
+      <div class="box"><b>Tipp für Neugierige</b><p>Technisch ist das eine „Web-App“. Sie verhält sich wie eine normale App: eigenes Symbol, Vollbild und offline nutzbar. Updates kommen automatisch, sobald du online bist.</p></div>
+      <div class="box"><b>Mehrere Geräte?</b><p>Du kannst die App auf iPhone <i>und</i> iPad installieren. Jedes Gerät lädt seine Pads selbst.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 Erster Start -->
+<section class="page" data-title="Erster Start">
+  <div class="inner">
+    <div>
+      <p class="kicker">Schritt 2</p>
+      <h2>Erster Start: „Start“ antippen</h2>
+      <p>Beim Öffnen siehst du einen großen Knopf <span class="ui o">🔊 Start</span>. iPhone und iPad erlauben Ton erst nach einem Fingertipp. Deshalb kommt dieser Knopf bei jedem App-Start.</p>
+      <p>Beim allerersten Start speichert die App die mitgelieferten Sets <i>Warm</i> und <i>Shimmer</i>. Oben erscheint kurz <i>„Alle Standard-Pads sind jetzt offline verfügbar ✓“</i>.</p>
+      <div class="box tip"><b>Kein Ton?</b><p>Lauter stellen und prüfen, ob ein Bluetooth-Gerät verbunden ist. Die App spielt auch, wenn der Stummschalter an ist.</p></div>
+    </div>
+    <div class="shots"><figure><img class="phone" src="anleitung/start.webp" alt="Startbildschirm mit Knopf Start" loading="lazy"><figcaption>Ein Tipp auf „Start“ schaltet den Ton frei.</figcaption></figure></div>
+  </div>
+</section>
+
+<!-- 4 Spielen -->
+<section class="page" data-title="Pads spielen">
+  <div class="inner">
+    <div>
+      <p class="kicker">Grundlagen</p>
+      <h2>Pads spielen</h2>
+      <table>
+        <tr><th>Du tippst …</th><th>Das passiert</th></tr>
+        <tr><td>eine Tonart, z. B. <span class="ui">G</span></td><td>Das Pad blendet weich ein und läuft als Schleife. Die Kachel leuchtet.</td></tr>
+        <tr><td>dieselbe Tonart noch einmal</td><td>Das Pad blendet langsam aus.</td></tr>
+        <tr><td>eine andere Tonart</td><td>Sanfte Überblendung in die neue Tonart.</td></tr>
+        <tr><td><span class="ui">Fade Out</span></td><td>Alles blendet langsam aus, z. B. am Ende eines Songs.</td></tr>
+        <tr><td><span class="ui" style="background:#e5484d;color:#fff;border-color:#e5484d">■</span></td><td>Sofort-Stopp, nur für den Notfall.</td></tr>
+      </table>
+      <p>Mit dem Regler über den Knöpfen stellst du die Lautstärke der App ein.</p>
+      <div class="box"><b>Kreuz oder b?</b><p>Kacheln mit zwei Namen sind dieselbe Tonart: D♭ = C♯, E♭ = D♯, F♯ = G♭, A♭ = G♯, B♭ = A♯.</p></div>
+      <div class="box"><b>Eigenen Sound auf eine Kachel legen</b><p>Halte eine Kachel gedrückt und tippe auf <span class="ui o">Datei wählen …</span>. Das geht nur in <i>Warm</i> und <i>Shimmer</i>. Team-Sets kommen immer aus SharePoint.</p></div>
+    </div>
+    <div class="shots two">
+      <figure><img class="phone" src="anleitung/spielen.webp" alt="G spielt, die Kachel leuchtet orange" loading="lazy"><figcaption>G spielt, die Kachel leuchtet.</figcaption></figure>
+      <figure><img class="phone" src="anleitung/zuweisen.webp" alt="Menü nach langem Drücken auf eine Kachel" loading="lazy"><figcaption>Lang drücken: Sound wählen, Lautstärke pro Kachel.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 5 Sets -->
+<section class="page" data-title="Sets wechseln">
+  <div class="inner">
+    <div>
+      <p class="kicker">Grundlagen</p>
+      <h2>Zwischen Sets wechseln</h2>
+      <p>Oben in der Leiste stehen die Sound-Sets. Ein Tipp wechselt das Set. Die Farbe des Strichs unter dem gewählten Set findest du auch an den Kacheln wieder.</p>
+      <ul class="dots">
+        <li><b>Warm</b>, <b>Shimmer</b>: mitgeliefert, ohne Symbol</li>
+        <li><b>▲ Team-Sets</b> aus dem gemeinsamen SharePoint-Ordner <span class="tag">Team</span></li>
+        <li><b>● eigene Sets</b> aus deinem OneDrive (optional)</li>
+      </ul>
+      <p>Bei vielen Sets <b>wischst du die Leiste seitlich</b>. Ein weicher Rand zeigt, dass es weitergeht.</p>
+      <p>Symbole und Anzeige kannst du selbst wählen, siehe Seite „Aussehen &amp; Reihenfolge“.</p>
+      <div class="box tip"><b>Wechsel während der Musik</b><p>Läuft gerade ein Pad, blendet die App beim Set-Wechsel sofort in dieselbe Tonart im neuen Set über. So wechselst du mitten im Song den Klang, ohne Pause.</p></div>
+    </div>
+    <div class="shots" style="flex-direction:column;gap:20px">
+      <figure style="flex-basis:auto"><img class="strip" src="anleitung/leiste.webp" alt="Set-Leiste mit Symbol und Namen" loading="lazy"><figcaption>Symbol + Name: das Team-Set „Sonntag Warm“ ist gewählt.</figcaption></figure>
+      <figure style="flex-basis:auto"><img class="strip" src="anleitung/leiste_symbol.webp" alt="Set-Leiste nur mit Symbolen" loading="lazy"><figcaption>„Nur Symbol“: Es passen mehr Sets in die Leiste, nur das gewählte zeigt seinen Namen.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 6 Anmelden -->
+<section class="page" data-title="Anmelden">
+  <div class="inner">
+    <div>
+      <p class="kicker">Schritt 3 · Team-Pads</p>
+      <h2>Mit dem Gemeindekonto anmelden</h2>
+      <p>Für die Team-Pads meldest du dich einmal bei Microsoft an. Dein Konto lautet immer:</p>
+      <p><span class="account">vorname.nachname@chara.church</span></p>
+      <ol class="steps">
+        <li>Tippe oben rechts auf <span class="ui">⚙︎</span> und dann auf <span class="ui">👥 Team-Pads</span>.</li>
+        <li>Tippe auf <span class="ui o">Team-Ordner durchsuchen</span>. Die Microsoft-Anmeldeseite öffnet sich.</li>
+        <li>Gib <b>vorname.nachname@chara.church</b> und dein Passwort ein. Je nach Einstellung folgt die Bestätigung per Authenticator-App oder SMS.</li>
+        <li>Fragt Microsoft <i>„Angemeldet bleiben?“</i>, tippe auf <span class="ui">Ja</span>.</li>
+        <li>Du landest automatisch wieder in der App. Tippe auf <span class="ui o">🔊 Start</span>, dann geht es mit der Auswahl weiter.</li>
+      </ol>
+      <div class="box"><b>Wie lange gilt die Anmeldung?</b><p>Microsoft erlaubt Web-Apps eine Anmeldung von höchstens 24 Stunden. Danach meldest du dich beim nächsten Durchsuchen einfach neu an. <b>Deine Pads bleiben auf dem Gerät und spielen auch ohne Anmeldung.</b></p></div>
+    </div>
+    <div class="shots"><figure><img class="phone" src="anleitung/einstellungen.webp" alt="Einstellungsmenü mit Pedal, Übergängen, Meine Pads, Team-Pads, Sets, App" loading="lazy"><figcaption>⚙︎ öffnet die Einstellungen. Die Team-Pads stehen an vierter Stelle.</figcaption></figure></div>
+  </div>
+</section>
+
+<!-- 7 Team-Pads hinzufügen -->
+<section class="page" data-title="Team-Pads hinzufügen">
+  <div class="inner">
+    <div>
+      <p class="kicker">Schritt 4 · Team-Pads</p>
+      <h2>Team-Pads aufs Gerät holen</h2>
+      <p>Der Team-Ordner <b>02_Worship Pads</b> ist schon fest eingetragen. Du musst keinen Link einfügen.</p>
+      <ol class="steps">
+        <li><span class="ui">⚙︎</span> → <span class="ui">👥 Team-Pads</span> → <span class="ui o">Team-Ordner durchsuchen</span></li>
+        <li>Die App zeigt alle Team-Sets mit Anzahl der Pads und Größe. Hake die gewünschten an oder tippe auf <span class="ui">Alle auswählen</span>.</li>
+        <li>Tippe auf <span class="ui o">Hinzufügen</span>. Die Pads werden geladen und die Anzeige zählt mit.</li>
+        <li>Fertig: Die Sets erscheinen oben in der Leiste mit ▲.</li>
+      </ol>
+      <div class="box tip"><b>Am besten im WLAN</b><p>Ein Set hat je nach Qualität 30–60 MB. Lade die Sets zu Hause oder im Gemeinde-WLAN, nicht kurz vor dem Gottesdienst über Mobilfunk.</p></div>
+      <div class="box"><b>Ausgegraut?</b><p>„bereits auf diesem Gerät“ heißt, das Set ist schon da. „keine Pads mit erkennbarer Tonart“ heißt, im Ordner liegt nichts Passendes.</p></div>
+    </div>
+    <div class="shots two">
+      <figure><img class="phone" src="anleitung/team.webp" alt="Einstellungsseite Team-Pads" loading="lazy"><figcaption>Seite „Team-Pads“ mit dem eingetragenen Ordner.</figcaption></figure>
+      <figure><img class="phone" src="anleitung/auswahl.webp" alt="Auswahl der Team-Sets mit Häkchen" loading="lazy"><figcaption>Sets anhaken und „Hinzufügen“ tippen.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 8 Aktuell halten -->
+<section class="page" data-title="Team-Pads aktuell halten">
+  <div class="inner wide">
+    <div>
+      <p class="kicker">Team-Pads</p>
+      <h2>Aktuell halten, nachladen, entfernen</h2>
+      <h3>Automatische Updates</h3>
+      <p>Bist du angemeldet und online, prüft die App beim Start, ob sich in deinen Team-Sets etwas geändert hat. Dann erscheint <i>„Neue Pads verfügbar“</i> mit einer Liste. Tippe auf <span class="ui o">Jetzt laden</span> oder auf <span class="ui">Später</span>.</p>
+      <p>Spielt gerade ein Pad, stört die App nicht. Es erscheint nur ein kleiner Punkt am ⚙︎-Knopf.</p>
+      <h3>Neue Team-Sets</h3>
+      <p>Neue Ordner im Team-Ordner werden <b>nicht</b> automatisch geladen. Die App meldet nur <i>„weitere Team-Sets verfügbar“</i>. Hinzufügen kannst du sie wie auf der vorigen Seite.</p>
+      <h3>Set entfernen</h3>
+      <p><span class="ui">⚙︎</span> → <span class="ui">Sets &amp; Anordnung</span> → <span class="ui o">Kacheln &amp; Sets anordnen</span> und dann auf das <b>×</b> am Set tippen. Das Set wird vom Gerät gelöscht, in SharePoint bleibt es erhalten. Über „Team-Ordner durchsuchen“ holst du es jederzeit wieder.</p>
+      <div class="box team"><b>Gut zu wissen</b><p>Die App liest im Team-Ordner nur. Du kannst dort mit der App nichts verändern oder löschen.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 Pedal -->
+<section class="page" data-title="Fußpedal">
+  <div class="inner">
+    <div>
+      <p class="kicker">Optional</p>
+      <h2>Mit dem Fußpedal steuern</h2>
+      <p>Geeignet ist ein Bluetooth-Umblätterpedal mit zwei Tasten, z. B. von <b>Tavsou</b>.</p>
+      <h3>Einmalig koppeln</h3>
+      <ol class="steps">
+        <li>Stelle das Pedal auf den Modus mit <b>Pfeiltasten</b> oder <b>Bild↑/Bild↓</b> (siehe Anleitung des Pedals) und schalte den <b>Repeat-Modus aus</b>.</li>
+        <li>iPhone/iPad: <span class="ui">Einstellungen</span> → <span class="ui">Bluetooth</span> → Pedal antippen.</li>
+        <li>In der App: <span class="ui">⚙︎</span> → <span class="ui">🦶 Pedal</span> → <span class="ui o">Pedal lernen</span>. Folge der Anzeige: links kurz, rechts kurz, dann links etwa 2 Sekunden halten.</li>
+      </ol>
+      <h3>Belegung</h3>
+      <table>
+        <tr><th></th><th>kurz</th><th>lang</th></tr>
+        <tr><td><b>Links</b></td><td>nächste Tonart</td><td>Tonart zurück</td></tr>
+        <tr><td><b>Rechts</b></td><td>Start / Stopp</td><td>alles ausblenden</td></tr>
+      </table>
+      <div class="box"><b>Pedal kennt kein „lang“?</b><p>Manche Pedale melden langes Drücken nicht. Die App merkt das beim Lernen und stellt um: <b>links doppelt tippen</b> = zurück, <b>beide Tasten gleichzeitig</b> = alles ausblenden.</p></div>
+      <div class="box tip"><b>Bildschirmtastatur weg?</b><p>Solange ein Pedal verbunden ist, blendet iOS die Tastatur in anderen Apps aus. Bluetooth am Pedal aus- und wieder einschalten hilft.</p></div>
+    </div>
+    <div class="shots"><figure><img class="phone" src="anleitung/pedal.webp" alt="Einstellungsseite Pedal" loading="lazy"><figcaption>„Pedal lernen“ erkennt dein Pedal automatisch.</figcaption></figure></div>
+  </div>
+</section>
+
+<!-- 10 Eigene Pads -->
+<section class="page" data-title="Eigene Pads (OneDrive)">
+  <div class="inner">
+    <div>
+      <p class="kicker">Optional</p>
+      <h2>Eigene Pads aus deinem OneDrive</h2>
+      <p>Hast du eigene Pad-Sounds, legst du sie in dein persönliches OneDrive. Sie erscheinen dann mit <b>●</b> in der Leiste und nur auf deinen Geräten.</p>
+      <ol class="steps">
+        <li>Lege in deinem OneDrive (Gemeindekonto) ganz oben den Ordner <code>Meine Pads</code> an.</li>
+        <li>Darin für jedes Set einen Unterordner, z. B. <code>Meine Pads/Ambient</code>. Der Ordnername wird der Set-Name.</li>
+        <li>Lege die Dateien hinein. Die <b>Tonart muss im Dateinamen stehen</b>, siehe unten.</li>
+        <li>In der App: <span class="ui">⚙︎</span> → <span class="ui">☁️ Meine Pads</span> → <span class="ui o">Nach neuen Pads suchen</span> → <span class="ui o">Jetzt laden</span>.</li>
+      </ol>
+      <h3>So erkennt die App die Tonart</h3>
+      <table>
+        <tr><th>Dateiname</th><th>wird zu</th></tr>
+        <tr><td><code>Key of A Pads.mp3</code></td><td>A</td></tr>
+        <tr><td><code>01 - Bb.mp3</code></td><td>B♭</td></tr>
+        <tr><td><code>Pad F#.wav</code> / <code>Pad F sharp.wav</code></td><td>F♯</td></tr>
+        <tr><td><code>Intro.mp3</code></td><td><i>übersprungen, keine Tonart</i></td></tr>
+      </table>
+      <div class="box"><b>Ohne eigenen Ordner?</b><p>Kein Problem. Hast du keinen Ordner „Meine Pads“, nutzt du einfach nur die Team-Pads.</p></div>
+    </div>
+    <div class="shots"><figure><img class="phone" src="anleitung/onedrive.webp" alt="Einstellungsseite Meine Pads" loading="lazy"><figcaption>„Meine Pads“: Anmeldung, Ordnername und Suchen.</figcaption></figure></div>
+  </div>
+</section>
+
+<!-- 11 Aussehen -->
+<section class="page" data-title="Aussehen & Reihenfolge">
+  <div class="inner">
+    <div>
+      <p class="kicker">Anpassen</p>
+      <h2>Aussehen &amp; Reihenfolge</h2>
+      <h3>Symbole der Sets</h3>
+      <p><span class="ui">⚙︎</span> → <span class="ui">Sets &amp; Anordnung</span>, ganz unten. Für Team-Sets und eigene Sets wählst du jeweils eines von 8 Symbolen. Es erscheint in der Farbe des jeweiligen Sets.</p>
+      <p>Dazu stellst du die Anzeige ein: <span class="ui">Beides</span>, <span class="ui">Nur Symbol</span> oder <span class="ui">Nur Name</span>. Mit „Nur Symbol“ passen die meisten Sets in die Leiste.</p>
+      <h3>Kacheln und Sets sortieren</h3>
+      <p><span class="ui o">Kacheln &amp; Sets anordnen</span> antippen. Alles wackelt jetzt:</p>
+      <ul class="dots">
+        <li>Kacheln und Set-Knöpfe an die gewünschte Stelle <b>ziehen</b></li>
+        <li><b>×</b> entfernt ein Set vom Gerät</li>
+        <li><span class="ui">Quintenzirkel</span> ordnet die Kacheln nach Quinten, <span class="ui">↺ Zurücksetzen</span> wieder chromatisch</li>
+        <li>Mit <span class="ui o">Fertig</span> beenden</li>
+      </ul>
+      <p>Das Pedal folgt der Reihenfolge der Kacheln. Mit dem Quintenzirkel springt „nächste Tonart“ also C → G → D …</p>
+    </div>
+    <div class="shots two">
+      <figure><img class="phone" src="anleitung/symbole.webp" alt="Auswahl der Symbole für Sets" loading="lazy"><figcaption>8 Symbole und 3 Anzeigearten pro Kategorie.</figcaption></figure>
+      <figure><img class="phone" src="anleitung/anordnen.webp" alt="Anordnen-Modus mit wackelnden Kacheln" loading="lazy"><figcaption>Anordnen-Modus: ziehen, entfernen, fertig.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 12 Team-Ordner befüllen -->
+<section class="page" data-title="Pads im Team-Ordner bereitstellen">
+  <div class="inner wide">
+    <div>
+      <p class="kicker">Für Verantwortliche <span class="tag">Team</span></p>
+      <h2>Pads im Team-Ordner bereitstellen</h2>
+      <p>Neue Team-Sets legst du direkt in SharePoint an. Die App holt sie dort ab.</p>
+      <h3>Ort</h3>
+      <p>SharePoint <b>Gemeinschaft Chara e.V.</b> → <b>Dokumente</b> → General → Dienstbereiche → Lobpreis → <b>02_Worship Pads</b></p>
+      <h3>Aufbau</h3>
+      <table>
+        <tr><th>Ebene</th><th>Beispiel</th><th>Bedeutung</th></tr>
+        <tr><td>Unterordner</td><td><code>02_Worship Pads/Sonntag Warm</code></td><td>Ein Set, der Ordnername ist der Set-Name in der App</td></tr>
+        <tr><td>Datei</td><td><code>Key of C Pads.mp3</code> … <code>Key of B Pads.mp3</code></td><td>Eine Datei pro Tonart, bis zu 12. Die Tonart muss im Namen stehen.</td></tr>
+      </table>
+      <ul class="dots">
+        <li><b>Format:</b> MP3 ist am besten (klein, schnell). WAV geht auch, ist aber etwa zehnmal größer.</li>
+        <li><b>Länge:</b> beliebig. Die App spielt aus langen Dateien einen etwa 2½-minütigen Ausschnitt als nahtlose Schleife.</li>
+        <li><b>Datei ersetzen:</b> Unter demselben Namen hochladen genügt. Beim nächsten Start bekommen alle das Update angeboten.</li>
+        <li><b>Set umbenennen oder löschen:</b> wirkt bei allen. Ein gelöschter Ordner verschwindet auch auf den Geräten.</li>
+      </ul>
+      <div class="box warn"><b>Lizenzen beachten</b><p>Lege nur Pads ab, die die Gemeinde im Team nutzen darf, also selbst erstellte, freie oder mit Team-Lizenz gekaufte. Einzellizenzen gehören in den eigenen OneDrive-Ordner „Meine Pads“.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 Gottesdienst -->
+<section class="page" data-title="Tipps für den Gottesdienst">
+  <div class="inner wide">
+    <div>
+      <p class="kicker">Live</p>
+      <h2>Tipps für den Gottesdienst</h2>
+      <table>
+        <tr><th>Wann</th><th>Was</th></tr>
+        <tr><td><b>Am Vortag</b></td><td>App öffnen, „Start“ tippen und Updates laden. Die Sets für den Gottesdienst kurz anspielen.</td></tr>
+        <tr><td><b>Vor dem Soundcheck</b></td><td>Akku laden. <b>Nicht stören</b> bzw. Fokus einschalten, damit keine Anrufe oder Nachrichten dazwischenfunken. Lautstärke am Gerät hoch und den Pegel am Mischpult einstellen.</td></tr>
+        <tr><td><b>Ausgabe</b></td><td>Klinken- oder USB-C-Kabel ins Mischpult ist am zuverlässigsten. Bluetooth-Lautsprecher funktionieren, haben aber etwas Verzögerung.</td></tr>
+        <tr><td><b>Während des Gottesdienstes</b></td><td>Die App muss im Vordergrund bleiben. Wechselst du die App oder sperrst das Gerät, verstummt das Pad. Die App hält das Display selbst wach.</td></tr>
+        <tr><td><b>Ohne Internet</b></td><td>Geladene Pads spielen auch im Flugmodus (Bluetooth fürs Pedal bleibt an).</td></tr>
+      </table>
+      <div class="box tip"><b>Weiche Übergänge einstellen</b><p><span class="ui">⚙︎</span> → <span class="ui">🎚 Übergänge &amp; Klang</span>: Dauer für Tonartwechsel, Einblenden und Fade Out. Gut zum Start: Wechsel 3–6 s, Fade Out 4–8 s.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 Hilfe -->
+<section class="page" data-title="Hilfe bei Problemen">
+  <div class="inner wide">
+    <div>
+      <p class="kicker">Hilfe</p>
+      <h2>Wenn etwas nicht klappt</h2>
+      <table>
+        <tr><th>Problem</th><th>Lösung</th></tr>
+        <tr><td>Kein Ton</td><td>„🔊 Start“ antippen, Lautstärke hoch, Bluetooth-Verbindungen prüfen, Regler in der App prüfen.</td></tr>
+        <tr><td>„Team-Ordner nicht erreichbar“</td><td>Mit <b>vorname.nachname@chara.church</b> angemeldet? Öffnet sich der Ordner „02_Worship Pads“ im Browser? Wenn nicht, fehlt die Berechtigung. Melde dich dann bei der Lobpreisleitung.</td></tr>
+        <tr><td>„Anmeldung abgelaufen“</td><td>Normal nach 24 Stunden. Einfach erneut durchsuchen und anmelden. Die Pads auf dem Gerät sind davon nicht betroffen.</td></tr>
+        <tr><td>Microsoft fragt nach „Administratorgenehmigung“</td><td>Bitte der Lobpreisleitung melden. Das ist eine einmalige Freigabe in der Gemeinde-IT.</td></tr>
+        <tr><td>Pedal reagiert nicht</td><td>Ist das Pedal in den iOS-Einstellungen unter Bluetooth verbunden? Steht es im Pfeiltasten-Modus? „Pedal lernen“ wiederholen.</td></tr>
+        <tr><td>Alte Version / neue Funktion fehlt</td><td><span class="ui">⚙︎</span> → <span class="ui">ⓘ App &amp; Speicher</span> → <span class="ui">App aktualisieren</span>. Die Versionsnummer steht dort.</td></tr>
+        <tr><td>Speicher voll</td><td>Nicht benötigte Sets über „Anordnen“ → × entfernen. MP3 statt WAV verwenden.</td></tr>
+      </table>
+      <p style="margin-top:18px">Viel Freude beim Spielen! 🎹</p>
+      <p><a class="hbtn acc" href="./" style="display:inline-block">Zur App</a></p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <button class="nav" id="prev" aria-label="Zurück">‹</button>
+  <div class="pos" id="pos"></div>
+  <button class="nav next" id="next">Weiter ›</button>
+</footer>
+
+<div id="tocSheet"><div class="sh">
+  <div class="shhead"><h2>Inhalt</h2><button class="hbtn" id="tocClose">Schließen</button></div>
+  <div class="toc" id="tocList"></div>
+</div></div>
+
+<script>
+"use strict";
+const deck=document.getElementById("deck"),pages=[...document.querySelectorAll(".page")];
+const N=pages.length;let cur=0;
+function go(i,smooth=true){i=Math.max(0,Math.min(N-1,i));deck.scrollTo({left:i*deck.clientWidth,behavior:smooth?"smooth":"auto"});setCur(i);}
+function setCur(i){
+  if(i===cur&&document.getElementById("pos").textContent)return;
+  cur=i;
+  document.getElementById("pos").innerHTML=`<b>${i+1}</b> / ${N} · ${pages[i].dataset.title}`;
+  document.getElementById("bar").style.width=((i)/(N-1)*100)+"%";
+  document.getElementById("prev").disabled=i===0;
+  const nx=document.getElementById("next");nx.disabled=i===N-1;nx.textContent=i===0?"Los geht's ›":"Weiter ›";
+  history.replaceState(null,"","#"+(i+1));
+  pages[i].scrollTop=0;
+}
+let st;deck.addEventListener("scroll",()=>{clearTimeout(st);st=setTimeout(()=>{const i=Math.round(deck.scrollLeft/deck.clientWidth);if(i!==cur)setCur(i);},60);},{passive:true});
+document.getElementById("prev").onclick=()=>go(cur-1);
+document.getElementById("next").onclick=()=>go(cur+1);
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"||e.key==="PageDown"){e.preventDefault();go(cur+1);}
+  else if(e.key==="ArrowLeft"||e.key==="PageUp"){e.preventDefault();go(cur-1);}
+  else if(e.key==="Escape")tocSheet.classList.remove("open");
+});
+window.addEventListener("resize",()=>go(cur,false));
+// Inhaltsverzeichnis
+function fillToc(el,close){
+  pages.forEach((p,i)=>{if(i===0)return;const b=document.createElement("button");b.innerHTML=`<span>${i}</span>${p.dataset.title}`;b.onclick=()=>{if(close)tocSheet.classList.remove("open");go(i);};el.appendChild(b);});
+}
+const tocSheet=document.getElementById("tocSheet");
+fillToc(document.getElementById("tocCover"),false);fillToc(document.getElementById("tocList"),true);
+document.getElementById("tocBtn").onclick=()=>tocSheet.classList.add("open");
+document.getElementById("tocClose").onclick=()=>tocSheet.classList.remove("open");
+tocSheet.addEventListener("click",e=>{if(e.target===tocSheet)tocSheet.classList.remove("open");});
+// Start auf Seite aus #
+const h=parseInt(location.hash.slice(1),10);
+requestAnimationFrame(()=>{cur=-1;go(h>0?h-1:0,false);});
+</script>
+</body>
+</html>
