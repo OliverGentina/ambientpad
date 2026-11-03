@@ -310,7 +310,7 @@
 
 <script>
 "use strict";
-const VERSION="2.0.0";
+const VERSION="2.0.1";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1045,7 +1045,7 @@ function showInfoSheet(title,lines){
 }
 
 // ================= Team-Ordner (SharePoint) =================
-const TEAM_DEFAULT_URL="";   // Freigabe-Link zum Team-Ordner der Gemeinde (in ⚙︎ → Team-Pads änderbar)
+const TEAM_DEFAULT_URL="https://charaorg.sharepoint.com/sites/GemeinschaftCharae.V/Freigegebene%20Dokumente/General/Dienstbereiche/Lobpreis/02_Worship%20Pads";   // Freigabe-Link zum Team-Ordner der Gemeinde (in ⚙︎ → Team-Pads änderbar)
 const TEAM=Object.assign({url:"",cache:null},load("apl.team",{}));
 const saveTeam=()=>store("apl.team",TEAM);
 const teamUrl=()=>(TEAM.url||TEAM_DEFAULT_URL||"").trim();
@@ -1060,10 +1060,27 @@ async function resolveTeamRoot(){
   const url=teamUrl();
   if(!url)throw Object.assign(new Error("Kein Link"),{status:0});
   if(TEAM.cache&&TEAM.cache.url===url)return TEAM.cache;
-  const j=await graph(`/shares/${shareId(normalizeSpUrl(url))}/driveItem?$select=id,name,folder,parentReference`);
+  const direct=normalizeSpUrl(url);
+  let j;
+  try{j=await graph(`/shares/${shareId(direct)}/driveItem?$select=id,name,folder,parentReference`);}
+  catch(e){if(e.status===401)throw e;j=await resolveByPath(direct);if(!j)throw e;}
   if(!j.folder)throw Object.assign(new Error("Kein Ordner"),{status:400});
   TEAM.cache={url,driveId:j.parentReference.driveId,itemId:j.id,name:j.name};saveTeam();
   return TEAM.cache;
+}
+// Ersatzweg für Browser-Adressen: Website → Dokumentbibliothek → Ordnerpfad
+async function resolveByPath(u){
+  let x;try{x=new URL(u);}catch(e){return null;}
+  const parts=decodeURIComponent(x.pathname).split("/").filter(Boolean);
+  if(parts.length<3||!/^(sites|teams)$/i.test(parts[0]))return null;
+  const site=await graph(`/sites/${x.hostname}:/${parts[0]}/${encodeURIComponent(parts[1])}?$select=id`);
+  const drives=(await graph(`/sites/${encodeURIComponent(site.id)}/drives?$select=id,name,webUrl`)).value||[];
+  const lib=parts[2],drive=drives.find(d=>{try{return decodeURIComponent(new URL(d.webUrl).pathname).split("/").filter(Boolean)[2]===lib;}catch(e){return false;}})||drives.find(d=>d.name===lib);
+  if(!drive)return null;
+  const rest=parts.slice(3).map(encodeURIComponent).join("/");
+  const it=await graph(`/drives/${encodeURIComponent(drive.id)}/${rest?`root:/${rest}`:"root"}?$select=id,name,folder,parentReference`);
+  it.parentReference=Object.assign({},it.parentReference,{driveId:drive.id});
+  return it;
 }
 async function listItemChildren(driveId,itemId){
   let url=`/drives/${encodeURIComponent(driveId)}/items/${encodeURIComponent(itemId)}/children?$select=id,name,size,folder,file,cTag,eTag&$top=200`;
