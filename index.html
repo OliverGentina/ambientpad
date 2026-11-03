@@ -138,6 +138,23 @@
   .hint{font-size:13px!important}
   .sheet select{background:var(--surface);color:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
   .sheet label.trow{flex-direction:row;text-align:left;margin:0;font-size:16px;color:var(--fg,inherit)}
+  #slBar{display:flex;gap:6px;align-items:stretch}
+  #slBar[hidden]{display:none}
+  #slBar .btn{min-width:46px;font-size:24px;padding:0}
+  #slMid{flex:1;min-width:0;border:0;border-radius:12px;background:var(--surface);color:#fff;text-align:left;padding:7px 12px;display:flex;flex-direction:column;gap:2px;cursor:pointer;box-shadow:inset 3px 0 0 var(--setcolor);font:inherit}
+  #slMid .top{display:flex;gap:10px;align-items:baseline;min-width:0}
+  #slMid b{flex:1;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #slKey{flex:none;font-weight:800;font-size:17px;color:var(--setcolor)}
+  #slMid small{color:var(--dim);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slrow{display:flex;align-items:center;gap:11px;width:100%;border:0;border-radius:10px;background:var(--empty);color:#fff;font:inherit;text-align:left;padding:10px 12px;cursor:pointer}
+  .slrow .n{flex:none;width:24px;color:var(--dim);font-weight:700;text-align:right}
+  .slrow .t{flex:1;min-width:0;display:flex;flex-direction:column}
+  .slrow .t small{color:var(--dim);font-size:13px}
+  .slrow .k{flex:none;font-weight:800;color:var(--accent)}
+  .slrow.on{background:var(--surface);box-shadow:inset 3px 0 0 var(--accent)}
+  .slrow.nokey{opacity:.55}.slrow.nokey .k{color:var(--dim);font-weight:600;font-size:13px}
+  .muted{color:var(--dim);padding:8px 2px}
+  #pcoLink{min-width:0;background:var(--empty);border:1px solid var(--line);border-radius:10px;color:#fff;padding:10px;font:inherit;font-size:15px}
   .trow{display:flex;align-items:center;gap:12px;background:var(--empty);border-radius:10px;padding:11px 12px;cursor:pointer}
   .trow input{width:22px;height:22px;accent-color:var(--accent);flex:none}
   .trow span{display:flex;flex-direction:column;align-items:flex-start;min-width:0;text-align:left}
@@ -163,6 +180,11 @@
 </header>
 <div id="status"><span>Audio: <b id="audioState" class="badc">aus</b> · Pedal: <b id="pedalState">–</b></span><span id="xfInfo"></span></div>
 
+<div id="slBar" hidden>
+  <button class="btn" id="slPrev" aria-label="Vorheriges Lied">‹</button>
+  <button id="slMid"><span class="top"><b id="slNow"></b><span id="slKey"></span></span><small id="slNext"></small></button>
+  <button class="btn" id="slFwd" aria-label="Nächstes Lied">›</button>
+</div>
 <main id="grid" aria-label="Tonarten"></main>
 
 <div id="arrangeBar">
@@ -220,6 +242,7 @@
       <button class="mrow" data-go="sound"><span class="mi">🎚</span><span class="mt"><b>Übergänge &amp; Klang</b><small id="sum_sound"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="onedrive"><span class="mi">☁️</span><span class="mt"><b>Meine Pads (OneDrive)</b><small id="sum_onedrive"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="team"><span class="mi">👥</span><span class="mt"><b>Team-Pads</b><small id="sum_team"></small></span><span class="mc">›</span></button>
+      <button class="mrow" data-go="pco"><span class="mi">🎵</span><span class="mt"><b>Setlist (Planning Center)</b><small id="sum_pco"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="sets"><span class="mi">▦</span><span class="mt"><b>Sets &amp; Anordnung</b><small id="sum_sets"></small></span><span class="mc">›</span></button>
       <a class="mrow" href="anleitung.html" id="guideLink"><span class="mi">📖</span><span class="mt"><b>Anleitung</b><small>Schritt für Schritt mit Bildern</small></span><span class="mc">›</span></a>
       <button class="mrow" data-go="app"><span class="mi">ⓘ</span><span class="mt"><b>App &amp; Speicher</b><small id="sum_app"></small></span><span class="mc">›</span></button>
@@ -278,6 +301,20 @@
     <p class="hint">Anmeldung mit deinem Gemeindekonto – dieselbe wie bei „Meine Pads“. Entfernen: ⚙︎ → Sets &amp; Anordnung → × am Set.</p>
   </section>
 
+  <!-- Planning Center -->
+  <section class="spage" data-page="pco" data-title="Setlist">
+    <p id="pcoAccount"></p>
+    <div class="row"><button class="btn accent" id="pco_load">Setlist aus Planning Center laden</button></div>
+    <div class="group">
+      <p id="pcoSlInfo"></p>
+      <div class="row"><button class="btn" id="pco_list">Setlist anzeigen</button><button class="btn" id="pco_logout">Trennen</button></div>
+    </div>
+    <p class="hint">Im Setlist-Modus springt das Pedal links von Lied zu Lied (lang = zurück), rechts startet und stoppt das Pad. Moll-Tonarten spielen das Pad der Paralleldur (Em → G), bei Modulationen zählt die erste Tonart. Die Setlist bleibt offline gespeichert.</p>
+    <details><summary>Erweitert</summary>
+      <div class="group"><label>Planning-Center Client-ID<input type="text" id="pco_client" autocapitalize="off" autocorrect="off" spellcheck="false"></label></div>
+    </details>
+  </section>
+
   <!-- Sets & Anordnung -->
   <section class="spage" data-page="sets" data-title="Sets & Anordnung">
     <p class="hint">Kacheln und Set-Knöpfe per Drag &amp; Drop sortieren, Sets ausblenden. Das Pedal folgt der Reihenfolge der Kacheln.</p>
@@ -318,6 +355,25 @@
   <div class="row"><button class="btn" id="syncLater">Später</button><button class="btn accent" id="syncGo">Jetzt laden</button></div>
 </div></div>
 
+<!-- Setlist laden -->
+<div class="sheet-bg" id="pcoSheet"><div class="sheet">
+  <h2>Setlist laden</h2>
+  <h3>Kommende Veranstaltungen</h3>
+  <div class="synclist" id="pcoPlans"></div>
+  <h3>Oder Link einfügen</h3>
+  <div class="row"><input type="text" id="pcoLink" class="grow" placeholder="https://services.planningcenteronline.com/plans/…" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="btn accent" id="pcoLinkGo">Laden</button></div>
+  <div class="row"><button class="btn" id="pcoCancel">Abbrechen</button></div>
+</div></div>
+
+<!-- Setlist -->
+<div class="sheet-bg" id="slSheet"><div class="sheet">
+  <h2 id="slSheetTitle">Setlist</h2>
+  <p id="slSheetInfo"></p>
+  <div class="synclist" id="slList"></div>
+  <div class="row"><button class="btn" id="slReload">↻ Aktualisieren</button><button class="btn" id="slOther">Andere Setlist</button></div>
+  <div class="row"><button class="btn" id="slStart"></button><button class="btn accent" id="slClose">Fertig</button></div>
+</div></div>
+
 <!-- Team-Sets auswählen -->
 <div class="sheet-bg" id="teamSheet"><div class="sheet">
   <h2>Team-Pads hinzufügen</h2>
@@ -337,7 +393,7 @@
 
 <script>
 "use strict";
-const VERSION="2.2.0";
+const VERSION="2.3.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -650,7 +706,7 @@ const down={};            // side → {t, timer, longFired}
 let learning=null, lastSide=null, lastSideT=0, fallbackTimer=null, fallbackSide=null;
 function sideOf(key){ if(P.left.includes(key))return "left"; if(P.right.includes(key))return "right"; return null; }
 function action(side,long){
-  if(side==="left"){ long?stepSel(-1):stepSel(1); }
+  if(side==="left"){ if(slOn()){long?stepSong(-1):stepSong(1);} else {long?stepSel(-1):stepSel(1);} }
   else{ long?fadeAll(S.fadeOut):toggleKey(selected); }
 }
 function pedalEvent(side,isLong){
@@ -658,7 +714,7 @@ function pedalEvent(side,isLong){
   // Fallback ohne Halten
   const now=performance.now();
   if(fallbackTimer&&fallbackSide&&fallbackSide!==side){clearTimeout(fallbackTimer);fallbackTimer=null;fallbackSide=null;fadeAll(S.fadeOut);toast("Alles ausblenden");return;}
-  if(side==="left"&&lastSide==="left"&&now-lastSideT<450){lastSide=null;stepSel(-2);return;}
+  if(side==="left"&&lastSide==="left"&&now-lastSideT<450){lastSide=null;if(slOn()){stepSong(-1);stepSong(-1);}else stepSel(-2);return;}
   clearTimeout(fallbackTimer);fallbackSide=side;
   fallbackTimer=setTimeout(()=>{fallbackTimer=null;fallbackSide=null;action(side,false);},130);
   lastSide=side;lastSideT=now;
@@ -1033,6 +1089,7 @@ async function handleAuthRedirect(){
   if(!q.has("code")&&!q.has("error"))return null;
   history.replaceState(null,"",location.pathname);
   const pk=load("apl.pkce",null);try{localStorage.removeItem("apl.pkce");}catch(e){}
+  if(pk&&pk.provider==="pco")return pcoFinish(q,pk);
   if(q.has("error")){
     const d=(q.get("error_description")||"").replace(/\+/g," ");
     if(/consent|AADSTS65001|AADSTS90094|admin/i.test(d+q.get("error")))showInfoSheet("Zustimmung des Administrators nötig",["Dein Firmenkonto erlaubt AmbientPad noch nicht, Dateien zu lesen.","Im Entra-Portal: App-Registrierungen → AmbientPad → API-Berechtigungen → „Administratorzustimmung erteilen“ – oder deine IT darum bitten.",d.slice(0,200)]);
@@ -1377,6 +1434,216 @@ function updateTeamInfo(){
 }
 window.addEventListener("online",()=>{if(msSessionValid())checkRemote(false,"auto");});
 
+
+// ================= Planning Center (Setlist) =================
+const PCO_DEFAULT_CLIENT_ID="";            // Client-ID der bei Planning Center registrierten App (⚙︎ → Planning Center → Erweitert)
+const PCO_BASE="https://api.planningcenteronline.com";
+const PCO=Object.assign({clientId:""},load("apl.pco",{}));
+const savePCO=()=>store("apl.pco",PCO);
+const pcoClientId=()=>(PCO.clientId||PCO_DEFAULT_CLIENT_ID||"").trim();
+let PCT=load("apl.pcotoken",null);         // {at,atExp,rt,rtExp,user}
+const savePCT=()=>{try{PCT?localStorage.setItem("apl.pcotoken",JSON.stringify(PCT)):localStorage.removeItem("apl.pcotoken");}catch(e){}};
+const pcoValid=()=>!!(PCT&&PCT.rt&&Date.now()<PCT.rtExp);
+async function pcoLogin(afterwards="setlist"){
+  const cid=pcoClientId();
+  if(!cid){showInfoSheet("App noch nicht bei Planning Center registriert",["Für die Setlist braucht die App eine Client-ID von Planning Center.","Trage sie unter ⚙︎ → Planning Center → Erweitert ein."]);return;}
+  if(current)fadeAll(1);
+  const verifier=b64url(crypto.getRandomValues(new Uint8Array(48)));
+  const challenge=b64url(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier))));
+  const state=b64url(crypto.getRandomValues(new Uint8Array(16)));
+  store("apl.pkce",{provider:"pco",verifier,state,afterwards,t:Date.now()});
+  const q=new URLSearchParams({client_id:cid,response_type:"code",redirect_uri:redirectUri(),scope:"services",state,code_challenge:challenge,code_challenge_method:"S256"});
+  location.href=`${PCO_BASE}/oauth/authorize?${q}`;
+}
+function pcoStore(j){
+  const now=Date.now();
+  PCT={at:j.access_token,atExp:now+(j.expires_in||7200)*1000-60000,rt:j.refresh_token||(PCT&&PCT.rt),
+       rtExp:now+89*24*3600*1000,user:(PCT&&PCT.user)||""};
+  savePCT();
+}
+async function pcoTokenRequest(params){
+  const res=await fetch(`${PCO_BASE}/oauth/token`,{method:"POST",body:new URLSearchParams(Object.assign({client_id:pcoClientId()},params))});
+  const j=await res.json().catch(()=>({}));
+  if(!res.ok||!j.access_token)throw Object.assign(new Error(j.error_description||j.error||("HTTP "+res.status)),{status:res.status});
+  return j;
+}
+async function pcoFinish(q,pk){
+  if(q.has("error")){toast("Planning-Center-Anmeldung abgebrochen");return null;}
+  if(pk.state!==q.get("state")){toast("Anmeldung ungültig – bitte erneut anmelden");return null;}
+  try{
+    pcoStore(await pcoTokenRequest({grant_type:"authorization_code",code:q.get("code"),redirect_uri:redirectUri(),code_verifier:pk.verifier}));
+    pcoWhoAmI();toast("Mit Planning Center verbunden");
+    return "pco:"+(pk.afterwards||"setlist");
+  }catch(e){showInfoSheet("Planning-Center-Anmeldung fehlgeschlagen",[String(e.message||e).slice(0,300),"Ist bei der App in Planning Center die Redirect-URI genau „"+redirectUri()+"“ eingetragen?"]);return null;}
+}
+async function pcoToken(){
+  if(!PCT)return null;
+  if(PCT.at&&Date.now()<PCT.atExp)return PCT.at;
+  if(!pcoValid())return null;
+  try{pcoStore(await pcoTokenRequest({grant_type:"refresh_token",refresh_token:PCT.rt}));return PCT.at;}
+  catch(e){if(e.status===400||e.status===401){PCT.rtExp=0;savePCT();}return null;}
+}
+async function pco(path){
+  const t=await pcoToken();if(!t)throw Object.assign(new Error("Nicht angemeldet"),{status:401});
+  const res=await fetch(path.startsWith("http")?path:PCO_BASE+path,{headers:{Authorization:"Bearer "+t}});
+  if(!res.ok)throw Object.assign(new Error("HTTP "+res.status),{status:res.status});
+  return res.json();
+}
+async function pcoWhoAmI(){
+  try{const j=await pco("/services/v2/me");const a=j.data&&j.data.attributes||{};PCT.user=a.full_name||[a.first_name,a.last_name].filter(Boolean).join(" ")||PCT.user;savePCT();updatePcoInfo();}catch(e){}
+}
+// Tonart aus Planning Center → Kachel. Moll → Paralleldur, Modulation „C – D“ → erste Tonart.
+const NOTE_ST={c:0,d:2,e:4,f:5,g:7,a:9,b:11,h:11};
+function pcoKey(name){
+  if(!name)return null;
+  const s=String(name).trim().replace(/♯/g,"#").replace(/♭/g,"b");
+  const m=s.match(/^([A-Ha-h])\s*(#|b(?![a-z]{2})|sharp|flat|is|es|s)?\s*(m(?!aj)|min(?:or)?|moll|-)?/i);
+  if(!m)return null;
+  let k=NOTE_ST[m[1].toLowerCase()];
+  const acc=(m[2]||"").toLowerCase();
+  if(acc==="#"||acc==="sharp"||acc==="is")k+=1; else if(acc==="b"||acc==="flat"||acc==="es"||acc==="s")k-=1;
+  const minor=!!m[3]&&m[3]!=="-";
+  if(minor)k+=3;
+  return {k:((k%12)+12)%12,minor};
+}
+// ---- Setlist-Daten ----
+let SL=load("apl.setlist",null);           // {planId,stId,title,date,songs:[{title,key,k,minor}],pos,on}
+const saveSL=()=>store("apl.setlist",SL);
+const slOn=()=>!!(SL&&SL.on&&SL.songs&&SL.songs.length);
+const playable=i=>SL.songs[i]&&SL.songs[i].k!==null&&SL.songs[i].k!==undefined;
+const keyLabel=k=>KEYS[k][0];
+function fmtSong(s){return s.k===null||s.k===undefined?"keine Tonart":(s.minor?`${keyLabel(s.k)} (${s.key})`:keyLabel(s.k));}
+function nextPlayable(from,dir){let i=from;for(let n=0;n<SL.songs.length;n++){i+=dir;if(i<0||i>=SL.songs.length)return -1;if(playable(i))return i;}return -1;}
+function goSong(i,opts={}){
+  if(!slOn()||i<0||i>=SL.songs.length)return;
+  SL.pos=i;saveSL();
+  const s=SL.songs[i];
+  if(playable(i)){
+    if(current&&!opts.noPlay){ if(pads[S.set][s.k]){setSelected(s.k);play(S.set,s.k);} else {setSelected(s.k);toast(`${keyLabel(s.k)} ist in „${setName(S.set)}“ nicht belegt`);} }
+    else setSelected(s.k);
+  }
+  renderSetlist();
+}
+function stepSong(dir){
+  if(!slOn())return;
+  const i=nextPlayable(SL.pos,dir>0?1:-1);
+  if(i<0){toast(dir>0?"Ende der Setlist":"Anfang der Setlist");return;}
+  goSong(i);
+}
+function renderSetlist(){
+  const bar=$("slBar");document.body.classList.toggle("setlist",slOn());
+  if(!slOn()){bar.hidden=true;return;}
+  bar.hidden=false;
+  const s=SL.songs[SL.pos]||SL.songs[0],nx=nextPlayable(SL.pos,1);
+  $("slNow").textContent=`${SL.pos+1}/${SL.songs.length} · ${s.title}`;
+  $("slKey").textContent=fmtSong(s);
+  $("slNext").textContent=nx>=0?`weiter: ${SL.songs[nx].title} · ${fmtSong(SL.songs[nx])}`:"letztes Lied";
+  $("slPrev").disabled=nextPlayable(SL.pos,-1)<0;$("slFwd").disabled=nx<0;
+  if($("slSheet").classList.contains("open"))renderSlList();
+}
+function renderSlList(){
+  $("slSheetTitle").textContent=SL?SL.title:"Setlist";
+  $("slSheetInfo").textContent=SL?[SL.date,`${SL.songs.length} Lieder`].filter(Boolean).join(" · "):"";
+  const list=$("slList");list.innerHTML="";
+  if(!SL)return;
+  SL.songs.forEach((s,i)=>{
+    const b=document.createElement("button");b.className="slrow"+(i===SL.pos&&slOn()?" on":"")+(playable(i)?"":" nokey");
+    b.innerHTML=`<span class="n">${i+1}</span><span class="t"></span><span class="k"></span>`;
+    b.querySelector(".t").textContent=s.title;b.querySelector(".k").textContent=fmtSong(s);
+    b.onclick=()=>{SL.on=true;goSong(i);$("slSheet").classList.remove("open");};
+    list.appendChild(b);
+  });
+  $("slStart").textContent=slOn()?"Setlist-Modus beenden":"Setlist-Modus starten";
+}
+// ---- Laden aus Planning Center ----
+async function pcoPlanFromId(planId){
+  const types=(await pco("/services/v2/service_types?per_page=100")).data||[];
+  for(const t of types){
+    try{const j=await pco(`/services/v2/service_types/${t.id}/plans/${planId}`);return {st:t,plan:j.data};}catch(e){if(e.status===401)throw e;}
+  }
+  throw Object.assign(new Error("Plan nicht gefunden"),{status:404});
+}
+async function pcoLoadPlan(stId,plan,stName){
+  const j=await pco(`/services/v2/service_types/${stId}/plans/${plan.id}/items?per_page=100`);
+  const items=(j.data||[]).filter(x=>x.attributes&&x.attributes.item_type==="song").sort((a,b)=>(a.attributes.sequence||0)-(b.attributes.sequence||0));
+  const songs=items.map(x=>{const key=(x.attributes.key_name||"").trim(),p=pcoKey(key);return {title:x.attributes.title||"Lied",key,k:p?p.k:null,minor:p?p.minor:false};});
+  const a=plan.attributes||{};
+  SL={planId:plan.id,stId,title:[stName,a.title||a.series_title].filter(Boolean).join(" · ")||"Setlist",date:a.dates||"",songs,pos:0,on:true};
+  const first=nextPlayable(-1,1);SL.pos=first>=0?first:0;saveSL();
+  $("pcoSheet").classList.remove("open");
+  if(!songs.length){showInfoSheet("Keine Lieder gefunden",["Dieser Plan enthält keine Lieder."]);SL.on=false;saveSL();renderSetlist();return;}
+  goSong(SL.pos,{noPlay:true});
+  const nok=songs.filter(s=>s.k===null).length;
+  toast(`Setlist geladen: ${songs.length} Lieder`+(nok?` · ${nok} ohne Tonart`:""));
+}
+function pcoErr(e){
+  if(e.status===401)return "Anmeldung abgelaufen – bitte neu verbinden.";
+  if(e.status===403)return "Kein Zugriff auf diesen Plan.";
+  if(e.status===404)return "Plan nicht gefunden – stimmt der Link?";
+  return "Planning Center gerade nicht erreichbar.";
+}
+async function openPcoSheet(){
+  $("settingsSheet").classList.remove("open");
+  if(!pcoClientId()){pcoLogin();return;}
+  if(!pcoValid()&&!(await pcoToken())){pcoLogin("setlist");return;}
+  if(!navigator.onLine){toast("Kein Internet");return;}
+  $("pcoSheet").classList.add("open");
+  const list=$("pcoPlans");list.innerHTML="<div class='muted'>Lade kommende Veranstaltungen …</div>";
+  try{
+    const types=((await pco("/services/v2/service_types?per_page=100")).data||[]);
+    const rows=[];
+    await Promise.all(types.map(async t=>{
+      try{const j=await pco(`/services/v2/service_types/${t.id}/plans?filter=future&order=sort_date&per_page=6`);
+        for(const p of j.data||[])rows.push({st:t,plan:p,sort:p.attributes.sort_date||""});}catch(e){if(e.status===401)throw e;}
+    }));
+    rows.sort((a,b)=>a.sort.localeCompare(b.sort));
+    list.innerHTML="";
+    if(!rows.length)list.innerHTML="<div class='muted'>Keine kommenden Veranstaltungen gefunden.</div>";
+    for(const r of rows.slice(0,20)){
+      const b=document.createElement("button");b.className="slrow";
+      const a=r.plan.attributes||{};
+      b.innerHTML=`<span class="t"><b></b><small></small></span><span class="k">›</span>`;
+      b.querySelector("b").textContent=a.dates||"ohne Datum";
+      b.querySelector("small").textContent=[r.st.attributes.name,a.title||a.series_title].filter(Boolean).join(" · ")+(a.items_count?` · ${a.items_count} Punkte`:"");
+      b.onclick=async()=>{b.disabled=true;try{await pcoLoadPlan(r.st.id,r.plan,r.st.attributes.name);}catch(e){toast(pcoErr(e));b.disabled=false;}};
+      list.appendChild(b);
+    }
+  }catch(e){list.innerHTML="";const d=document.createElement("div");d.className="muted";d.textContent=pcoErr(e);list.appendChild(d);if(e.status===401){PCT&&(PCT.rtExp=0,savePCT());}}
+}
+$("pcoLinkGo").onclick=async()=>{
+  const v=$("pcoLink").value.trim(),m=v.match(/plans\/(\d+)/)||v.match(/^(\d+)$/);
+  if(!m){toast("Bitte einen Link zu einem Plan einfügen (…/plans/12345)");return;}
+  $("pcoLinkGo").disabled=true;$("pcoLinkGo").textContent="Lade …";
+  try{const {st,plan}=await pcoPlanFromId(m[1]);await pcoLoadPlan(st.id,plan,st.attributes.name);PCO.lastLink=v;savePCO();}
+  catch(e){toast(pcoErr(e));}
+  $("pcoLinkGo").disabled=false;$("pcoLinkGo").textContent="Laden";
+};
+$("pcoCancel").onclick=()=>$("pcoSheet").classList.remove("open");
+$("slMid").onclick=()=>{renderSlList();$("slSheet").classList.add("open");};
+$("slPrev").onclick=()=>{unlockAudio();stepSong(-1);};
+$("slFwd").onclick=()=>{unlockAudio();stepSong(1);};
+$("slClose").onclick=()=>$("slSheet").classList.remove("open");
+$("slStart").onclick=()=>{if(!SL)return;SL.on=!slOn();saveSL();if(slOn())goSong(SL.pos,{noPlay:true});renderSetlist();renderSlList();$("slSheet").classList.remove("open");toast(slOn()?"Setlist-Modus an – Pedal links = nächstes Lied":"Setlist-Modus aus – Pedal wieder durch alle Tonarten");};
+$("slReload").onclick=async()=>{
+  if(!SL)return;$("slReload").disabled=true;
+  try{const {st,plan}=await pcoPlanFromId(SL.planId);const pos=SL.pos,on=SL.on;await pcoLoadPlan(st.id,plan,st.attributes.name);SL.pos=Math.min(pos,SL.songs.length-1);SL.on=on;saveSL();renderSetlist();renderSlList();}
+  catch(e){if(e.status===401)pcoLogin("reload");else toast(pcoErr(e));}
+  $("slReload").disabled=false;
+};
+$("slOther").onclick=()=>{$("slSheet").classList.remove("open");openPcoSheet();};
+function updatePcoInfo(){
+  const el=$("pcoAccount");if(!el)return;
+  el.textContent=!pcoClientId()?"Noch keine Client-ID eingetragen (siehe „Erweitert“).":pcoValid()?`Verbunden${PCT.user?" als "+PCT.user:""}`:"Nicht verbunden.";
+  $("pco_logout").disabled=!PCT;
+  $("pcoSlInfo").textContent=SL?`Aktuelle Setlist: ${SL.title}${SL.date?" ("+SL.date+")":""} · ${SL.songs.length} Lieder${slOn()?" · Setlist-Modus an":""}`:"Noch keine Setlist geladen.";
+}
+$("pco_client").value=PCO.clientId||PCO_DEFAULT_CLIENT_ID;
+$("pco_client").onchange=()=>{const v=$("pco_client").value.trim();PCO.clientId=v===PCO_DEFAULT_CLIENT_ID?"":v;savePCO();updatePcoInfo();};
+$("pco_load").onclick=()=>openPcoSheet();
+$("pco_logout").onclick=()=>{PCT=null;savePCT();updatePcoInfo();toast("Von Planning Center getrennt – die Setlist bleibt gespeichert");};
+$("pco_list").onclick=()=>{$("settingsSheet").classList.remove("open");if(!SL){openPcoSheet();return;}renderSlList();$("slSheet").classList.add("open");};
+renderSetlist();
+
 // ================= Standard-Pads offline speichern =================
 let offlineCount=0;
 async function cacheBundledPads(){
@@ -1428,6 +1695,7 @@ function settingsSummaries(){
   $("sum_sound").textContent=`Wechsel ${f(S.xfade)} · Fade Out ${f(S.fadeOut)} · Pads ${({90:"1½ Min.",150:"2½ Min.",240:"4 Min.",0:"ganz"})[S.maxLoop]||""}`;
   $("sum_onedrive").textContent=!msClientId()?"Nicht eingerichtet":msSessionValid()?`Angemeldet · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}${remotePlan?" · Neues verfügbar":""}`:`${remoteSets.length} Set${remoteSets.length===1?"":"s"} auf dem Gerät · nicht angemeldet`;
   document.querySelector('.mrow[data-go="onedrive"]').classList.toggle("badge",!!remotePlan);
+  $("sum_pco").textContent=SL?`${slOn()?"An":"Aus"} · ${SL.title}`:(pcoValid()?"Verbunden · noch keine Setlist":"Lieder & Tonarten aus Planning Center");
   $("sum_team").textContent=teamUrl()?`${teamSets.length} Team-Set${teamSets.length===1?"":"s"} auf dem Gerät`:"Noch kein Team-Ordner hinterlegt";
   $("sum_sets").textContent=allSetKeys().map(setLabel).join(", ")+(HIDDEN.length?` · ${HIDDEN.length} ausgeblendet`:"");
   $("sum_app").textContent="Version "+VERSION;
@@ -1443,7 +1711,7 @@ function showSettingsPage(name){
 }
 document.querySelectorAll("#settingsSheet .mrow").forEach(r=>r.onclick=()=>showSettingsPage(r.dataset.go));
 $("setBack").onclick=()=>showSettingsPage("main");
-$("settingsBtn").onclick=()=>{showSettingsPage("main");updateTeamInfo();updatePedalInfo();updateStorage();updateOfflineInfo();updateAccountInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
+$("settingsBtn").onclick=()=>{showSettingsPage("main");updateTeamInfo();updatePcoInfo();updatePedalInfo();updateStorage();updateOfflineInfo();updateAccountInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
 $("settingsClose").onclick=()=>$("settingsSheet").classList.remove("open");
 for(const sh of ["assignSheet","settingsSheet"])$(sh).addEventListener("click",e=>{if(e.target===$(sh))$(sh).classList.remove("open");});
 const masterEl=$("master");masterEl.value=S.master;
@@ -1531,6 +1799,7 @@ async function forceUpdate(){
   const after=await handleAuthRedirect();
   if(after==="check")checkRemote(true,"personal");
   else if(after==="team")scanTeamFolders();
+  else if(after&&after.startsWith("pco:")){if(after==="pco:reload"&&SL)$("slReload").click();else openPcoSheet();if(msSessionValid())checkRemote(false,"auto");}
   else if(msSessionValid())checkRemote(false,"auto");
   else setRemoteStatus(msClientId()?"Zum Suchen nach neuen Pads mit Microsoft anmelden.":"");
   registerSW();
