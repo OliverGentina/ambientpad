@@ -138,6 +138,12 @@
   .hint{font-size:13px!important}
   .sheet select{background:var(--surface);color:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
   .sheet label.trow{flex-direction:row;text-align:left;margin:0;font-size:16px;color:var(--fg,inherit)}
+  .slhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .slhead h2{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #slSheetInfo{margin:-4px 0 0;color:var(--dim);font-size:14px}
+  .slnav{display:flex;gap:6px}
+  #slSheet .slnav button{flex:1 1 auto;min-width:0;min-height:0;border:0;border-radius:999px;background:var(--empty);color:#fff;font-family:inherit;font-weight:600;font-size:13px;line-height:1.2;padding:7px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slnav button:disabled{opacity:.5}
   #slBar{display:flex;gap:6px;align-items:stretch}
   #slBar[hidden]{display:none}
   #slBar .btn{min-width:46px;font-size:24px;padding:0}
@@ -367,11 +373,10 @@
 
 <!-- Setlist -->
 <div class="sheet-bg" id="slSheet"><div class="sheet">
-  <h2 id="slSheetTitle">Setlist</h2>
+  <div class="slhead"><h2 id="slSheetTitle">Setlist</h2><button class="linkbtn strong" id="slClose">Fertig</button></div>
   <p id="slSheetInfo"></p>
+  <div class="slnav"><button id="slReload">↻ Aktualisieren</button><button id="slOther">Andere Setlist</button><button id="slStart"></button></div>
   <div class="synclist" id="slList"></div>
-  <div class="row"><button class="btn" id="slReload">↻ Aktualisieren</button><button class="btn" id="slOther">Andere Setlist</button></div>
-  <div class="row"><button class="btn" id="slStart"></button><button class="btn accent" id="slClose">Fertig</button></div>
 </div></div>
 
 <!-- Team-Sets auswählen -->
@@ -393,7 +398,7 @@
 
 <script>
 "use strict";
-const VERSION="2.3.1";
+const VERSION="2.3.2";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1554,7 +1559,7 @@ function renderSlList(){
     b.onclick=()=>{SL.on=true;goSong(i);$("slSheet").classList.remove("open");};
     list.appendChild(b);
   });
-  $("slStart").textContent=slOn()?"Setlist-Modus beenden":"Setlist-Modus starten";
+  $("slStart").textContent=slOn()?"Modus aus":"Modus an";
 }
 // ---- Laden aus Planning Center ----
 async function pcoPlanFromId(planId){
