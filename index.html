@@ -117,6 +117,11 @@
   .group{background:var(--empty);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:12px}
   .hint{font-size:13px!important}
   .sheet select{background:var(--surface);color:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+  .sheet label.trow{flex-direction:row;text-align:left;margin:0;font-size:16px;color:var(--fg,inherit)}
+  .trow{display:flex;align-items:center;gap:12px;background:var(--empty);border-radius:10px;padding:11px 12px;cursor:pointer}
+  .trow input{width:22px;height:22px;accent-color:var(--accent);flex:none}
+  .trow span{display:flex;flex-direction:column;align-items:flex-start;min-width:0;text-align:left}
+  .trow small{color:var(--dim);font-size:13px}
   .sheet details summary{color:var(--dim);font-size:14px;cursor:pointer}
   #settingsBtn.badge::after{content:"";position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:var(--ok)}
   .synclist{display:flex;flex-direction:column;gap:6px;font-size:15px}
@@ -194,6 +199,7 @@
       <button class="mrow" data-go="pedal"><span class="mi">🦶</span><span class="mt"><b>Pedal</b><small id="sum_pedal"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="sound"><span class="mi">🎚</span><span class="mt"><b>Übergänge &amp; Klang</b><small id="sum_sound"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="onedrive"><span class="mi">☁️</span><span class="mt"><b>Meine Pads (OneDrive)</b><small id="sum_onedrive"></small></span><span class="mc">›</span></button>
+      <button class="mrow" data-go="team"><span class="mi">👥</span><span class="mt"><b>Team-Pads</b><small id="sum_team"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="sets"><span class="mi">▦</span><span class="mt"><b>Sets &amp; Anordnung</b><small id="sum_sets"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="app"><span class="mi">ⓘ</span><span class="mt"><b>App &amp; Speicher</b><small id="sum_app"></small></span><span class="mc">›</span></button>
     </div>
@@ -239,6 +245,18 @@
     </details>
   </section>
 
+  <!-- Team-Pads -->
+  <section class="spage" data-page="team" data-title="Team-Pads">
+    <p id="teamStatus"></p>
+    <div class="row"><button class="btn accent" id="t_scan">Team-Ordner durchsuchen</button></div>
+    <div class="group">
+      <label>SharePoint-Link zum Team-Ordner<input type="text" id="t_url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://….sharepoint.com/…"></label>
+      <p class="hint">Jeder Unterordner ist ein Team-Set. Nach dem Durchsuchen wählst du aus, welche auf dieses Gerät sollen. Team-Sets erkennst du oben am 👥.</p>
+      <button class="btn" id="t_default">Standard-Link der Gemeinde verwenden</button>
+    </div>
+    <p class="hint">Anmeldung mit deinem Gemeindekonto – dieselbe wie bei „Meine Pads“. Entfernen: ⚙︎ → Sets &amp; Anordnung → × am Set.</p>
+  </section>
+
   <!-- Sets & Anordnung -->
   <section class="spage" data-page="sets" data-title="Sets & Anordnung">
     <p class="hint">Kacheln und Set-Knöpfe per Drag &amp; Drop sortieren, Sets ausblenden. Das Pedal folgt der Reihenfolge der Kacheln.</p>
@@ -273,6 +291,15 @@
   <div class="row"><button class="btn" id="syncLater">Später</button><button class="btn accent" id="syncGo">Jetzt laden</button></div>
 </div></div>
 
+<!-- Team-Sets auswählen -->
+<div class="sheet-bg" id="teamSheet"><div class="sheet">
+  <h2>👥 Team-Pads hinzufügen</h2>
+  <p id="teamSheetInfo"></p>
+  <div class="row"><button class="btn" id="teamAll">Alle auswählen</button></div>
+  <div class="synclist" id="teamList"></div>
+  <div class="row"><button class="btn" id="teamCancel">Abbrechen</button><button class="btn accent" id="teamAdd">Hinzufügen</button></div>
+</div></div>
+
 <!-- Pedal lernen -->
 <div class="sheet-bg" id="learnSheet"><div class="sheet">
   <h2>Pedal lernen</h2>
@@ -283,7 +310,7 @@
 
 <script>
 "use strict";
-const VERSION="1.9.0";
+const VERSION="2.0.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -352,13 +379,19 @@ const pads={"0":new Array(12).fill(null),"1":new Array(12).fill(null)};
 let remoteSets=load("apl.remoteSets",[]);
 const saveRemoteSets=()=>store("apl.remoteSets",remoteSets);
 const RCOLORS=["#7ed957","#f06292","#b388ff","#ffd54f","#4dd0e1","#ff8a65"];
-const isRemote=s=>String(s).startsWith("r/");
+let teamSets=load("apl.teamSets",[]);
+const saveTeamSets=()=>store("apl.teamSets",teamSets);
+const TCOLORS=["#4dd0e1","#b388ff","#7ed957","#ffd54f","#f06292","#ff8a65"];
+const isPersonal=s=>String(s).startsWith("r/"), isTeam=s=>String(s).startsWith("t/");
+const isRemote=s=>isPersonal(s)||isTeam(s);
 const setName=s=>isRemote(s)?String(s).slice(2):S.names[s];
-const setColor=s=>isRemote(s)?RCOLORS[Math.max(0,remoteSets.indexOf(String(s).slice(2)))%RCOLORS.length]:SETCOLORS[s];
+const setLabel=s=>(isTeam(s)?"👥 ":isPersonal(s)?"☁️ ":"")+setName(s);
+const srcOf=s=>isTeam(s)?"den Team-Ordner":"deinen OneDrive-Ordner";
+const setColor=s=>isPersonal(s)?RCOLORS[Math.max(0,remoteSets.indexOf(String(s).slice(2)))%RCOLORS.length]:isTeam(s)?TCOLORS[Math.max(0,teamSets.indexOf(String(s).slice(2)))%TCOLORS.length]:SETCOLORS[s];
 // Reihenfolge der Set-Knöpfe und ausgeblendete Sets (pro Gerät)
 let SETORDER=load("apl.setOrder",[]), HIDDEN=load("apl.hiddenSets",[]);
 const saveSetOrder=()=>store("apl.setOrder",SETORDER), saveHidden=()=>store("apl.hiddenSets",HIDDEN);
-const rawSetKeys=()=>["0","1",...remoteSets.map(f=>"r/"+f)];
+const rawSetKeys=()=>["0","1",...remoteSets.map(f=>"r/"+f),...teamSets.map(f=>"t/"+f)];
 function allSetKeys(){
   const raw=rawSetKeys().filter(k=>!HIDDEN.includes(k));
   const ord=SETORDER.filter(k=>raw.includes(k));
@@ -565,7 +598,7 @@ function switchSet(s){
   s=String(s); if(s===S.set||!pads[s])return;
   S.set=s; saveSettings(); applySetColor();
   if(current&&pads[s][current.key])play(s,current.key);   // gleichen Ton im anderen Set überblenden
-  render(); toast(setName(s));
+  render(); toast(setLabel(s));
 }
 
 // ================= Pedal =================
@@ -718,7 +751,8 @@ async function removeSetButton(k){
   const name=setName(k),b=document.querySelector(`#sets button[data-set="${CSS.escape(k)}"] .x`);
   if(b&&b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="?";toast(`Nochmal auf × tippen, um „${name}“ zu entfernen`);setTimeout(()=>{if(b){b.dataset.confirm="";b.textContent="×";}},3000);return;}
   if(current&&current.set===k)stopCurrent(0.5);
-  if(isRemote(k)){await removeRemoteSet(k.slice(2));toast(`„${name}“ vom Gerät gelöscht – kommt beim nächsten Abgleich wieder, solange der Ordner in OneDrive liegt`);}
+  if(isTeam(k)){await removeRemoteSet(k);toast(`„${name}“ entfernt – über ⚙︎ → Team-Pads jederzeit wieder hinzufügen`);}
+  else if(isPersonal(k)){await removeRemoteSet(k);toast(`„${name}“ vom Gerät gelöscht – kommt beim nächsten Abgleich wieder, solange der Ordner in OneDrive liegt`);}
   else{
     HIDDEN.push(k);saveHidden();
     try{const c=await caches.open(PADCACHE);for(let i=0;i<12;i++)await c.delete(bundledUrl(k,i));offlineCount=Math.max(0,offlineCount-12);}catch(e){}
@@ -746,14 +780,14 @@ function renderSetButtons(){
   const box=$("sets"); box.innerHTML="";
   for(const k of allSetKeys()){
     const b=document.createElement("button"); b.dataset.set=k;
-    const lbl=document.createElement("span");lbl.className="lbl";lbl.textContent=setName(k);b.appendChild(lbl);
+    const lbl=document.createElement("span");lbl.className="lbl";lbl.textContent=setLabel(k);b.appendChild(lbl);
     const x=document.createElement("span");x.className="x";x.textContent="×";x.setAttribute("aria-label",setName(k)+" entfernen");b.appendChild(x);
     x.addEventListener("pointerdown",e=>e.stopPropagation());
     x.addEventListener("click",e=>{e.stopPropagation();removeSetButton(k);});
     b.onclick=()=>{if(arranging)return;unlockAudio();switchSet(k);};
     b.addEventListener("pointerdown",e=>{if(arranging)startSetDrag(b,k,e);});
     dropTarget(b,async files=>{
-      if(isRemote(k)){toast(`„${setName(k)}“ wird über deinen OneDrive-Ordner befüllt`);return;}
+      if(isRemote(k)){toast(`„${setName(k)}“ wird über ${srcOf(k)} befüllt`);return;}
       if(k!==S.set)switchSet(k);
       await importFiles(k,files);
     });
@@ -772,7 +806,7 @@ function render(){
     el.classList.toggle("loading",loadingKey===id(set,i));
     el.querySelector(".name").textContent=p?p.name:"leer · halten zum Zuweisen";
   });
-  document.querySelectorAll("#sets button").forEach(b=>{const s=b.dataset.set;b.classList.toggle("on",s===set);const l=b.querySelector(".lbl");if(l)l.textContent=setName(s);});
+  document.querySelectorAll("#sets button").forEach(b=>{const s=b.dataset.set;b.classList.toggle("on",s===set);const l=b.querySelector(".lbl");if(l)l.textContent=setLabel(s);});
   const on=document.querySelector("#sets button.on"); if(on&&on.scrollIntoView)try{on.scrollIntoView({block:"nearest",inline:"nearest"});}catch(e){}
   $("xfInfo").textContent="Überblenden "+S.xfade.toFixed(1).replace(".",",")+" s";
 }
@@ -801,7 +835,7 @@ $("fileMulti").onchange=async e=>{
 // Mehrere Dateien: Tonart aus dem Dateinamen, sonst auf leere Tasten verteilen
 async function importFiles(set,files){
   if(!files.length)return;
-  if(isRemote(set)){toast(`„${setName(set)}“ wird über deinen OneDrive-Ordner befüllt – dort Dateien ändern`);return;}
+  if(isRemote(set)){toast(`„${setName(set)}“ wird über ${srcOf(set)} befüllt – dort Dateien ändern`);return;}
   toast(`Lade ${files.length} Datei(en) …`);
   let ok=0,auto=0,fail=0,skipped=0;const rest=[];
   for(const f of files){
@@ -828,7 +862,7 @@ function fillAssign(){
   $("assignPick").disabled=rem;
   $("assignRemove").disabled=!p||rem;
   $("assignRemove").textContent=!p?"Entfernen":(p.bundled?"Taste leeren":"Eigene Datei entfernen");
-  $("assignHint").textContent=rem?"Dieses Set kommt aus deinem OneDrive-Ordner „Meine Pads“. Dateien dort ändern – hier nur die Lautstärke.":p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ → Sets & Anordnung das Set auf Standard zurücksetzen.");
+  $("assignHint").textContent=rem?"Dieses Set kommt aus "+(isTeam(S.set)?"dem Team-Ordner":"deinem OneDrive-Ordner")+". Dateien dort ändern – hier nur die Lautstärke.":p&&p.bundled?"Mitgeliefertes Standard-Pad. „Datei wählen“ ersetzt es durch einen eigenen Sound.":(p?"Eigener Sound. Entfernen stellt das Standard-Pad wieder her.":"Leer. „Datei wählen“ oder in ⚙︎ → Sets & Anordnung das Set auf Standard zurücksetzen.");
 }
 $("assignPick").onclick=()=>{unlockAudio();$("fileOne").click();};
 $("fileOne").onchange=async e=>{
@@ -897,7 +931,7 @@ $("clearSetBtn").onclick=async()=>{
   if(btn.dataset.confirm!=="1"){btn.dataset.confirm="1";btn.textContent=isRemote(set)?"Wirklich löschen?":"Wirklich? Eigene Sounds werden gelöscht";setTimeout(()=>{btn.dataset.confirm="";btn.textContent=clearBtnLabel();},3500);return;}
   btn.dataset.confirm="";
   fadeAll(0.3);
-  if(isRemote(set)){await removeRemoteSet(set.slice(2));btn.textContent=clearBtnLabel();toast(`„${set.slice(2)}“ vom Gerät gelöscht – „Nach neuen Pads suchen“ lädt es wieder`);return;}
+  if(isRemote(set)){await removeRemoteSet(set);btn.textContent=clearBtnLabel();toast(`„${set.slice(2)}“ vom Gerät gelöscht`);return;}
   btn.textContent=clearBtnLabel();
   for(let k=0;k<12;k++){pads[set][k]=bundledPad(set,k);cache.delete(id(set,k));try{await dbDel("files",id(set,k));await dbDel("meta",id(set,k));}catch(e){}}
   render();updateStorage();toast(setName(set)+": Standard-Pads wiederhergestellt");
@@ -911,7 +945,7 @@ const MS_DEFAULT_CLIENT_ID="9798d7a7-5f76-47d2-aa17-84efb0f86119";            //
 const MS_DEFAULT_TENANT="f0ce23f1-a52e-4146-bb93-3bd2e8635baa";  // "consumers" = privates OneDrive, sonst Verzeichnis-ID (Mandant) des Geschäftskontos
 const msTenant=()=>(OD.tenant||MS_DEFAULT_TENANT||"consumers").trim();
 const msAuth=()=>`https://login.microsoftonline.com/${encodeURIComponent(msTenant())}/oauth2/v2.0`;
-const MS_SCOPES="openid profile offline_access Files.Read";
+const MS_SCOPES="openid profile offline_access Files.Read.All";   // .All: auch freigegebene Team-Ordner in SharePoint
 const GRAPH="https://graph.microsoft.com/v1.0";
 const OD=Object.assign({folder:"Meine Pads",clientId:"",tenant:""},load("apl.onedrive",{}));
 const saveOD=()=>store("apl.onedrive",OD);
@@ -942,7 +976,7 @@ function storeTokens(j,sessionStart){
   const now=Date.now();
   MST={at:j.access_token,atExp:now+(j.expires_in||3600)*1000-60000,rt:j.refresh_token||(MST&&MST.rt),
        rtExp:sessionStart?now+24*3600*1000-10*60000:(MST?MST.rtExp:now),
-       user:(j.id_token&&jwtName(j.id_token))||(MST&&MST.user)||""};
+       user:(j.id_token&&jwtName(j.id_token))||(MST&&MST.user)||"",scope:j.scope||(MST&&MST.scope)||""};
   saveMST();
 }
 // Rückkehr von der Microsoft-Anmeldung (…/ambientpad/?code=…&state=…)
@@ -990,14 +1024,8 @@ async function listChildren(path){
   while(url){const j=await graph(url);out.push(...(j.value||[]));url=j["@odata.nextLink"]||null;}
   return out;
 }
-async function downloadItem(itemId){
-  const j=await graph(`/me/drive/items/${encodeURIComponent(itemId)}?select=id,@microsoft.graph.downloadUrl`);
-  const url=j["@microsoft.graph.downloadUrl"];if(!url)throw new Error("Kein Download-Link");
-  const res=await fetch(url);                     // vorab freigegeben → ohne Anmelde-Header
-  if(!res.ok)throw new Error("HTTP "+res.status);
-  return res.arrayBuffer();
-}
 function setRemoteStatus(t){const el=$("remoteStatus");if(el)el.textContent=t;}
+function setTeamStatus(t){const el=$("teamStatus");if(el)el.textContent=t;}
 function updateAccountInfo(){
   const el=$("msAccount");if(!el)return;
   if(!msClientId())el.textContent="Noch keine Microsoft-Anwendungs-ID eingetragen (siehe „Erweitert“).";
@@ -1015,97 +1043,172 @@ function showInfoSheet(title,lines){
   $("syncGo").style.display="none";$("syncLater").textContent="OK";$("syncLater").disabled=false;
   $("syncSheet").classList.add("open");
 }
-async function checkRemote(interactive){
-  if(syncing)return;
-  if(!msClientId()){setRemoteStatus("");if(interactive)msLogin();return;}
-  if(!navigator.onLine){if(interactive)toast("Kein Internet");return;}
-  if(!msSessionValid()){
-    setRemoteStatus("Zum Suchen bitte mit Microsoft anmelden.");
-    if(interactive)msLogin("check");          // nur auf Knopfdruck – nie automatisch mitten im Gottesdienst
-    return;
+
+// ================= Team-Ordner (SharePoint) =================
+const TEAM_DEFAULT_URL="";   // Freigabe-Link zum Team-Ordner der Gemeinde (in ⚙︎ → Team-Pads änderbar)
+const TEAM=Object.assign({url:"",cache:null},load("apl.team",{}));
+const saveTeam=()=>store("apl.team",TEAM);
+const teamUrl=()=>(TEAM.url||TEAM_DEFAULT_URL||"").trim();
+const hasTeamScope=()=>!!(MST&&/Files\.Read\.All/i.test(MST.scope||""));
+// Browser-Adresse eines SharePoint-Ordners (…/AllItems.aspx?id=/sites/…) in eine direkte Adresse umwandeln
+function normalizeSpUrl(u){
+  try{const x=new URL(u);const idp=x.searchParams.get("id");if(idp&&/\.aspx$/i.test(x.pathname))return x.origin+encodeURI(idp);}catch(e){}
+  return u;
+}
+const shareId=u=>"u!"+btoa(unescape(encodeURIComponent(u))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+async function resolveTeamRoot(){
+  const url=teamUrl();
+  if(!url)throw Object.assign(new Error("Kein Link"),{status:0});
+  if(TEAM.cache&&TEAM.cache.url===url)return TEAM.cache;
+  const j=await graph(`/shares/${shareId(normalizeSpUrl(url))}/driveItem?$select=id,name,folder,parentReference`);
+  if(!j.folder)throw Object.assign(new Error("Kein Ordner"),{status:400});
+  TEAM.cache={url,driveId:j.parentReference.driveId,itemId:j.id,name:j.name};saveTeam();
+  return TEAM.cache;
+}
+async function listItemChildren(driveId,itemId){
+  let url=`/drives/${encodeURIComponent(driveId)}/items/${encodeURIComponent(itemId)}/children?$select=id,name,size,folder,file,cTag,eTag&$top=200`;
+  const out=[];
+  while(url){const j=await graph(url);out.push(...(j.value||[]));url=j["@odata.nextLink"]||null;}
+  return out;
+}
+function teamError(e){
+  if(e.status===0)return ["Kein Team-Link hinterlegt",["In ⚙︎ → Team-Pads den SharePoint-Link zum Team-Ordner einfügen."]];
+  if(e.status===401)return ["Anmeldung nötig",["Bitte erneut mit deinem Gemeindekonto anmelden."]];
+  if(e.status===403||e.status===404)return ["Team-Ordner nicht erreichbar",["Der Link ist ungültig oder dein Konto hat keinen Zugriff auf den Ordner.","Prüfe: Kannst du den Link im Browser mit deinem Gemeindekonto öffnen?","Ist in der App-Registrierung die Berechtigung „Files.Read.All“ hinzugefügt und die Administratorzustimmung erteilt?"]];
+  if(e.status===400)return ["Link zeigt nicht auf einen Ordner",["Bitte den Link zum Ordner selbst kopieren (in SharePoint: Ordner markieren → „Link kopieren“)."]];
+  return ["SharePoint gerade nicht erreichbar",["Bitte später erneut versuchen."]];
+}
+
+// ================= Gemeinsamer Abgleich (☁️ Meine Pads + 👥 Team-Pads) =================
+const newPlan=()=>({sets:[],downloads:[],removals:[],removeSets:[],bytes:0,unknown:[],dupes:[],teamAvailable:[],notes:[]});
+function sortAudio(items){return items.filter(x=>x.file&&AUDIO_EXT.test(x.name)).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true}));}
+// Vergleicht die Dateien eines Ordners mit dem, was auf dem Gerät liegt
+function diffFolder(plan,prefix,folder,files,driveId){
+  const setKey=prefix+folder,byKey=new Array(12).fill(null);
+  for(const f of files){const k=parseKey(f.name);if(k===null){plan.unknown.push(`${folder}/${f.name}`);continue;}if(byKey[k]){plan.dupes.push(`${folder}/${f.name}`);continue;}byKey[k]=f;}
+  const local=pads[setKey]||new Array(12).fill(null);
+  let nNew=0,nChg=0,nDel=0;
+  for(let k=0;k<12;k++){
+    const f=byKey[k],l=local[k],tag=f&&(f.cTag||f.eTag);
+    if(f&&(!l||l.sha!==tag)){plan.downloads.push({setKey,folder,k,src:prefix,file:{name:f.name,id:f.id,size:f.size||0,tag,driveId}});plan.bytes+=f.size||0;l?nChg++:nNew++;}
+    else if(!f&&l){plan.removals.push({setKey,k});nDel++;}
   }
-  setRemoteStatus("Prüfe OneDrive-Ordner …");
+  const list=prefix==="t/"?teamSets:remoteSets;
+  if(nNew||nChg||nDel)plan.sets.push({key:setKey,nNew,nChg,nDel,isNew:!list.includes(folder)});
+  return byKey.filter(Boolean);
+}
+async function scanPersonal(plan){
   const folder=OD.folder.trim().replace(/^\/+|\/+$/g,"");
   let dirs;
   try{dirs=(await listChildren(folder)).filter(x=>x.folder);}
   catch(e){
-    if(e.status===401){setRemoteStatus("Anmeldung abgelaufen.");if(interactive)msLogin("check");return;}
     if(e.status===404){
       let root=[];try{root=(await listChildren("")).filter(x=>x.folder).map(x=>x.name);}catch(_){}
-      const t=`Ordner „${folder}“ nicht in deinem OneDrive gefunden`;setRemoteStatus(t);
-      if(interactive)showInfoSheet(t,[root.length?`Ganz oben in deinem OneDrive liegen die Ordner: ${root.slice(0,15).join(", ")}${root.length>15?" …":""}`:"Dein OneDrive scheint leer zu sein – ist der Ordner schon hochgeladen (OneDrive-Symbol am PC zeigt einen grünen Haken)?",
-        "Liegt „Meine Pads“ in einem Unterordner, trage in ⚙︎ → Meine Pads bei „Ordner in OneDrive“ den ganzen Pfad ein, z. B. Musik/Meine Pads.",
-        MST&&MST.user?`Angemeldet ist: ${MST.user} – ist das das richtige Konto?`:""].filter(Boolean));
-      return;
+      return {error:[`Ordner „${folder}“ nicht in deinem OneDrive gefunden`,[root.length?`Ganz oben in deinem OneDrive liegen die Ordner: ${root.slice(0,15).join(", ")}${root.length>15?" …":""}`:"Dein OneDrive scheint leer zu sein – ist der Ordner schon hochgeladen?",
+        "Liegt „Meine Pads“ in einem Unterordner, trage in ⚙︎ → Meine Pads bei „Ordner in OneDrive“ den ganzen Pfad ein, z. B. Musik/Meine Pads.","Nutzt du nur Team-Pads, kannst du diesen Hinweis ignorieren.",
+        MST&&MST.user?`Angemeldet ist: ${MST.user}`:""].filter(Boolean)],notFound:true};
     }
-    const t="OneDrive gerade nicht erreichbar.";setRemoteStatus(t);if(interactive)toast(t);return;
+    return {error:["OneDrive gerade nicht erreichbar",["Bitte später erneut versuchen."]],status:e.status};
   }
-  if(!dirs.length){const t=`Ordner „${folder}“ gefunden, aber ohne Unterordner`;setRemoteStatus(t);
-    if(interactive)showInfoSheet(t,[`Die App macht aus jedem Unterordner ein Set. Lege z. B. „${folder}/Ambient Swells“ an und lege die MP3s dort hinein.`]);return;}
-  const plan={sets:[],downloads:[],removals:[],removeSets:[],bytes:0,unknown:[],dupes:[]};
   const seen=new Set();
   for(const d of dirs){
-    let files;
-    try{files=(await listChildren(`${folder}/${d.name}`)).filter(x=>x.file&&AUDIO_EXT.test(x.name)).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true}));}catch(e){continue;}
-    seen.add(d.name);
-    const setKey="r/"+d.name,byKey=new Array(12).fill(null);
-    for(const f of files){const k=parseKey(f.name);if(k===null){plan.unknown.push(`${d.name}/${f.name}`);continue;}if(byKey[k]){plan.dupes.push(`${d.name}/${f.name}`);continue;}byKey[k]=f;}
-    const local=pads[setKey]||new Array(12).fill(null);
-    let nNew=0,nChg=0,nDel=0;
-    for(let k=0;k<12;k++){
-      const f=byKey[k],l=local[k],tag=f&&(f.cTag||f.eTag);
-      if(f&&(!l||l.sha!==tag)){plan.downloads.push({setKey,folder:d.name,k,file:{name:f.name,id:f.id,size:f.size||0,tag}});plan.bytes+=f.size||0;l?nChg++:nNew++;}
-      else if(!f&&l){plan.removals.push({setKey,k});nDel++;}
-    }
-    if(nNew||nChg||nDel)plan.sets.push({name:d.name,nNew,nChg,nDel,isNew:!remoteSets.includes(d.name)});
+    let files;try{files=sortAudio(await listChildren(`${folder}/${d.name}`));}catch(e){continue;}
+    seen.add(d.name);diffFolder(plan,"r/",d.name,files,null);
   }
-  for(const f of remoteSets)if(!seen.has(f)){plan.removeSets.push(f);plan.sets.push({name:f,gone:true});}
+  for(const f of remoteSets)if(!seen.has(f)){plan.removeSets.push("r/"+f);plan.sets.push({key:"r/"+f,gone:true});}
+  return {ok:true,count:dirs.length};
+}
+// Team: nur bereits hinzugefügte Sets aktualisieren; neue Unterordner nur melden
+async function scanTeamUpdates(plan){
+  if(!teamUrl()||!teamSets.length&&!TEAM.cache)return {skipped:true};
+  let root,dirs;
+  try{root=await resolveTeamRoot();dirs=(await listItemChildren(root.driveId,root.itemId)).filter(x=>x.folder);}
+  catch(e){return {error:teamError(e)};}
+  const names=new Set(dirs.map(d=>d.name));
+  for(const d of dirs){
+    if(!teamSets.includes(d.name)){plan.teamAvailable.push(d.name);continue;}
+    let files;try{files=sortAudio(await listItemChildren(root.driveId,d.id));}catch(e){continue;}
+    diffFolder(plan,"t/",d.name,files,root.driveId);
+  }
+  for(const f of teamSets)if(!names.has(f)){plan.removeSets.push("t/"+f);plan.sets.push({key:"t/"+f,gone:true});}
+  return {ok:true};
+}
+async function ensureLogin(interactive,afterwards,needTeam){
+  if(!msClientId()){if(interactive)msLogin(afterwards);return false;}
+  if(!navigator.onLine){if(interactive)toast("Kein Internet");return false;}
+  if(!msSessionValid()||(needTeam&&!hasTeamScope())){
+    if(interactive)msLogin(afterwards);     // nur auf Knopfdruck – nie automatisch mitten im Gottesdienst
+    return false;
+  }
+  return true;
+}
+// origin: "auto" (Start), "personal" (Knopf in Meine Pads)
+async function checkRemote(interactive,origin="personal"){
+  if(syncing)return;
+  if(!(await ensureLogin(interactive,"check",false))){setRemoteStatus(msClientId()?"Zum Suchen mit Microsoft anmelden.":"");return;}
+  setRemoteStatus("Prüfe …");
+  const plan=newPlan();
+  const p=await scanPersonal(plan);
+  if(p.error){setRemoteStatus(p.error[0]);if(interactive&&origin==="personal"){showInfoSheet(...p.error);return;}}
+  const t=hasTeamScope()?await scanTeamUpdates(plan):{skipped:true};
+  if(t.error)setTeamStatus(t.error[0]);
   if(!plan.sets.length){
     remotePlan=null;$("settingsBtn").classList.remove("badge");
-    setRemoteStatus(`Alles aktuell (${remoteSets.length} Set${remoteSets.length===1?"":"s"}) · geprüft ${hhmm()}`+(plan.unknown.length?` · ${plan.unknown.length} Datei(en) ohne erkennbare Tonart`:""));
+    if(p.ok)setRemoteStatus(`Alles aktuell (${remoteSets.length} Set${remoteSets.length===1?"":"s"}) · geprüft ${hhmm()}`+(plan.unknown.length?` · ${plan.unknown.length} Datei(en) ohne erkennbare Tonart`:""));
+    if(t.ok)setTeamStatus(`Alles aktuell (${teamSets.length} Team-Set${teamSets.length===1?"":"s"})${plan.teamAvailable.length?` · ${plan.teamAvailable.length} weitere verfügbar`:""} · geprüft ${hhmm()}`);
     if(interactive){
-      if(plan.unknown.length&&!remoteSets.length)showInfoSheet("Keine Tonart erkannt",["Die Dateien wurden gefunden, aber in keinem Namen eine Tonart erkannt:",...plan.unknown.slice(0,8),"Namen bitte nach dem Schema „Key of A Pads.mp3“ vergeben."]);
-      else toast("OneDrive-Ordner: alles aktuell");
+      if(plan.unknown.length&&!remoteSets.length&&p.ok)showInfoSheet("Keine Tonart erkannt",["Die Dateien wurden gefunden, aber in keinem Namen eine Tonart erkannt:",...plan.unknown.slice(0,8),"Namen bitte nach dem Schema „Key of A Pads.mp3“ vergeben."]);
+      else toast("Alles aktuell"+(plan.teamAvailable.length?` · ${plan.teamAvailable.length} weitere Team-Sets unter ⚙︎ → Team-Pads`:""));
     }
     return;
   }
   remotePlan=plan;
-  setRemoteStatus(`Neues im OneDrive-Ordner gefunden · geprüft ${hhmm()}`);
+  setRemoteStatus(`Neues gefunden · geprüft ${hhmm()}`);
   // Nie mitten in der Wiedergabe aufpoppen – dann nur ein Punkt am ⚙︎-Knopf
   if(interactive||!current)showSyncSheet(plan); else $("settingsBtn").classList.add("badge");
 }
 function showSyncSheet(plan){
-  $("syncTitle").textContent="Neues im OneDrive-Ordner";$("syncGo").style.display="";$("syncLater").textContent="Später";
+  $("syncTitle").textContent="Neue Pads verfügbar";$("syncGo").style.display="";$("syncLater").textContent="Später";
   const list=$("syncList");list.innerHTML="";
   for(const st of plan.sets){
-    const d=document.createElement("div");
-    if(st.gone)d.textContent=`„${st.name}“ – im Ordner gelöscht, wird vom Gerät entfernt`;
+    const d=document.createElement("div"),name=setLabel(st.key);
+    if(st.gone)d.textContent=`„${name}“ – im Ordner gelöscht, wird vom Gerät entfernt`;
     else{const parts=[];if(st.nNew)parts.push(`${st.nNew} neu`);if(st.nChg)parts.push(`${st.nChg} geändert`);if(st.nDel)parts.push(`${st.nDel} entfernt`);
-      d.textContent=`„${st.name}“${st.isNew?" (neues Set)":""}: ${parts.join(", ")}`;}
+      d.textContent=`„${name}“${st.isNew?" (neues Set)":""}: ${parts.join(", ")}`;}
     list.appendChild(d);
   }
   const info=[];
   if(plan.downloads.length)info.push(`Download: ${plan.downloads.length} Datei(en), ${mb(plan.bytes)}. Danach offline verfügbar.`);
   if(plan.unknown.length)info.push(`Übersprungen (keine Tonart im Namen erkannt): ${plan.unknown.slice(0,4).join(", ")}${plan.unknown.length>4?" …":""}`);
   if(plan.dupes.length)info.push(`Doppelt belegt, übersprungen: ${plan.dupes.slice(0,3).join(", ")}${plan.dupes.length>3?" …":""}`);
+  if(plan.teamAvailable&&plan.teamAvailable.length)info.push(`${plan.teamAvailable.length} weitere Team-Set(s) verfügbar – hinzufügen unter ⚙︎ → Team-Pads.`);
   $("syncInfo").textContent=info.join(" ");
   $("syncGo").disabled=false;$("syncGo").textContent=plan.downloads.length?"Jetzt laden":"Übernehmen";
   $("syncLater").disabled=false;
   $("syncSheet").classList.add("open");
 }
-async function removeRemoteSet(folder){
-  const key="r/"+folder;
+async function removeRemoteSet(key){
+  const list=isTeam(key)?teamSets:remoteSets,folder=key.slice(2);
   if(current&&current.set===key)stopCurrent(0.5);
   for(let k=0;k<12;k++){cache.delete(id(key,k));try{await dbDel("files",id(key,k));await dbDel("meta",id(key,k));}catch(e){}}
-  remoteSets=remoteSets.filter(f=>f!==folder);saveRemoteSets();delete pads[key];
+  const i=list.indexOf(folder);if(i>=0)list.splice(i,1);
+  isTeam(key)?saveTeamSets():saveRemoteSets();delete pads[key];
   if(S.set===key){S.set=firstSet();saveSettings();applySetColor();}
   renderSetButtons();updateStorage();
 }
-async function applySync(){
-  const plan=remotePlan;if(!plan||syncing)return;
+async function downloadItem(itemId,driveId){
+  const base=driveId?`/drives/${encodeURIComponent(driveId)}`:"/me/drive";
+  const j=await graph(`${base}/items/${encodeURIComponent(itemId)}?select=id,@microsoft.graph.downloadUrl`);
+  const url=j["@microsoft.graph.downloadUrl"];if(!url)throw new Error("Kein Download-Link");
+  const res=await fetch(url);                     // vorab freigegeben → ohne Anmelde-Header
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  return res.arrayBuffer();
+}
+async function applySync(planArg){
+  const plan=planArg||remotePlan;if(!plan||syncing)return;
   syncing=true;$("syncGo").disabled=true;$("syncLater").disabled=true;
   let done=0,fail=0,quota=false,auth=false;
-  for(const f of plan.removeSets)await removeRemoteSet(f);
+  for(const k of plan.removeSets)await removeRemoteSet(k);
   for(const r of plan.removals){
     if(!pads[r.setKey])continue;
     if(current&&current.id===id(r.setKey,r.k))stopCurrent(0.5);
@@ -1114,10 +1217,11 @@ async function applySync(){
   }
   for(const d of plan.downloads){
     $("syncGo").textContent=`Lade ${done+fail+1}/${plan.downloads.length} …`;
-    $("syncInfo").textContent=`${d.folder} – ${d.file.name}`;
+    $("syncInfo").textContent=`${d.src==="t/"?"👥 ":"☁️ "}${d.folder} – ${d.file.name}`;
     try{
-      const data=await downloadItem(d.file.id);
-      if(!remoteSets.includes(d.folder)){remoteSets.push(d.folder);saveRemoteSets();ensureSetArrays();renderSetButtons();}
+      const data=await downloadItem(d.file.id,d.file.driveId);
+      const list=d.src==="t/"?teamSets:remoteSets;
+      if(!list.includes(d.folder)){list.push(d.folder);d.src==="t/"?saveTeamSets():saveRemoteSets();ensureSetArrays();renderSetButtons();}
       const old=pads[d.setKey][d.k];
       const meta={name:d.file.name.replace(/\.[^.]+$/,""),vol:old?.vol??0.85,remote:true,sha:d.file.tag,path:d.file.id};
       await dbPut("files",id(d.setKey,d.k),data);
@@ -1126,21 +1230,86 @@ async function applySync(){
       pads[d.setKey][d.k]=meta;cache.delete(id(d.setKey,d.k));done++;render();
     }catch(e){fail++;if(e&&e.name==="QuotaExceededError"){quota=true;break;}if(e&&e.status===401){auth=true;break;}}
   }
-  syncing=false;remotePlan=null;$("settingsBtn").classList.remove("badge");
+  syncing=false;if(plan===remotePlan)remotePlan=null;$("settingsBtn").classList.remove("badge");
   $("syncSheet").classList.remove("open");
   renderSetButtons();updateStorage();
   setRemoteStatus(`Abgeglichen ${hhmm()} · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}`);
-  toast(quota?"Speicher voll – nicht alle Pads geladen":auth?"Anmeldung abgelaufen – bitte erneut suchen":fail?`${done} geladen, ${fail} fehlgeschlagen – später erneut suchen`:`OneDrive abgeglichen${done?` · ${done} Pad(s) geladen`:""}`);
+  if(teamUrl())setTeamStatus(`${teamSets.length} Team-Set${teamSets.length===1?"":"s"} auf dem Gerät · ${hhmm()}`);
+  toast(quota?"Speicher voll – nicht alle Pads geladen":auth?"Anmeldung abgelaufen – bitte erneut suchen":fail?`${done} geladen, ${fail} fehlgeschlagen – später erneut suchen`:`Abgeglichen${done?` · ${done} Pad(s) geladen`:""}`);
 }
-$("syncGo").onclick=applySync;
+
+// ---- Team-Ordner durchsuchen und Sets auswählen ----
+let teamScan=null;   // {root, folders:[{name,id,files,bytes,added}]}
+async function scanTeamFolders(){
+  if(!teamUrl()){showInfoSheet(...teamError({status:0}));return;}
+  if(!(await ensureLogin(true,"team",true)))return;
+  setTeamStatus("Durchsuche Team-Ordner …");toast("Durchsuche Team-Ordner …");
+  let root,dirs;
+  try{TEAM.cache=null;root=await resolveTeamRoot();dirs=(await listItemChildren(root.driveId,root.itemId)).filter(x=>x.folder).sort((a,b)=>a.name.localeCompare(b.name,"de",{numeric:true}));}
+  catch(e){const [t,l]=teamError(e);setTeamStatus(t);showInfoSheet(t,l);return;}
+  const folders=[];
+  for(const d of dirs){
+    let files=[];try{files=sortAudio(await listItemChildren(root.driveId,d.id));}catch(e){}
+    const keyed=files.filter(f=>parseKey(f.name)!==null);
+    folders.push({name:d.name,id:d.id,files,count:new Set(keyed.map(f=>parseKey(f.name))).size,bytes:keyed.reduce((a,f)=>a+(f.size||0),0),added:teamSets.includes(d.name)});
+  }
+  teamScan={root,folders};
+  setTeamStatus(`${folders.length} Team-Set${folders.length===1?"":"s"} im Ordner „${root.name}“ · ${teamSets.length} auf dem Gerät`);
+  showTeamSheet();
+}
+function showTeamSheet(){
+  const list=$("teamList");list.innerHTML="";
+  if(!teamScan.folders.length){list.innerHTML="<div>Der Team-Ordner enthält noch keine Unterordner.</div>";}
+  for(const f of teamScan.folders){
+    const row=document.createElement("label");row.className="trow";
+    row.innerHTML=`<input type="checkbox" ${f.added?"checked disabled":""}><span><b></b><small></small></span>`;
+    row.querySelector("b").textContent="👥 "+f.name;
+    row.querySelector("small").textContent=f.added?"bereits auf diesem Gerät":f.count?`${f.count} Pads · ${mb(f.bytes)}`:"keine Pads mit erkennbarer Tonart";
+    const cb=row.querySelector("input");cb.dataset.name=f.name;if(!f.count&&!f.added)cb.disabled=true;
+    cb.onchange=updateTeamSheet;
+    list.appendChild(row);
+  }
+  $("teamSheetInfo").textContent=`Ordner „${teamScan.root.name}“ – wähle die Sets, die auf dieses Gerät sollen.`;
+  updateTeamSheet();
+  $("teamSheet").classList.add("open");
+}
+function selectedTeam(){return [...document.querySelectorAll("#teamList input:checked:not(:disabled)")].map(c=>teamScan.folders.find(f=>f.name===c.dataset.name));}
+function updateTeamSheet(){
+  const sel=selectedTeam(),bytes=sel.reduce((a,f)=>a+f.bytes,0);
+  $("teamAdd").disabled=!sel.length;
+  $("teamAdd").textContent=sel.length?`Hinzufügen (${sel.length} · ${mb(bytes)})`:"Hinzufügen";
+  const free=[...document.querySelectorAll("#teamList input:not(:disabled)")];
+  $("teamAll").textContent=free.length&&free.every(c=>c.checked)?"Keine auswählen":"Alle auswählen";
+}
+$("teamAll").onclick=()=>{const free=[...document.querySelectorAll("#teamList input:not(:disabled)")];const all=free.every(c=>c.checked);free.forEach(c=>c.checked=!all);updateTeamSheet();};
+$("teamCancel").onclick=()=>$("teamSheet").classList.remove("open");
+$("teamAdd").onclick=async()=>{
+  const sel=selectedTeam();if(!sel.length)return;
+  $("teamSheet").classList.remove("open");
+  const plan=newPlan();
+  for(const f of sel)diffFolder(plan,"t/",f.name,f.files,teamScan.root.driveId);
+  showSyncSheet(plan);
+  await applySync(plan);
+  if(sel.length&&teamSets.includes(sel[0].name)){switchSet("t/"+sel[0].name);}
+};
+
+$("syncGo").onclick=()=>applySync();
 $("syncLater").onclick=()=>{$("syncSheet").classList.remove("open");if(remotePlan)$("settingsBtn").classList.add("badge");};
 $("r_folder").value=OD.folder;$("r_folder").onchange=()=>{OD.folder=$("r_folder").value.trim()||"Meine Pads";saveOD();};
 $("r_tenant").value=OD.tenant;$("r_tenant").onchange=()=>{OD.tenant=$("r_tenant").value.trim();saveOD();MST=null;try{localStorage.removeItem("apl.mstoken");}catch(e){}updateAccountInfo();};
 $("r_client").value=OD.clientId;$("r_client").onchange=()=>{OD.clientId=$("r_client").value.trim();saveOD();updateAccountInfo();};
-$("r_check").onclick=()=>{OD.folder=$("r_folder").value.trim()||"Meine Pads";OD.clientId=$("r_client").value.trim();saveOD();$("settingsSheet").classList.remove("open");checkRemote(true);};
+$("r_check").onclick=()=>{OD.folder=$("r_folder").value.trim()||"Meine Pads";OD.clientId=$("r_client").value.trim();saveOD();$("settingsSheet").classList.remove("open");checkRemote(true,"personal");};
 $("r_login").onclick=()=>{OD.clientId=$("r_client").value.trim();saveOD();msLogin("check");};
 $("r_logout").onclick=()=>{MST=null;try{localStorage.removeItem("apl.mstoken");}catch(e){}updateAccountInfo();setRemoteStatus("Abgemeldet. Bereits geladene Sets bleiben auf dem Gerät.");};
-window.addEventListener("online",()=>{if(msSessionValid())checkRemote(false);});
+$("t_url").value=teamUrl();
+$("t_url").onchange=()=>{const v=$("t_url").value.trim();TEAM.url=v===TEAM_DEFAULT_URL?"":v;TEAM.cache=null;saveTeam();updateTeamInfo();};
+$("t_default").onclick=()=>{TEAM.url="";TEAM.cache=null;saveTeam();$("t_url").value=teamUrl();updateTeamInfo();toast(TEAM_DEFAULT_URL?"Standard-Link der Gemeinde eingesetzt":"Noch kein Standard-Link hinterlegt");};
+$("t_scan").onclick=()=>{const v=$("t_url").value.trim();if(v!==teamUrl()){TEAM.url=v===TEAM_DEFAULT_URL?"":v;TEAM.cache=null;saveTeam();}$("settingsSheet").classList.remove("open");scanTeamFolders();};
+function updateTeamInfo(){
+  $("t_default").style.display=TEAM_DEFAULT_URL&&TEAM.url?"":"none";
+  if(!$("teamStatus").textContent)setTeamStatus(teamUrl()?`${teamSets.length} Team-Set${teamSets.length===1?"":"s"} auf dem Gerät`:"Noch kein Team-Link hinterlegt.");
+}
+window.addEventListener("online",()=>{if(msSessionValid())checkRemote(false,"auto");});
 
 // ================= Standard-Pads offline speichern =================
 let offlineCount=0;
@@ -1174,7 +1343,8 @@ function settingsSummaries(){
   $("sum_sound").textContent=`Wechsel ${f(S.xfade)} · Fade Out ${f(S.fadeOut)} · Pads ${({90:"1½ Min.",150:"2½ Min.",240:"4 Min.",0:"ganz"})[S.maxLoop]||""}`;
   $("sum_onedrive").textContent=!msClientId()?"Nicht eingerichtet":msSessionValid()?`Angemeldet · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}${remotePlan?" · Neues verfügbar":""}`:`${remoteSets.length} Set${remoteSets.length===1?"":"s"} auf dem Gerät · nicht angemeldet`;
   document.querySelector('.mrow[data-go="onedrive"]').classList.toggle("badge",!!remotePlan);
-  $("sum_sets").textContent=allSetKeys().map(setName).join(", ")+(HIDDEN.length?` · ${HIDDEN.length} ausgeblendet`:"");
+  $("sum_team").textContent=teamUrl()?`${teamSets.length} Team-Set${teamSets.length===1?"":"s"} auf dem Gerät`:"Noch kein Team-Ordner hinterlegt";
+  $("sum_sets").textContent=allSetKeys().map(setLabel).join(", ")+(HIDDEN.length?` · ${HIDDEN.length} ausgeblendet`:"");
   $("sum_app").textContent="Version "+VERSION;
   try{navigator.storage.estimate().then(e=>{$("sum_app").textContent=`Version ${VERSION} · ${(e.usage/1048576).toFixed(0)} MB belegt`;});}catch(e){}
 }
@@ -1188,7 +1358,7 @@ function showSettingsPage(name){
 }
 document.querySelectorAll("#settingsSheet .mrow").forEach(r=>r.onclick=()=>showSettingsPage(r.dataset.go));
 $("setBack").onclick=()=>showSettingsPage("main");
-$("settingsBtn").onclick=()=>{showSettingsPage("main");updatePedalInfo();updateStorage();updateOfflineInfo();updateAccountInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
+$("settingsBtn").onclick=()=>{showSettingsPage("main");updateTeamInfo();updatePedalInfo();updateStorage();updateOfflineInfo();updateAccountInfo();$("clearSetBtn").textContent=clearBtnLabel();if(remotePlan){$("settingsSheet").classList.remove("open");showSyncSheet(remotePlan);return;}$("settingsSheet").classList.add("open");};
 $("settingsClose").onclick=()=>$("settingsSheet").classList.remove("open");
 for(const sh of ["assignSheet","settingsSheet"])$(sh).addEventListener("click",e=>{if(e.target===$(sh))$(sh).classList.remove("open");});
 const masterEl=$("master");masterEl.value=S.master;
@@ -1263,7 +1433,7 @@ async function forceUpdate(){
   for(const s of ["0","1"])for(let k=0;k<12;k++)pads[s][k]=bundledPad(s,k);
   for(const [key,v] of await dbAllMeta()){
     const i=key.lastIndexOf(":"),s=key.slice(0,i),k=+key.slice(i+1);
-    if(isRemote(s)&&v.remote){const f=s.slice(2);if(!remoteSets.includes(f)){remoteSets.push(f);saveRemoteSets();}ensureSetArrays();pads[s][k]={name:v.name,vol:v.vol??0.85,remote:true,sha:v.sha,path:v.path};continue;}
+    if(isRemote(s)&&v.remote){const f=s.slice(2),list=isTeam(s)?teamSets:remoteSets;if(!list.includes(f)){list.push(f);isTeam(s)?saveTeamSets():saveRemoteSets();}ensureSetArrays();pads[s][k]={name:v.name,vol:v.vol??0.85,remote:true,sha:v.sha,path:v.path};continue;}
     if(!pads[s])continue;
     if(v.hidden)pads[s][k]=null;
     else if(v.bundled)pads[s][k]=Object.assign(bundledPad(s,k),{vol:v.vol??0.85});
@@ -1274,8 +1444,9 @@ async function forceUpdate(){
   cacheBundledPads();
   updateAccountInfo();
   const after=await handleAuthRedirect();
-  if(after==="check")checkRemote(true);
-  else if(msSessionValid())checkRemote(false);
+  if(after==="check")checkRemote(true,"personal");
+  else if(after==="team")scanTeamFolders();
+  else if(msSessionValid())checkRemote(false,"auto");
   else setRemoteStatus(msClientId()?"Zum Suchen nach neuen Pads mit Microsoft anmelden.":"");
   registerSW();
 })();
