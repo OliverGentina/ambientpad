@@ -129,10 +129,17 @@
   .mrow{appearance:none;border:0;background:none;color:#fff;font:inherit;display:flex;align-items:center;gap:12px;padding:13px 14px;text-align:left;cursor:pointer;min-height:58px}
   .mrow+.mrow{border-top:1px solid var(--line)}
   .mrow:active{background:#1b2030}
+  a.mrow{text-decoration:none;color:#fff}
   .mi{width:30px;height:30px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
   .mt{flex:1;min-width:0;display:flex;flex-direction:column}
   .mt small{color:var(--dim);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mc{color:var(--dim);font-size:22px}
+  .mrow.feature{width:100%;border-radius:14px;margin-bottom:12px;background:linear-gradient(135deg,var(--accent),#ff7a3d);color:#1a1205;box-shadow:0 6px 18px rgba(255,140,40,.25)}
+  .mrow.feature:active{filter:brightness(.95);background:linear-gradient(135deg,var(--accent),#ff7a3d)}
+  .mrow.feature .mi{background:rgba(255,255,255,.35);font-size:18px}
+  .mrow.feature b{font-size:17px}
+  .mrow.feature small{color:rgba(26,18,5,.75)}
+  .mrow.feature .mc{color:#1a1205;opacity:.7}
   .mrow.badge .mi{box-shadow:0 0 0 2px var(--ok)}
   .group{background:var(--empty);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:12px}
   .hint{font-size:13px!important}
@@ -243,12 +250,12 @@
 
   <!-- Übersicht -->
   <section class="spage" data-page="main">
+    <button class="mrow feature" data-go="pco"><span class="mi">🎵</span><span class="mt"><b>Setlist aus Planning Center</b><small id="sum_pco"></small></span><span class="mc">›</span></button>
     <div class="menu">
       <button class="mrow" data-go="pedal"><span class="mi">🦶</span><span class="mt"><b>Pedal</b><small id="sum_pedal"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="sound"><span class="mi">🎚</span><span class="mt"><b>Übergänge &amp; Klang</b><small id="sum_sound"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="onedrive"><span class="mi">☁️</span><span class="mt"><b>Meine Pads (OneDrive)</b><small id="sum_onedrive"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="team"><span class="mi">👥</span><span class="mt"><b>Team-Pads</b><small id="sum_team"></small></span><span class="mc">›</span></button>
-      <button class="mrow" data-go="pco"><span class="mi">🎵</span><span class="mt"><b>Setlist (Planning Center)</b><small id="sum_pco"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="sets"><span class="mi">▦</span><span class="mt"><b>Sets &amp; Anordnung</b><small id="sum_sets"></small></span><span class="mc">›</span></button>
       <a class="mrow" href="anleitung.html" id="guideLink"><span class="mi">📖</span><span class="mt"><b>Anleitung</b><small>Schritt für Schritt mit Bildern</small></span><span class="mc">›</span></a>
       <button class="mrow" data-go="app"><span class="mi">ⓘ</span><span class="mt"><b>App &amp; Speicher</b><small id="sum_app"></small></span><span class="mc">›</span></button>
@@ -398,7 +405,7 @@
 
 <script>
 "use strict";
-const VERSION="2.3.2";
+const VERSION="2.4.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];

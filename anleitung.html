@@ -40,10 +40,12 @@
   ol.steps>li::before{content:counter(s);position:absolute;left:0;top:-2px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:15px}
   ol.steps>li:not(:last-child)::after{content:"";position:absolute;left:15.5px;top:34px;bottom:2px;width:1px;background:var(--line)}
   ul.dots{padding-left:20px;margin:8px 0 12px} ul.dots li{font-size:16.5px;line-height:1.5;margin-bottom:6px}
-  .ui{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:0 7px;font-weight:600;font-size:.94em;white-space:nowrap}
+  .ui{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:0 7px;font-weight:600;font-size:.94em;white-space:nowrap;max-width:100%;white-space:normal}
+  ol.steps b,ul.dots b,.account{overflow-wrap:anywhere}
   .ui.o{background:var(--accent);border-color:var(--accent);color:#fff}
   .ico{display:inline-block;vertical-align:-4px;width:20px;height:20px}
-  code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:#efebe4;border-radius:5px;padding:1px 5px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:#efebe4;border-radius:5px;padding:1px 5px;overflow-wrap:anywhere}
+  .inner>*{min-width:0}
   /* Hinweiskästen */
   .box{border-radius:14px;padding:13px 15px;margin:14px 0;font-size:15.5px;line-height:1.5;background:var(--card);border:1px solid var(--line)}
   .box b:first-child{display:block;margin-bottom:3px}
@@ -53,7 +55,9 @@
   .box p{font-size:15.5px;margin:0}
   /* Tabelle */
   table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--line);font-size:15.5px;margin:10px 0}
-  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+  td .ui{white-space:normal}
+  @media(max-width:420px){th,td{padding:9px 8px}}
   th{background:#faf8f4;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--dim)}
   tr:last-child td{border-bottom:0}
   /* Screenshots */
@@ -108,7 +112,7 @@
     <div>
       <p class="kicker">Gemeinschaft Chara · Lobpreis</p>
       <h1>AmbientPad Live<br>Kurzanleitung für iPhone &amp; iPad</h1>
-      <p class="lead">Teppich-Sounds (Pads) in allen 12 Tonarten, per Fingertipp oder Fußpedal. Die gemeinsamen Team-Pads liegen in SharePoint und kommen mit einem Tipp aufs Gerät. Danach laufen sie auch ohne Internet.</p>
+      <p class="lead">Teppich-Sounds (Pads) in allen 12 Tonarten, per Fingertipp oder Fußpedal, auf Wunsch direkt nach der Setlist aus Planning Center. Die gemeinsamen Team-Pads liegen in SharePoint und kommen mit einem Tipp aufs Gerät. Danach laufen sie auch ohne Internet.</p>
       <p style="color:var(--dim);font-size:15px">Zum Blättern wischen, die Pfeile unten antippen oder die Pfeiltasten benutzen. Ca. 10 Minuten.</p>
       <div class="toc" id="tocCover"></div>
     </div>
@@ -127,6 +131,7 @@
         <li><b>Mehrere Sound-Sets.</b> <i>Warm</i> und <i>Shimmer</i> sind schon dabei. Dazu kommen die <b>Team-Pads</b> aus SharePoint und auf Wunsch <b>eigene Pads</b> aus deinem OneDrive.</li>
         <li><b>Offline.</b> Was einmal geladen ist, spielt auch im Flugmodus.</li>
         <li><b>Fußpedal.</b> Mit einem Bluetooth-Umblätterpedal (z. B. Tavsou) bleiben beide Hände am Instrument.</li>
+        <li><b>Setlist aus Planning Center.</b> Lieder und Tonarten kommen direkt aus eurem Plan, das Pedal klickt von Lied zu Lied.</li>
       </ul>
       <div class="box tip"><b>Was du brauchst</b><p>iPhone oder iPad mit Safari, dein Gemeindekonto <b>vorname.nachname@chara.church</b> und für den Gottesdienst einen Lautsprecher oder ein Kabel zum Mischpult.</p></div>
     </div>
@@ -309,6 +314,48 @@
   </div>
 </section>
 
+<!-- Setlist -->
+<section class="page" data-title="Setlist aus Planning Center">
+  <div class="inner">
+    <div>
+      <p class="kicker">Planning Center <span class="tag">neu</span></p>
+      <h2>Setlist aus Planning Center</h2>
+      <p>Die App holt die Lieder mit ihren Tonarten aus <b>Planning Center Services</b>. Du klickst sie dann mit dem Pedal der Reihe nach durch.</p>
+      <ol class="steps">
+        <li><span class="ui">⚙︎</span> → oben der orange Knopf <span class="ui o">🎵 Setlist aus Planning Center</span> → <span class="ui o">Setlist aus Planning Center laden</span>.</li>
+        <li>Beim ersten Mal meldest du dich mit deinem <b>Planning-Center-Konto</b> an und erlaubst den Zugriff. Danach geht es zurück in die App, dort <span class="ui o">🔊 Start</span> tippen.</li>
+        <li>Wähle eine der <b>kommenden Veranstaltungen</b> oder füge einen <b>Link zum Plan</b> ein, z. B. <code>services.planningcenteronline.com/plans/…</code>, und tippe auf <span class="ui o">Laden</span>.</li>
+        <li>Über den Kacheln erscheint die Setlist-Leiste mit dem aktuellen Lied, seiner Tonart und dem nächsten Lied. Die passende Kachel ist schon ausgewählt.</li>
+      </ol>
+      <h3>Pedal im Setlist-Modus</h3>
+      <table>
+        <tr><th></th><th>kurz</th><th>lang</th></tr>
+        <tr><td><b>Links</b></td><td>nächstes Lied (ein laufendes Pad blendet direkt über)</td><td>Lied zurück</td></tr>
+        <tr><td><b>Rechts</b></td><td>Pad Start / Stopp</td><td>alles ausblenden</td></tr>
+      </table>
+      <p>Ohne Pedal blätterst du mit <span class="ui">‹</span> <span class="ui">›</span> in der Leiste. Ein Tipp auf die Leiste öffnet die ganze Liste, und ein Tipp auf ein Lied springt direkt dorthin.</p>
+      <h3>So liest die App die Tonarten</h3>
+      <ul class="dots">
+        <li><b>Moll</b> spielt das Pad der Paralleldur: Em → G, Am → C, F♯m → A.</li>
+        <li>Bei <b>Modulation</b> („D – E“) zählt die erste Tonart.</li>
+        <li>Lieder <b>ohne Tonart</b> stehen grau in der Liste und werden beim Blättern übersprungen.</li>
+      </ul>
+      <div class="box tip"><b>Plan geändert?</b><p>In der Liste oben auf <span class="ui">↻ Aktualisieren</span> tippen. <span class="ui">Andere Setlist</span> lädt einen anderen Plan, <span class="ui">Modus aus</span> schaltet das Pedal wieder auf alle 12 Tonarten.</p></div>
+      <div class="box"><b>Offline &amp; Anmeldung</b><p>Die geladene Setlist bleibt auf dem Gerät und funktioniert auch ohne Internet. Die Anmeldung bei Planning Center hält bis zu 90 Tage.</p></div>
+    </div>
+    <div class="shots" style="flex-direction:column;align-items:center">
+      <div class="shots two" style="width:100%">
+        <figure><img class="phone" src="anleitung/pco_menu.webp" alt="Einstellungen mit hervorgehobenem Knopf Setlist aus Planning Center" loading="lazy"><figcaption>Oben in ⚙︎: der orange Knopf.</figcaption></figure>
+        <figure><img class="phone" src="anleitung/pco_laden.webp" alt="Setlist laden: kommende Veranstaltungen oder Link" loading="lazy"><figcaption>Veranstaltung wählen oder Link einfügen.</figcaption></figure>
+      </div>
+      <div class="shots two" style="width:100%">
+        <figure><img class="phone" src="anleitung/pco_setlist.webp" alt="Setlist-Leiste über den Kacheln, Ab spielt" loading="lazy"><figcaption>Setlist-Leiste: Lied 2, A♭ spielt.</figcaption></figure>
+        <figure><img class="phone" src="anleitung/pco_liste.webp" alt="Liste aller Lieder mit Tonarten" loading="lazy"><figcaption>Ganze Liste mit Tonarten.</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- 10 Eigene Pads -->
 <section class="page" data-title="Eigene Pads (OneDrive)">
   <div class="inner">
@@ -421,6 +468,8 @@
         <tr><td>Microsoft fragt nach „Administratorgenehmigung“</td><td>Bitte der Lobpreisleitung melden. Das ist eine einmalige Freigabe in der Gemeinde-IT.</td></tr>
         <tr><td>Pedal reagiert nicht</td><td>Ist das Pedal in den iOS-Einstellungen unter Bluetooth verbunden? Steht es im Pfeiltasten-Modus? „Pedal lernen“ wiederholen.</td></tr>
         <tr><td>Alte Version / neue Funktion fehlt</td><td><span class="ui">⚙︎</span> → <span class="ui">ⓘ App &amp; Speicher</span> → <span class="ui">App aktualisieren</span>. Die Versionsnummer steht dort.</td></tr>
+        <tr><td>Planning Center: Anmeldung schlägt fehl</td><td>Fehlermeldung als Screenshot an die Lobpreisleitung schicken. Meist liegt es an der Registrierung der App bei Planning Center.</td></tr>
+        <tr><td>Setlist zeigt alte Lieder</td><td>Leiste antippen → <span class="ui">↻ Aktualisieren</span>.</td></tr>
         <tr><td>Speicher voll</td><td>Nicht benötigte Sets über „Anordnen“ → × entfernen. MP3 statt WAV verwenden.</td></tr>
       </table>
       <p style="margin-top:18px">Viel Freude beim Spielen! 🎹</p>
