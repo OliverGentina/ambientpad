@@ -393,7 +393,7 @@
 
 <script>
 "use strict";
-const VERSION="2.3.0";
+const VERSION="2.3.1";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1436,7 +1436,7 @@ window.addEventListener("online",()=>{if(msSessionValid())checkRemote(false,"aut
 
 
 // ================= Planning Center (Setlist) =================
-const PCO_DEFAULT_CLIENT_ID="";            // Client-ID der bei Planning Center registrierten App (⚙︎ → Planning Center → Erweitert)
+const PCO_DEFAULT_CLIENT_ID="75c62ac2b92e87a487723cfefdc07df4b4cf8b9de96c6cdd3ce32bbfeec635a8";            // Client-ID der bei Planning Center registrierten App (⚙︎ → Planning Center → Erweitert)
 const PCO_BASE="https://api.planningcenteronline.com";
 const PCO=Object.assign({clientId:""},load("apl.pco",{}));
 const savePCO=()=>store("apl.pco",PCO);
@@ -1474,7 +1474,8 @@ async function pcoFinish(q,pk){
     pcoStore(await pcoTokenRequest({grant_type:"authorization_code",code:q.get("code"),redirect_uri:redirectUri(),code_verifier:pk.verifier}));
     pcoWhoAmI();toast("Mit Planning Center verbunden");
     return "pco:"+(pk.afterwards||"setlist");
-  }catch(e){showInfoSheet("Planning-Center-Anmeldung fehlgeschlagen",[String(e.message||e).slice(0,300),"Ist bei der App in Planning Center die Redirect-URI genau „"+redirectUri()+"“ eingetragen?"]);return null;}
+  }catch(e){const m=String(e.message||e);showInfoSheet("Planning-Center-Anmeldung fehlgeschlagen",[m.slice(0,300),
+    /invalid_client|client authentication/i.test(m)?"Planning Center verlangt ein Secret – die App ist dort vermutlich als „vertraulich“ angelegt. In den App-Einstellungen bei Planning Center auf „öffentlich/Public“ (bzw. PKCE ohne Secret) umstellen.":"Ist bei der App in Planning Center die Callback-URL genau „"+redirectUri()+"“ eingetragen?"]);return null;}
 }
 async function pcoToken(){
   if(!PCT)return null;
