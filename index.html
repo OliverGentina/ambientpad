@@ -427,6 +427,17 @@ header #clickDots{flex:none;flex-wrap:nowrap}
 header #clickWidget.m5 #clickDots i{width:5px;height:5px}
 header #clickWidget.m5 #clickDots{gap:2px}
 header #clickWidget.m7 #clickDots{display:none}
+
+header #clickWidget{min-width:0}
+header #clickWidget .num{min-width:2.6em}
+@media (max-width:360px){
+  header{gap:5px;padding:6px 8px}
+  #clickPlay,#settingsBtn{width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important}
+  header #clickWidget b{font-size:20px}
+  header #clickWidget{gap:5px;padding:0 2px}
+  header #clickDots i{width:5px;height:5px}
+  #clickSoundWrap svg{display:none}
+}
 </style>
 </head>
 <body>
@@ -436,7 +447,6 @@ header #clickWidget.m7 #clickDots{display:none}
   <button id="clickWidget" aria-label="Tempo einstellen"><span id="clickDots"></span><span class="num"><b id="clickBpm"></b><small>BPM</small></span></button>
   <label id="clickSoundWrap" aria-label="Klick mit Ton"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><input type="checkbox" id="clickSound" role="switch"></label>
   <div class="sets" id="sets"></div>
-  <button class="btn" id="importBtn" aria-label="Sounds importieren" title="Sounds importieren" style="min-width:44px;font-size:22px;font-weight:500;padding-left:0;padding-right:0">+</button>
   <button class="btn" id="settingsBtn" aria-label="Einstellungen" style="min-width:44px">⚙︎</button>
 </header>
 <div id="status"><span>Audio: <b id="audioState" class="badc">aus</b> · Pedal: <b id="pedalState">–</b></span><span id="xfInfo" hidden></span></div>
@@ -624,6 +634,8 @@ header #clickWidget.m7 #clickDots{display:none}
   <section class="spage" data-page="sets" data-title="Sets & Anordnung">
     <p class="hint">Kacheln und Set-Knöpfe per Drag &amp; Drop sortieren, Sets ausblenden. Das Pedal folgt der Reihenfolge der Kacheln.</p>
     <div class="row"><button class="btn accent" id="arrangeBtn">Kacheln &amp; Sets anordnen</button></div>
+    <div class="row"><button class="btn" id="importBtn">＋ Eigene Sounds importieren …</button></div>
+    <p class="hint">Mehrere Dateien auf einmal: Die Tonart wird aus dem Dateinamen erkannt (z. B. „Key of A Pads.mp3“) und im Set der 1. Ebene abgelegt. Einzelne Kachel: lang drücken.</p>
     <div class="row"><button class="btn" id="orderReset">↺ Kachel-Reihenfolge zurücksetzen</button></div>
     <div class="group">
       <label>Name Set 1 (Standard: Warm)<input type="text" id="name0" maxlength="20"></label>
@@ -699,7 +711,7 @@ header #clickWidget.m7 #clickDots{display:none}
 
 <script>
 "use strict";
-const VERSION="3.0.0";
+const VERSION="3.0.1";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1292,7 +1304,7 @@ async function assignFile(set,k,file){
   pads[set][k]={name,vol};
   return probe.duration;
 }
-$("importBtn").onclick=()=>{unlockAudio();$("fileMulti").click();};
+$("importBtn").onclick=()=>{unlockAudio();$("settingsSheet").classList.remove("open");$("fileMulti").click();};
 $("fileMulti").onchange=async e=>{
   const files=[...e.target.files];e.target.value="";
   await importFiles(S.set,files);
@@ -2470,7 +2482,7 @@ async function forceUpdate(){
   };
   const ic=(n,cls="")=>`<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
   const $=id=>document.getElementById(id);
-  $("importBtn").innerHTML=ic("plus");
+
   $("settingsBtn").innerHTML=ic("gear");
   $("stopBtn").innerHTML='<svg class="ico f" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>';
   $("slPrev").innerHTML=ic("left"); $("slFwd").innerHTML=ic("right");
