@@ -326,16 +326,16 @@ input[type=range]{accent-color:var(--accent)}
 #unlock{overflow:hidden;isolation:isolate}
 #unlock>*:not(.nebel){position:relative;z-index:1}
 #unlock .nebel{position:absolute;inset:0;z-index:0;background:#000;filter:brightness(1.1);pointer-events:none}
-#unlock .nebel i{position:absolute;width:130%;aspect-ratio:1;border-radius:50%;filter:blur(46px);opacity:.83;mix-blend-mode:screen;will-change:transform}
-#unlock .nebel i:nth-child(1){left:-45%;top:-20%;background:radial-gradient(circle,#FF9F0A 0%,rgba(255,120,0,.45) 35%,transparent 68%);animation:n1 34s ease-in-out infinite alternate}
-#unlock .nebel i:nth-child(2){right:-55%;top:25%;background:radial-gradient(circle,#C2185B 0%,rgba(194,24,91,.4) 38%,transparent 68%);animation:n2 41s ease-in-out infinite alternate}
-#unlock .nebel i:nth-child(3){left:-30%;bottom:-45%;background:radial-gradient(circle,#4527A0 0%,rgba(69,39,160,.45) 40%,transparent 70%);animation:n3 47s ease-in-out infinite alternate}
-#unlock .nebel i:nth-child(4){left:5%;top:30%;width:90%;background:radial-gradient(circle,#FFD180 0%,rgba(255,209,128,.25) 35%,transparent 65%);opacity:.5;animation:n4 29s ease-in-out infinite alternate}
+#unlock .nebel i{position:absolute;width:130%;aspect-ratio:1;border-radius:50%;filter:blur(46px);opacity:.83;mix-blend-mode:screen;will-change:transform,opacity;backface-visibility:hidden;transform:translate3d(0,0,0);animation-timing-function:cubic-bezier(.45,0,.55,1)!important}
+#unlock .nebel i:nth-child(1){left:-45%;top:-20%;background:radial-gradient(circle,#FF9F0A 0%,rgba(255,120,0,.45) 35%,transparent 68%);animation:n1 110s ease-in-out infinite alternate}
+#unlock .nebel i:nth-child(2){right:-55%;top:25%;background:radial-gradient(circle,#C2185B 0%,rgba(194,24,91,.4) 38%,transparent 68%);animation:n2 135s ease-in-out infinite alternate}
+#unlock .nebel i:nth-child(3){left:-30%;bottom:-45%;background:radial-gradient(circle,#4527A0 0%,rgba(69,39,160,.45) 40%,transparent 70%);animation:n3 150s ease-in-out infinite alternate}
+#unlock .nebel i:nth-child(4){left:5%;top:30%;width:90%;background:radial-gradient(circle,#FFD180 0%,rgba(255,209,128,.25) 35%,transparent 65%);opacity:.5;animation:n4 95s ease-in-out infinite alternate}
 @media (min-aspect-ratio:3/4){#unlock .nebel i{width:95%}#unlock .nebel i:nth-child(4){width:65%}}
-@keyframes n1{0%{transform:translate(0,0) scale(1)}50%{transform:translate(18%,14%) scale(1.15)}100%{transform:translate(6%,30%) scale(.95)}}
-@keyframes n2{0%{transform:translate(0,0) scale(1.05)}50%{transform:translate(-22%,-10%) scale(.9)}100%{transform:translate(-8%,18%) scale(1.12)}}
-@keyframes n3{0%{transform:translate(0,0) scale(.95)}50%{transform:translate(20%,-16%) scale(1.1)}100%{transform:translate(32%,-4%) scale(1)}}
-@keyframes n4{0%{transform:translate(-10%,-6%) scale(.85);opacity:.33}100%{transform:translate(12%,8%) scale(1.1);opacity:.6}}
+@keyframes n1{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(18%,14%,0) scale(1.15)}100%{transform:translate3d(6%,30%,0) scale(.95)}}
+@keyframes n2{0%{transform:translate3d(0,0,0) scale(1.05)}50%{transform:translate3d(-22%,-10%,0) scale(.9)}100%{transform:translate3d(-8%,18%,0) scale(1.12)}}
+@keyframes n3{0%{transform:translate3d(0,0,0) scale(.95)}50%{transform:translate3d(20%,-16%,0) scale(1.1)}100%{transform:translate3d(32%,-4%,0) scale(1)}}
+@keyframes n4{0%{transform:translate3d(-10%,-6%,0) scale(.85);opacity:.33}100%{transform:translate3d(12%,8%,0) scale(1.1);opacity:.6}}
 #unlock.hidden .nebel i{animation-play-state:paused}
 #charaLogo{position:absolute!important;left:50%;top:23.6%;transform:translate(-50%,-50%);width:clamp(44px,12vw,64px);height:auto;opacity:.95;filter:drop-shadow(0 2px 10px rgba(0,0,0,.25));animation:logoIn 1.2s ease-out both}
 @keyframes logoIn{from{opacity:0;transform:translate(-50%,-40%)}to{opacity:.95;transform:translate(-50%,-50%)}}
@@ -571,7 +571,7 @@ input[type=range]{accent-color:var(--accent)}
 
 <script>
 "use strict";
-const VERSION="2.6.3";
+const VERSION="2.6.4";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
