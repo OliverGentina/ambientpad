@@ -522,7 +522,9 @@ input[type=range]{accent-color:var(--accent)}
   <!-- Planning Center -->
   <section class="spage" data-page="pco" data-title="Setlist">
     <p id="pcoAccount"></p>
-    <div class="row"><button class="btn accent" id="pco_load">Setlist aus Planning Center laden</button></div>
+    <div class="row"><button class="btn accent" id="pco_next">⚡ Nächste Veranstaltung laden</button></div>
+    <div class="row"><button class="btn" id="pco_load">Veranstaltung auswählen …</button></div>
+    <label class="trow"><input type="checkbox" id="pco_live"><span><b>Live-Abgleich</b><small>Änderungen im Plan (z. B. vom anderen iPad) alle 20 Sekunden übernehmen</small></span></label>
     <div class="group">
       <p id="pcoSlInfo"></p>
       <div class="row"><button class="btn" id="pco_list">Setlist anzeigen</button><button class="btn" id="pco_logout">Trennen</button></div>
@@ -576,6 +578,7 @@ input[type=range]{accent-color:var(--accent)}
 <!-- Setlist laden -->
 <div class="sheet-bg" id="pcoSheet"><div class="sheet">
   <h2>Setlist laden</h2>
+  <button class="btn accent" id="pcoNextBtn">⚡ Nächste Veranstaltung laden</button>
   <h3>Kommende Veranstaltungen</h3>
   <div class="synclist" id="pcoPlans"></div>
   <h3>Oder Link einfügen</h3>
@@ -587,7 +590,8 @@ input[type=range]{accent-color:var(--accent)}
 <div class="sheet-bg" id="slSheet"><div class="sheet">
   <div class="slhead"><h2 id="slSheetTitle">Setlist</h2><button class="linkbtn strong" id="slClose">Fertig</button></div>
   <p id="slSheetInfo"></p>
-  <div class="slnav"><button id="slReload">↻ Aktualisieren</button><button id="slOther">Andere Setlist</button><button id="slStart"></button></div>
+  <div class="slnav"><button id="slReload">↻ Aktualisieren</button><button id="slNext2">⚡ Nächste</button><button id="slOther">Andere</button><button id="slStart"></button></div>
+  <p class="hint" id="slSyncInfo"></p>
   <div class="synclist" id="slList"></div>
 </div></div>
 
@@ -610,7 +614,7 @@ input[type=range]{accent-color:var(--accent)}
 
 <script>
 "use strict";
-const VERSION="2.8.1";
+const VERSION="2.9.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1774,6 +1778,7 @@ function renderSetlist(){
   if($("slSheet").classList.contains("open"))renderSlList();
 }
 function renderSlList(){
+  updateSyncInfo();
   $("slSheetTitle").textContent=SL?SL.title:"Setlist";
   $("slSheetInfo").textContent=SL?[SL.date,`${SL.songs.length} Lieder`].filter(Boolean).join(" · "):"";
   const list=$("slList");list.innerHTML="";
@@ -1795,14 +1800,17 @@ async function pcoPlanFromId(planId){
   }
   throw Object.assign(new Error("Plan nicht gefunden"),{status:404});
 }
-async function pcoLoadPlan(stId,plan,stName){
-  const j=await pco(`/services/v2/service_types/${stId}/plans/${plan.id}/items?per_page=100&include=arrangement`);
+async function pcoFetchSongs(stId,planId){
+  const j=await pco(`/services/v2/service_types/${stId}/plans/${planId}/items?per_page=100&include=arrangement`);
   const arr={};for(const x of j.included||[])if(x.type==="Arrangement")arr[x.id]=x.attributes||{};
   const items=(j.data||[]).filter(x=>x.attributes&&x.attributes.item_type==="song").sort((a,b)=>(a.attributes.sequence||0)-(b.attributes.sequence||0));
-  const songs=items.map(x=>{const key=(x.attributes.key_name||"").trim(),p=pcoKey(key);const ar=arr[x.relationships&&x.relationships.arrangement&&x.relationships.arrangement.data&&x.relationships.arrangement.data.id]||{};
-    return {title:x.attributes.title||"Lied",key,k:p?p.k:null,minor:p?p.minor:false,bpm:ar.bpm?+ar.bpm:null,meter:meterOf(ar.meter)};});
+  return items.map(x=>{const key=(x.attributes.key_name||"").trim(),p=pcoKey(key);const ar=arr[x.relationships&&x.relationships.arrangement&&x.relationships.arrangement.data&&x.relationships.arrangement.data.id]||{};
+    return {id:x.id,title:x.attributes.title||"Lied",key,k:p?p.k:null,minor:p?p.minor:false,bpm:ar.bpm?+ar.bpm:null,meter:meterOf(ar.meter)};});
+}
+async function pcoLoadPlan(stId,plan,stName){
+  const songs=await pcoFetchSongs(stId,plan.id);
   const a=plan.attributes||{};
-  SL={planId:plan.id,stId,title:[stName,a.title||a.series_title].filter(Boolean).join(" · ")||"Setlist",date:a.dates||"",songs,pos:0,on:true};
+  SL={planId:plan.id,stId,stName,title:[stName,a.title||a.series_title].filter(Boolean).join(" · ")||"Setlist",date:a.dates||"",sort:a.sort_date||"",songs,pos:0,on:true,sig:songSig(songs),synced:Date.now()};
   const first=nextPlayable(-1,1);SL.pos=first>=0?first:0;saveSL();
   $("pcoSheet").classList.remove("open");
   if(!songs.length){showInfoSheet("Keine Lieder gefunden",["Dieser Plan enthält keine Lieder."]);SL.on=false;saveSL();renderSetlist();return;}
@@ -1860,11 +1868,67 @@ $("slClose").onclick=()=>$("slSheet").classList.remove("open");
 $("slStart").onclick=()=>{if(!SL)return;SL.on=!slOn();saveSL();if(slOn())goSong(SL.pos,{noPlay:true});renderSetlist();renderSlList();$("slSheet").classList.remove("open");toast(slOn()?"Setlist-Modus an – Pedal links = nächstes Lied":"Setlist-Modus aus – Pedal wieder durch alle Tonarten");};
 $("slReload").onclick=async()=>{
   if(!SL)return;$("slReload").disabled=true;
-  try{const {st,plan}=await pcoPlanFromId(SL.planId);const pos=SL.pos,on=SL.on;await pcoLoadPlan(st.id,plan,st.attributes.name);SL.pos=Math.min(pos,SL.songs.length-1);SL.on=on;saveSL();renderSetlist();renderSlList();}
-  catch(e){if(e.status===401)pcoLogin("reload");else toast(pcoErr(e));}
+  if(SL.stId)await pcoSync(true);
+  else{try{const {st,plan}=await pcoPlanFromId(SL.planId);const pos=SL.pos,on=SL.on;await pcoLoadPlan(st.id,plan,st.attributes.name);SL.pos=Math.min(pos,SL.songs.length-1);SL.on=on;saveSL();renderSetlist();renderSlList();}
+    catch(e){if(e.status===401)pcoLogin("reload");else toast(pcoErr(e));}}
   $("slReload").disabled=false;
 };
 $("slOther").onclick=()=>{$("slSheet").classList.remove("open");openPcoSheet();};
+// ---- Nächste Veranstaltung & Live-Abgleich ----
+const songSig=songs=>JSON.stringify(songs.map(s=>[s.id||s.title,s.key,s.bpm,s.meter]));
+async function pcoUpcoming(perType){
+  const types=((await pco("/services/v2/service_types?per_page=100")).data||[]),rows=[];
+  await Promise.all(types.map(async t=>{
+    try{const j=await pco(`/services/v2/service_types/${t.id}/plans?filter=future&order=sort_date&per_page=${perType}`);
+      for(const p of j.data||[])rows.push({st:t,plan:p,sort:p.attributes.sort_date||""});}catch(e){if(e.status===401)throw e;}
+  }));
+  return rows.sort((a,b)=>a.sort.localeCompare(b.sort));
+}
+async function pcoLoadNext(){
+  $("settingsSheet").classList.remove("open");
+  if(!pcoValid()&&!(await pcoToken())){pcoLogin("next");return;}
+  toast("Suche die nächste Veranstaltung …");
+  try{
+    const rows=await pcoUpcoming(3);
+    const r=rows.find(x=>(x.plan.attributes.items_count||1)>0)||rows[0];
+    if(!r){toast("Keine kommende Veranstaltung gefunden");return;}
+    await pcoLoadPlan(r.st.id,r.plan,r.st.attributes.name);
+    toast(`Nächste Veranstaltung: ${r.plan.attributes.dates||""} · ${SL.songs.length} Lieder`);
+  }catch(e){if(e.status===401)pcoLogin("next");else toast(pcoErr(e));}
+}
+// Änderungen aus Planning Center übernehmen, ohne laufende Pads zu stören
+let slSyncBusy=false;
+async function pcoSync(manual){
+  if(!SL||!SL.stId||slSyncBusy)return;
+  if(!navigator.onLine||!pcoValid()){if(manual)toast(navigator.onLine?"Bitte neu mit Planning Center verbinden":"Kein Internet");return;}
+  slSyncBusy=true;
+  try{
+    const songs=await pcoFetchSongs(SL.stId,SL.planId),sig=songSig(songs);
+    SL.synced=Date.now();
+    if(sig!==SL.sig){
+      const cur=SL.songs[SL.pos];
+      let pos=songs.findIndex(s=>cur&&(s.id&&s.id===cur.id));if(pos<0)pos=songs.findIndex(s=>cur&&s.title===cur.title);if(pos<0)pos=Math.min(SL.pos,songs.length-1);
+      const diff=songs.length-SL.songs.length;
+      SL.songs=songs;SL.sig=sig;SL.pos=Math.max(0,pos);saveSL();
+      const s=SL.songs[SL.pos];
+      if(s&&!current&&playable(SL.pos))setSelected(s.k);   // läuft ein Pad, bleibt es unangetastet – die neue Tonart gilt beim nächsten Lied
+      renderSetlist();if($("slSheet").classList.contains("open"))renderSlList();
+      toast("Setlist aktualisiert"+(diff>0?` · ${diff} Lied${diff>1?"er":""} neu`:diff<0?` · ${-diff} entfernt`:" · Änderungen übernommen"));
+    }else{saveSL();if(manual)toast("Setlist ist aktuell");}
+    updateSyncInfo();
+  }catch(e){if(manual){if(e.status===401)pcoLogin("reload");else toast(pcoErr(e));}}
+  slSyncBusy=false;
+}
+function updateSyncInfo(){const el=$("slSyncInfo");if(!el||!SL)return;
+  el.textContent=PCO.live!==false?`Live-Abgleich an · zuletzt ${SL.synced?new Date(SL.synced).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"–"}`:"Live-Abgleich aus";}
+setInterval(()=>{if(PCO.live!==false&&slOn()&&document.visibilityState==="visible")pcoSync(false);},20000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&PCO.live!==false&&slOn())pcoSync(false);});
+$("slNext2").onclick=()=>{$("slSheet").classList.remove("open");pcoLoadNext();};
+$("pcoNextBtn").onclick=()=>{$("pcoSheet").classList.remove("open");pcoLoadNext();};
+$("pco_next").onclick=()=>pcoLoadNext();
+$("pco_live").onchange=()=>{PCO.live=$("pco_live").checked;savePCO();updateSyncInfo();if(PCO.live&&slOn())pcoSync(false);};
+$("pco_live").checked=PCO.live!==false;
+
 function updatePcoInfo(){
   const el=$("pcoAccount");if(!el)return;
   el.textContent=!pcoClientId()?"Noch keine Client-ID eingetragen (siehe „Erweitert“).":pcoValid()?`Verbunden${PCT.user?" als "+PCT.user:""}`:"Nicht verbunden.";
@@ -2182,7 +2246,7 @@ async function forceUpdate(){
   const after=await handleAuthRedirect();
   if(after==="check")checkRemote(true,"personal");
   else if(after==="team")scanTeamFolders();
-  else if(after&&after.startsWith("pco:")){if(after==="pco:reload"&&SL)$("slReload").click();else openPcoSheet();if(msSessionValid())checkRemote(false,"auto");}
+  else if(after&&after.startsWith("pco:")){if(after==="pco:reload"&&SL)$("slReload").click();else if(after==="pco:next")pcoLoadNext();else openPcoSheet();if(msSessionValid())checkRemote(false,"auto");}
   else if(msSessionValid())checkRemote(false,"auto");
   else setRemoteStatus(msClientId()?"Zum Suchen nach neuen Pads mit Microsoft anmelden.":"");
   registerSW();
