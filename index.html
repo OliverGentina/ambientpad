@@ -560,7 +560,7 @@ input[type=range]{accent-color:var(--accent)}
 
 <script>
 "use strict";
-const VERSION="2.7.1";
+const VERSION="2.7.2";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -2013,41 +2013,35 @@ async function forceUpdate(){
 <script>
 document.getElementById("unlockVersion").textContent="Version "+VERSION;
 
-// Nebel hinter „Start“: kleine Zeichenfläche, weich hochskaliert. Ohne CSS-Filter → flimmerfrei auf iOS.
-// Nahtloser Loop: alle Bewegungen haben genau die Periode LOOP (30 s).
+// Nebel hinter „Start“: statisches Bild, einmal in voller Auflösung gezeichnet (mit feinem Rauschen gegen Farbstufen)
 (function(){
   const cv=document.getElementById("nebel"),un=document.getElementById("unlock");if(!cv||!cv.getContext)return;
   const ctx=cv.getContext("2d",{alpha:false});
-  const LOOP=30,SPEED=3,TAU=Math.PI*2,SCALE=6;      // 1 Zeichenpixel = 6 Bildschirmpunkte → von Natur aus weich
-  const B=[ // cx,cy (Anteil), r (Anteil der halben Diagonale), Farbe, Stärke, Bewegung ax,ay, Phase, Atmen
-    {x:.20,y:.12,r:.95,c:[255,159,10], a:.95,ax:.07,ay:.05,ph:0.0,br:.06},
-    {x:.98,y:.50,r:.95,c:[194,24,91],  a:.90,ax:.08,ay:.06,ph:2.1,br:.07},
-    {x:.22,y:.98,r:1.0,c:[69,39,160],  a:.95,ax:.07,ay:.05,ph:4.2,br:.05},
-    {x:.52,y:.46,r:.62,c:[255,209,128],a:.42,ax:.05,ay:.04,ph:1.0,br:.10}
+  const B=[ // cx,cy (Anteil), r (Anteil der halben Diagonale), Farbe, Stärke
+    {x:.22,y:.15,r:.95,c:[255,159,10], a:.95},
+    {x:.98,y:.50,r:.95,c:[194,24,91],  a:.90},
+    {x:.22,y:.98,r:1.0,c:[69,39,160],  a:.95},
+    {x:.52,y:.46,r:.62,c:[255,209,128],a:.42}
   ];
-  let W=0,H=0,D=1;
-  function size(){const w=Math.max(1,un.clientWidth),hh=Math.max(1,un.clientHeight);
-    W=Math.ceil(w/SCALE);H=Math.ceil(hh/SCALE);cv.width=W;cv.height=H;D=Math.hypot(W,H)/2;}
-  function frame(ms){
-    const t=(ms/1000%LOOP)/LOOP*TAU*SPEED;   // SPEED ganzzahlig → Loop bleibt nahtlos
+  function draw(){
+    const dpr=Math.min(window.devicePixelRatio||1,2),w=Math.max(1,un.clientWidth),hh=Math.max(1,un.clientHeight);
+    const W=Math.round(w*dpr),H=Math.round(hh*dpr);if(cv.width===W&&cv.height===H)return;
+    cv.width=W;cv.height=H;const D=Math.hypot(W,H)/2;
     ctx.globalCompositeOperation="source-over";ctx.fillStyle="#000";ctx.fillRect(0,0,W,H);
     ctx.globalCompositeOperation="lighter";
     for(const b of B){
-      const cx=(b.x+b.ax*Math.sin(t+b.ph))*W, cy=(b.y+b.ay*Math.cos(t+b.ph))*H;
-      const r=b.r*D*(1+b.br*Math.sin(t+b.ph*1.7));
-      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r),k=b.a*1.1;
-      g.addColorStop(0,`rgba(${b.c},${.62*k})`);g.addColorStop(.3,`rgba(${b.c},${.36*k})`);
-      g.addColorStop(.6,`rgba(${b.c},${.11*k})`);g.addColorStop(1,`rgba(${b.c},0)`);
+      const cx=b.x*W,cy=b.y*H,r=b.r*D,k=b.a*1.1,g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+      // viele weiche Stufen (Gauß-ähnlich) statt weniger harter Übergänge
+      for(let i=0;i<=12;i++){const p=i/12;g.addColorStop(p,`rgba(${b.c},${(.62*k*Math.exp(-4.2*p*p)*(1-p)).toFixed(4)})`);}
       ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
     }
+    // Dithering: ±1 Helligkeitsstufe Rauschen → keine sichtbaren Farbbänder
+    ctx.globalCompositeOperation="source-over";
+    const img=ctx.getImageData(0,0,W,H),d=img.data;
+    for(let i=0;i<d.length;i+=4){const n=(Math.random()-.5)*2.2;d[i]+=n;d[i+1]+=n;d[i+2]+=n;}
+    ctx.putImageData(img,0,0);
   }
-  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let raf=0;
-  function loop(ms){frame(ms);raf=requestAnimationFrame(loop);}
-  function run(){cancelAnimationFrame(raf);if(un.classList.contains("hidden"))return;if(reduce){frame(0);return;}raf=requestAnimationFrame(loop);}
-  size();frame(0);run();
-  addEventListener("resize",()=>{size();frame(performance.now());});
-  new MutationObserver(run).observe(un,{attributes:true,attributeFilter:["class"]});
+  draw();addEventListener("resize",()=>{clearTimeout(draw.t);draw.t=setTimeout(draw,200);});
 })();
 
 // „Ambient Pad“ schreibt sich selbst – wie das „hallo“ beim Einrichten eines iPhones
