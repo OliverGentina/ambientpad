@@ -358,6 +358,14 @@ input[type=range]{accent-color:var(--accent)}
 .tempo .bpm{display:flex;flex-direction:column;align-items:center}
 .tempo .bpm b{font:600 44px/1 -apple-system,"SF Pro Display",sans-serif;font-variant-numeric:tabular-nums}
 .tempo .bpm small{color:var(--label2);font-size:13px}
+/* Zweite Ebene: zwei Lautstärkeregler unten */
+#mixRow{display:grid;grid-template-columns:auto 1fr auto 1fr;align-items:center;gap:6px 10px}
+#mixRow[hidden]{display:none}
+#mixRow .mixlbl{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--label2);max-width:6.5em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#mixRow .mixlbl i{flex:none;width:9px;height:9px;border-radius:50%;background:var(--c)}
+#mixRow input{height:26px;min-width:0}
+@media (max-width:430px){#mixRow{grid-template-columns:auto 1fr}}
+.sets button.layer:not(.on){box-shadow:inset 0 -3px 0 var(--lc)}
 </style>
 </head>
 <body>
@@ -383,6 +391,10 @@ input[type=range]{accent-color:var(--accent)}
   <button class="btn accent" id="arrangeDone" style="min-height:52px;font-size:18px">Fertig</button>
 </div>
 <footer id="mainFooter">
+  <div id="mixRow" hidden>
+    <span class="mixlbl" id="mixAName"></span><input type="range" id="mixA" min="0" max="1" step="0.01" aria-label="Lautstärke Ebene 1">
+    <span class="mixlbl" id="mixBName"></span><input type="range" id="mixB" min="0" max="1" step="0.01" aria-label="Lautstärke Ebene 2">
+  </div>
   <div class="row">
     <span aria-hidden="true">🔈</span>
     <input class="grow" type="range" id="master" min="0" max="1" step="0.01" aria-label="Master-Lautstärke">
@@ -488,6 +500,10 @@ input[type=range]{accent-color:var(--accent)}
           <option value="90">1½ Minuten – am schnellsten</option><option value="150">2½ Minuten – empfohlen</option><option value="240">4 Minuten</option><option value="0">ganze Datei – langsam, viel Speicher</option>
         </select></label>
       <p class="hint">Lange Pads werden als nahtlose Schleife aus einem Ausschnitt gespielt. Kürzer = schnellerer Tonartwechsel, weniger Speicher.</p>
+    </div>
+    <div class="group">
+      <label><span>Zweite Ebene</span><select id="s_layer"></select></label>
+      <p class="hint">Spielt zusätzlich das Pad eines zweiten Sets in derselben Tonart. Mit den zwei Reglern unten über „Fade Out“ mischst du beide. Tonartwechsel, Setlist und Pedal steuern immer beide Ebenen gemeinsam.</p>
     </div>
   </section>
 
@@ -614,7 +630,7 @@ input[type=range]{accent-color:var(--accent)}
 
 <script>
 "use strict";
-const VERSION="2.9.0";
+const VERSION="2.10.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -649,7 +665,7 @@ function parseKey(filename){
 }
 
 // ================= Einstellungen =================
-const S=Object.assign({xfade:3,fadeIn:2,fadeOut:4,loopX:3,master:0.9,set:"0",names:["Warm","Shimmer"],maxLoop:150},load("apl.settings",{}));
+const S=Object.assign({xfade:3,fadeIn:2,fadeOut:4,loopX:3,master:0.9,set:"0",names:["Warm","Shimmer"],maxLoop:150,layer:"",mixA:1,mixB:0.6},load("apl.settings",{}));
 S.set=String(S.set);
 if(S.names[0]==="Set 1"&&S.names[1]==="Set 2")S.names=["Warm","Shimmer"];
 const saveSettings=()=>store("apl.settings",S);
@@ -815,7 +831,7 @@ function makeLoop(buf,sec){
 }
 
 // ---- Puffer-Cache: begrenzt nach Speicher, nicht nach Anzahl ----
-const MAX_CACHE_BYTES=200*1048576;
+const maxCacheBytes=()=>(S.layer?300:200)*1048576;   // mit zweiter Ebene doppelt so viele Pads im Spiel
 const cache=new Map();      // id → {buf, cfg, used, bytes}
 const pending=new Map();    // id → Promise<AudioBuffer>
 const cacheCfg=()=>S.loopX+"/"+S.maxLoop;
@@ -823,13 +839,14 @@ function protectedIds(){
   const s=new Set();
   for(const v of voices)s.add(v.id);
   s.add(id(S.set,selected));
+  const L=layerFor(S.set);if(L)s.add(id(L,selected));
   return s;
 }
 function evict(){
   const prot=protectedIds();
   let total=0;for(const e of cache.values())total+=e.bytes;
   const entries=[...cache.entries()].filter(([k])=>!prot.has(k)).sort((a,b)=>a[1].used-b[1].used);
-  while(total>MAX_CACHE_BYTES&&entries.length){const [k,e]=entries.shift();cache.delete(k);total-=e.bytes;}
+  while(total>maxCacheBytes()&&entries.length){const [k,e]=entries.shift();cache.delete(k);total-=e.bytes;}
 }
 async function getBuffer(set,k){
   const key=id(set,k),p=pads[set][k];
@@ -859,17 +876,29 @@ async function getBuffer(set,k){
   try{return await job;}finally{pending.delete(key);}
 }
 function prefetch(set,k){ if(pads[set][k]&&!pending.size)getBuffer(set,k).catch(()=>{}); }
+// Tonart vorbereiten – mit zweiter Ebene beide Sets nacheinander
+function prefetchKey(k){
+  prefetch(S.set,k);
+  const L=layerFor(S.set);if(!L||!pads[L][k])return;
+  const p=pending.get(id(S.set,k));
+  (p?p.catch(()=>{}):Promise.resolve()).then(()=>prefetch(L,k));
+}
 
 // ---- Wiedergabe ----
 // Jede Stimme: Quelle → Einblenden → Ausblenden → Notaus → Lautstärke → Master.
 // Jeder Regler wird höchstens EINMAL automatisiert – keine abgebrochenen Kurven,
 // dadurch keine Knackser beim schnellen Wechseln (auch nicht in Safari).
-const voices=new Set();   // {id,set,key,src,gIn,gOut,gKill,gVol,outEnd,killed}
+const voices=new Set();   // {id,set,key,src,gIn,gOut,gKill,gVol,outEnd,killed,layer}
+// Zweite Ebene: ein weiteres Set läuft in derselben Tonart mit (current.layer)
+const layerFor=set=>{const L=S.layer;return L&&L!==String(set)&&pads[L]&&allSetKeys().includes(L)?L:null;};
+const volMain=(set,k)=>{const p=pads[set][k];return p?p.vol*(layerFor(set)?S.mixA:1):0;};
+const volLayer=(set,k)=>{const p=pads[set][k];return p?p.vol*S.mixB:0;};
 let current=null;         // aktuell „spielende“ Stimme
 let selected=load("apl.selected",0);
 let loadingKey=null, request=0;
 
 function fadeOutVoice(v,dur){
+  if(v.layer)fadeOutVoice(v.layer,dur);
   dur=Math.max(dur,0.03);
   const now=ctx.currentTime+0.01;
   if(!v.outEnd){                         // erstes Ausblenden
@@ -880,27 +909,73 @@ function fadeOutVoice(v,dur){
   try{v.src.stop(v.outEnd+0.1);}catch(e){}
 }
 function setVoiceVolume(v,vol){ if(v)v.gVol.gain.setTargetAtTime(vol,ctx.currentTime,0.05); }
+function makeVoice(set,k,buf,vol,fade){
+  const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
+  const gIn=ctx.createGain(),gOut=ctx.createGain(),gKill=ctx.createGain(),gVol=ctx.createGain();
+  gIn.gain.value=0;gVol.gain.value=vol;
+  src.connect(gIn);gIn.connect(gOut);gOut.connect(gKill);gKill.connect(gVol);gVol.connect(master);
+  const start=ctx.currentTime+0.02;
+  gIn.gain.setValueCurveAtTime(CURVE_IN,start,Math.max(fade,0.03));
+  src.start(start);
+  const v={id:id(set,k),set,key:k,src,gIn,gOut,gKill,gVol,outEnd:0,killed:false,layer:null};
+  voices.add(v); src.onended=()=>{voices.delete(v);try{gVol.disconnect();}catch(e){}evict();};
+  return v;
+}
+// Zweite Ebene zu einer laufenden Stimme dazuholen (z. B. wenn sie erst nachgeladen werden muss)
+async function addLayer(v,fade){
+  const L=layerFor(v.set);if(!L||!pads[L][v.key]||v.layer)return;
+  let buf;try{buf=await getBuffer(L,v.key);}catch(e){return;}
+  if(current!==v||v.outEnd||v.layer||layerFor(v.set)!==L)return;
+  v.layer=makeVoice(L,v.key,buf,volLayer(L,v.key),fade);
+}
 async function play(set,k){
   const p=pads[set][k]; if(!p)return;
   const req=++request; loadingKey=id(set,k); render();
-  let buf;
-  try{buf=await getBuffer(set,k);}
+  const L=layerFor(set),hasL=!!(L&&pads[L][k]);
+  const canReuse=()=>hasL&&current&&current.layer&&current.layer.set===L&&current.layer.key===k&&!current.layer.outEnd;
+  let buf,bufL=null;
+  try{[buf,bufL]=await Promise.all([getBuffer(set,k),hasL&&!canReuse()?getBuffer(L,k).catch(()=>null):null]);}
   catch(e){ if(req===request){loadingKey=null;render();toast(`${KEYS[k][0]}: ${e.message==="Datei fehlt"?"Datei fehlt – bitte neu laden":"Datei konnte nicht gelesen werden"}`);} return; }
   if(req!==request)return;          // inzwischen etwas anderes angefordert
   ensureCtx();
-  const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
-  const gIn=ctx.createGain(),gOut=ctx.createGain(),gKill=ctx.createGain(),gVol=ctx.createGain();
-  gIn.gain.value=0;gVol.gain.value=p.vol;
-  src.connect(gIn);gIn.connect(gOut);gOut.connect(gKill);gKill.connect(gVol);gVol.connect(master);
-  const start=ctx.currentTime+0.02;
-  gIn.gain.setValueCurveAtTime(CURVE_IN,start,Math.max(current?S.xfade:S.fadeIn,0.03));
-  src.start(start);
-  const v={id:id(set,k),set,key:k,src,gIn,gOut,gKill,gVol,outEnd:0,killed:false};
-  voices.add(v); src.onended=()=>{voices.delete(v);try{gVol.disconnect();}catch(e){}evict();};
+  const fade=current?S.xfade:S.fadeIn;
+  const v=makeVoice(set,k,buf,volMain(set,k),fade);
+  if(canReuse()){v.layer=current.layer;current.layer=null;}      // gleiche zweite Ebene einfach weiterlaufen lassen
+  else if(bufL)v.layer=makeVoice(L,k,bufL,volLayer(L,k),fade);
   if(current)fadeOutVoice(current,S.xfade);
   current=v; loadingKey=null; render();
+  if(hasL&&!v.layer)addLayer(v,fade);
+  if(L&&!hasL)toast(`${KEYS[k][0]} ist in „${setName(L)}“ nicht belegt – nur „${setName(set)}“`);
   // die in Pedal-Richtung nächste Tonart schon vorbereiten
-  setTimeout(()=>{ if(current===v){const nk=ORDER[(ORDER.indexOf(selected)+1)%12];prefetch(S.set,nk);} },Math.max(S.xfade,1)*1000+500);
+  setTimeout(()=>{ if(current===v){const nk=ORDER[(ORDER.indexOf(selected)+1)%12];prefetchKey(nk);} },Math.max(S.xfade,1)*1000+500);
+}
+// Mischverhältnis auf die laufenden Stimmen anwenden
+function applyMix(){
+  if(!ctx||!current)return;
+  setVoiceVolume(current,volMain(current.set,current.key));
+  if(current.layer)setVoiceVolume(current.layer,volLayer(current.layer.set,current.layer.key));
+}
+// Zweite Ebene umstellen, auch während ein Pad läuft
+function setLayer(L){
+  S.layer=L||"";saveSettings();
+  if(current&&ctx){
+    if(current.layer&&current.layer.set!==layerFor(current.set)){fadeOutVoice(current.layer,S.xfade);current.layer=null;}
+    applyMix();addLayer(current,S.xfade);
+  }
+  renderMix();render();
+}
+function renderMix(){
+  const L=layerFor(S.set);
+  $("mixRow").hidden=!S.layer;
+  const lbl=(el,s,txt)=>{el.innerHTML="";const i=document.createElement("i");i.style.setProperty("--c",s?setColor(s):"var(--label2)");el.appendChild(i);el.appendChild(document.createTextNode(txt));el.title=txt;};
+  lbl($("mixAName"),S.set,setName(S.set));
+  lbl($("mixBName"),S.layer&&pads[S.layer]?S.layer:null,!S.layer||!pads[S.layer]?"–":L?setName(L):"gleiches Set");
+  $("mixA").value=S.mixA;$("mixB").value=S.mixB;$("mixB").disabled=!L;
+  const sel=$("s_layer");if(sel){
+    sel.innerHTML="";const o=new Option("Aus","");sel.appendChild(o);
+    for(const k of allSetKeys())sel.appendChild(new Option(setLabel(k),k));
+    sel.value=allSetKeys().includes(S.layer)?S.layer:"";
+  }
 }
 function stopCurrent(dur){ request++; loadingKey=null; if(current){fadeOutVoice(current,dur);current=null;} render(); }
 function fadeAll(dur){ request++; loadingKey=null; if(ctx)for(const v of voices)fadeOutVoice(v,dur); current=null; render(); }
@@ -912,12 +987,12 @@ function toggleKey(k){
   if(!pads[S.set][k]){toast(`${KEYS[k][0]} ist in „${setName(S.set)}“ nicht belegt`);return;}
   play(S.set,k);
 }
-function setSelected(k){ selected=((k%12)+12)%12; store("apl.selected",selected); render(); clearTimeout(setSelected.t); setSelected.t=setTimeout(()=>prefetch(S.set,selected),250); }
+function setSelected(k){ selected=((k%12)+12)%12; store("apl.selected",selected); render(); clearTimeout(setSelected.t); setSelected.t=setTimeout(()=>prefetchKey(selected),250); }
 function switchSet(s){
   s=String(s); if(s===S.set||!pads[s])return;
   S.set=s; saveSettings(); applySetColor();
   if(current&&pads[s][current.key])play(s,current.key);   // gleichen Ton im anderen Set überblenden
-  render(); toast(setLabel(s));
+  render(); renderMix(); toast(setLabel(s)+(layerFor(s)?` + ${setName(layerFor(s))}`:""));
 }
 
 // ================= Pedal =================
@@ -1092,6 +1167,7 @@ async function removeSetButton(k){
     toast(`„${name}“ ausgeblendet – zurückholen über ⚙︎ → Sets & Anordnung`);
   }
   if(S.set===k){S.set=firstSet();saveSettings();applySetColor();}
+  if(S.layer===k)setLayer("");
   renderSetButtons();updateHiddenBtn();updateStorage();
 }
 function updateHiddenBtn(){
@@ -1116,7 +1192,7 @@ function renderSetButtons(){
   for(const k of allSetKeys()){
     const b=document.createElement("button"); b.dataset.set=k;
     const cat=symCat(k);if(cat){b.classList.add("mode-"+SYM[cat].mode);b.insertAdjacentHTML("beforeend",setSymbol(k,17));}
-    b.title=setLabel(k);b.setAttribute("aria-label",setLabel(k));
+    b.title=setLabel(k);b.setAttribute("aria-label",setLabel(k));b.style.setProperty("--lc",setColor(k));
     const lbl=document.createElement("span");lbl.className="lbl";lbl.textContent=setName(k);b.appendChild(lbl);
     const x=document.createElement("span");x.className="x";x.textContent="×";x.setAttribute("aria-label",setName(k)+" entfernen");b.appendChild(x);
     x.addEventListener("pointerdown",e=>e.stopPropagation());
@@ -1131,7 +1207,7 @@ function renderSetButtons(){
     box.appendChild(b);
   }
   applySetOrder();
-  render();
+  render();renderMix();
 }
 function render(){
   const set=S.set;
@@ -1143,7 +1219,8 @@ function render(){
     el.classList.toggle("loading",loadingKey===id(set,i));
     el.querySelector(".name").textContent=p?p.name:"leer · halten zum Zuweisen";
   });
-  document.querySelectorAll("#sets button").forEach(b=>{const s=b.dataset.set;b.classList.toggle("on",s===set);const l=b.querySelector(".lbl");if(l)l.textContent=setName(s);});
+  const lay=layerFor(set);
+  document.querySelectorAll("#sets button").forEach(b=>{const s=b.dataset.set;b.classList.toggle("on",s===set);b.classList.toggle("layer",s===lay);const l=b.querySelector(".lbl");if(l)l.textContent=setName(s);});
   const on=document.querySelector("#sets button.on"); if(on&&on.scrollIntoView)try{on.scrollIntoView({block:"nearest",inline:"nearest"});}catch(e){}
   updateSetsFade();
   $("xfInfo").textContent="Überblenden "+S.xfade.toFixed(1).replace(".",",")+" s";
@@ -1223,7 +1300,7 @@ $("assignRemove").onclick=async()=>{
 $("assignVol").oninput=e=>{
   const p=pads[S.set][assignKey];if(!p)return;p.vol=+e.target.value;
   $("assignVolVal").textContent=Math.round(p.vol*100)+" %";
-  if(current&&current.id===id(S.set,assignKey))setVoiceVolume(current,p.vol);
+  applyMix();
   dbPut("meta",id(S.set,assignKey),p.bundled?{bundled:true,vol:p.vol}:p.remote?{name:p.name,vol:p.vol,remote:true,sha:p.sha,path:p.path}:{name:p.name,vol:p.vol}).catch(()=>{});
 };
 $("assignClose").onclick=()=>$("assignSheet").classList.remove("open");
@@ -2138,7 +2215,7 @@ function settingsSummaries(){
   const f=v=>v.toFixed(1).replace(".",",")+" s";
   const isStd=P.left.length>1;
   $("sum_pedal").textContent=isStd?"Standard (Pfeiltasten, Bild↑/↓) · noch nicht gelernt":`Links ${keyName(P.left[0])} · Rechts ${keyName(P.right[0])} · ${P.hold?"lang drücken erkannt":"Doppeltipp-Modus"}`;
-  $("sum_sound").textContent=`Wechsel ${f(S.xfade)} · Fade Out ${f(S.fadeOut)} · Pads ${({90:"1½ Min.",150:"2½ Min.",240:"4 Min.",0:"ganz"})[S.maxLoop]||""}`;
+  $("sum_sound").textContent=`Wechsel ${f(S.xfade)} · Fade Out ${f(S.fadeOut)} · Pads ${({90:"1½ Min.",150:"2½ Min.",240:"4 Min.",0:"ganz"})[S.maxLoop]||""}${S.layer&&pads[S.layer]?" · 2. Ebene "+setName(S.layer):""}`;
   $("sum_onedrive").textContent=!msClientId()?"Nicht eingerichtet":msSessionValid()?`Angemeldet · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}${remotePlan?" · Neues verfügbar":""}`:`${remoteSets.length} Set${remoteSets.length===1?"":"s"} auf dem Gerät · nicht angemeldet`;
   document.querySelector('.mrow[data-go="onedrive"]').classList.toggle("badge",!!remotePlan);
   $("sum_click").textContent=`${Math.round(CLICK.bpm)} BPM · ${CLICK.meter===6?"6/8":CLICK.meter+"/"+(CLICK.meter>=6?8:4)} · ${{visual:"nur Anzeige",split:"Split",mix:"gemischt"}[CLICK.out]}${clickOn?" · läuft":""}`;
@@ -2163,6 +2240,10 @@ $("settingsClose").onclick=()=>$("settingsSheet").classList.remove("open");
 for(const sh of ["assignSheet","settingsSheet"])$(sh).addEventListener("click",e=>{if(e.target===$(sh))$(sh).classList.remove("open");});
 const masterEl=$("master");masterEl.value=S.master;
 masterEl.oninput=()=>{S.master=+masterEl.value;saveSettings();if(master)master.gain.setTargetAtTime(S.master,ctx.currentTime,0.03);};
+$("mixA").oninput=e=>{S.mixA=+e.target.value;saveSettings();applyMix();};
+$("mixB").oninput=e=>{S.mixB=+e.target.value;saveSettings();applyMix();};
+$("s_layer").onchange=e=>{unlockAudio();setLayer(e.target.value);toast(e.target.value?`Zweite Ebene: ${setName(e.target.value)}`:"Zweite Ebene aus");};
+renderMix();
 $("fadeAllBtn").onclick=()=>fadeAll(S.fadeOut);
 $("stopBtn").onclick=()=>fadeAll(0.15);
 async function updateStorage(){
