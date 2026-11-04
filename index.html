@@ -217,7 +217,7 @@ header{gap:10px}
 .sets button.on{background:#636366;opacity:1;box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04)}
 .sets button+button:not(.on)::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:1px;background:var(--sep)}
 .sets button.on+button::before{display:none}
-#importBtn,#settingsBtn{min-width:40px;width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--fill);color:var(--accent)}
+#settingsBtn{min-width:40px;width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--fill);color:var(--accent)}
 #status{font-size:13px;color:var(--label2);margin-top:-6px;padding:0 4px}
 
 /* ---- Kacheln: Inset-Karten, SF Pro Display ---- */
@@ -322,7 +322,8 @@ input[type=range]{accent-color:var(--accent)}
 #unlockBtn{border-radius:999px;min-height:56px;padding:14px 34px;font-size:20px;display:inline-flex;gap:10px;align-items:center}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-.sheet .row .btn{white-space:nowrap;font-size:16px;padding-left:12px;padding-right:12px}
+.sheet .row .btn{font-size:16px;padding-left:14px;padding-right:14px;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+#teamSheet .row .btn,#syncSheet .row .btn{white-space:nowrap}
 #slSheet .slnav button{font-size:14px;padding:7px 10px}
 
 /* ================= Start-Bildschirm: Nebel, Logo, „Ambient Pad“-Schriftzug ================= */
@@ -438,6 +439,10 @@ header #clickWidget .num{min-width:2.6em}
   header #clickDots i{width:5px;height:5px}
   #clickSoundWrap svg{display:none}
 }
+
+#symGroup .seg{display:none}
+.group .ghead{font-size:17px;font-weight:600}
+.symcat>b{font-size:15px;font-weight:500;color:var(--label2)}
 </style>
 </head>
 <body>
@@ -632,7 +637,7 @@ header #clickWidget .num{min-width:2.6em}
 
   <!-- Sets & Anordnung -->
   <section class="spage" data-page="sets" data-title="Sets & Anordnung">
-    <p class="hint">Kacheln und Set-Knöpfe per Drag &amp; Drop sortieren, Sets ausblenden. Das Pedal folgt der Reihenfolge der Kacheln.</p>
+    <p class="hint">Kacheln und Sets per Ziehen sortieren, Sets entfernen. Das Pedal folgt der Reihenfolge der Kacheln.</p>
     <div class="row"><button class="btn accent" id="arrangeBtn">Kacheln &amp; Sets anordnen</button></div>
     <div class="row"><button class="btn" id="importBtn">＋ Eigene Sounds importieren …</button></div>
     <p class="hint">Mehrere Dateien auf einmal: Die Tonart wird aus dem Dateinamen erkannt (z. B. „Key of A Pads.mp3“) und im Set der 1. Ebene abgelegt. Einzelne Kachel: lang drücken.</p>
@@ -643,8 +648,8 @@ header #clickWidget .num{min-width:2.6em}
     </div>
     <div class="row"><button class="btn" id="clearSetBtn">Set auf Standard zurücksetzen</button></div>
     <div class="group" id="symGroup">
-      <h3>Darstellung der Set-Knöpfe</h3>
-      <p class="hint">Ein Symbol pro Kategorie. Es erscheint in der Farbe des jeweiligen Sets. Bei „Nur Symbol“ zeigt das gewählte Set zusätzlich seinen Namen.</p>
+      <b class="ghead">Symbole der Sets</b>
+      <p class="hint">Ein Symbol pro Kategorie – in der Farbe des jeweiligen Sets. Es steht in der Set-Auswahl und unten vor dem Namen der Ebene.</p>
       <div class="symcat" data-cat="personal"><b>Meine Pads (OneDrive)</b><div class="shapes"></div><div class="seg"></div></div>
       <div class="symcat" data-cat="team"><b>Team-Pads</b><div class="shapes"></div><div class="seg"></div></div>
     </div>
@@ -711,7 +716,7 @@ header #clickWidget .num{min-width:2.6em}
 
 <script>
 "use strict";
-const VERSION="3.0.1";
+const VERSION="3.0.2";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1402,7 +1407,7 @@ padEls.forEach((el,k)=>dropTarget(el,async files=>{
 }));
 
 // ================= Set zurücksetzen =================
-function clearBtnLabel(){return isRemote(S.set)?`„${setName(S.set)}“ von diesem Gerät löschen`:"Set auf Standard zurücksetzen";}
+function clearBtnLabel(){return isRemote(S.set)?`„${setName(S.set)}“ vom Gerät löschen`:`„${setName(S.set)}“ auf Standard zurücksetzen`;}
 $("clearSetBtn").onclick=async()=>{
   const btn=$("clearSetBtn"),set=S.set;
   if(btn.dataset.confirm!=="1"){btn.dataset.confirm="1";btn.textContent=isRemote(set)?"Wirklich löschen?":"Wirklich? Eigene Sounds werden gelöscht";setTimeout(()=>{btn.dataset.confirm="";btn.textContent=clearBtnLabel();},3500);return;}
