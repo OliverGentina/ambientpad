@@ -48,7 +48,7 @@
   .inner>*{min-width:0}
   /* Hinweiskästen */
   .box{border-radius:14px;padding:13px 15px;margin:14px 0;font-size:15.5px;line-height:1.5;background:var(--card);border:1px solid var(--line)}
-  .box b:first-child{display:block;margin-bottom:3px}
+  .box>b:first-child{display:block;margin-bottom:3px}
   .box.tip{background:var(--accent-soft);border-color:#f8d5ab}
   .box.warn{background:#fdecea;border-color:#f3c3bd}
   .box.team{background:#e5f6f8;border-color:#b6e3ea}
@@ -132,7 +132,7 @@
       <ul class="dots">
         <li><b>12 Kacheln = 12 Tonarten.</b> Antippen startet das Pad als endlose, nahtlose Schleife.</li>
         <li><b>Weiche Übergänge.</b> Eine andere Tonart wird sanft übergeblendet. Tippst du dieselbe Tonart noch einmal, blendet das Pad aus.</li>
-        <li><b>Mehrere Sound-Sets.</b> <i>Warm</i> und <i>Shimmer</i> sind schon dabei. Dazu kommen die <b>Team-Pads</b> aus SharePoint und auf Wunsch <b>eigene Pads</b> aus deinem OneDrive.</li>
+        <li><b>Zwei Pads mischen.</b> Zwei Klänge laufen gleichzeitig in derselben Tonart, jeder mit eigenem Regler. <i>Warm</i> und <i>Shimmer</i> sind schon dabei. Dazu kommen die <b>Team-Pads</b> aus SharePoint und auf Wunsch <b>eigene Pads</b> aus deinem OneDrive.</li>
         <li><b>Offline.</b> Was einmal geladen ist, spielt auch im Flugmodus.</li>
         <li><b>Fußpedal.</b> Mit einem Bluetooth-Umblätterpedal (z. B. Tavsou) bleiben beide Hände am Instrument.</li>
         <li><b>Klick &amp; zweites Pedal.</b> Metronom nur als Anzeige oder getrennt fürs In-Ear, dazu ein zweites Pedal für Klang und Klick.</li>
@@ -197,7 +197,7 @@
         <tr><td><span class="ui">Fade Out</span></td><td>Alles blendet langsam aus, z. B. am Ende eines Songs.</td></tr>
         <tr><td><span class="ui" style="background:#e5484d;color:#fff;border-color:#e5484d">■</span></td><td>Sofort-Stopp, nur für den Notfall.</td></tr>
       </table>
-      <p>Mit dem Regler über den Knöpfen stellst du die Lautstärke der App ein.</p>
+      <p>Die Gesamtlautstärke regelst du mit den Lautstärketasten am Gerät. Die beiden Regler unten mischen die zwei Klänge (nächste Seite).</p>
       <div class="box"><b>Kreuz oder b?</b><p>Kacheln mit zwei Namen sind dieselbe Tonart: D♭ = C♯, E♭ = D♯, F♯ = G♭, A♭ = G♯, B♭ = A♯.</p></div>
       <div class="box"><b>Eigenen Sound auf eine Kachel legen</b><p>Halte eine Kachel gedrückt und tippe auf <span class="ui o">Datei wählen …</span>. Das geht nur in <i>Warm</i> und <i>Shimmer</i>. Team-Sets kommen immer aus SharePoint.</p></div>
     </div>
@@ -209,24 +209,23 @@
 </section>
 
 <!-- 5 Sets -->
-<section class="page" data-title="Sets wechseln">
+<section class="page" data-title="Zwei Pads mischen">
   <div class="inner">
     <div>
       <p class="kicker">Grundlagen</p>
-      <h2>Zwischen Sets wechseln</h2>
-      <p>Oben in der Leiste stehen die Sound-Sets. Ein Tipp wechselt das Set. Die Farbe des Strichs unter dem gewählten Set findest du auch an den Kacheln wieder.</p>
-      <ul class="dots">
-        <li><b>Warm</b>, <b>Shimmer</b>: mitgeliefert, ohne Symbol</li>
-        <li><b>▲ Team-Sets</b> aus dem gemeinsamen SharePoint-Ordner <span class="tag">Team</span></li>
-        <li><b>● eigene Sets</b> aus deinem OneDrive (optional)</li>
-      </ul>
-      <p>Bei vielen Sets <b>wischst du die Leiste seitlich</b>. Ein weicher Rand zeigt, dass es weitergeht.</p>
-      <p>Symbole und Anzeige kannst du selbst wählen, siehe Seite „Aussehen &amp; Reihenfolge“.</p>
-      <div class="box tip"><b>Wechsel während der Musik</b><p>Läuft gerade ein Pad, blendet die App beim Set-Wechsel sofort in dieselbe Tonart im neuen Set über. So wechselst du mitten im Song den Klang, ohne Pause.</p></div>
+      <h2>Zwei Pads mischen</h2>
+      <p>Unten gibt es zwei <b>Ebenen</b>, jede mit eigenem Set und eigenem Regler. Tippst du eine Tonart an, spielen beide Ebenen gleichzeitig in dieser Tonart. Mit den Reglern mischst du sie, z. B. viel <i>Warm</i> und ein wenig <i>Shimmer</i>, oder du überblendest langsam von einem Klang in den anderen.</p>
+      <ol class="steps">
+        <li><b>Tipp auf den Namen</b> einer Ebene, z. B. <span class="ui">Warm ▾</span>: Es öffnet sich die Auswahl mit allen Sets, sortiert nach Mitgeliefert, Team (▲) und Meine Pads (●).</li>
+        <li>Set antippen, fertig. Ein laufendes Pad blendet in dieselbe Tonart des neuen Sets über.</li>
+        <li>Für die zweite Ebene steht ganz oben <span class="ui">Leer – nur ein Pad</span>. Dann klingt nur Ebene 1.</li>
+      </ol>
+      <div class="box tip"><b>Gut zu wissen</b><p>Fehlt einem Set eine Tonart, spielt in dieser Tonart nur die andere Ebene. Die Belegung und die Regler bleiben gespeichert.</p></div>
+      <div class="box"><b>Mit Pedal 2</b><p>Pedal 2 links schaltet das Set der <b>zweiten Ebene</b> weiter (lang = zurück), einschließlich „Leer“.</p></div>
     </div>
-    <div class="shots" style="flex-direction:column;gap:20px">
-      <figure style="flex-basis:auto"><img class="strip" src="anleitung/leiste.webp" alt="Set-Leiste mit Symbol und Namen" loading="lazy"><figcaption>Symbol + Name: das Team-Set „Sonntag Warm“ ist gewählt.</figcaption></figure>
-      <figure style="flex-basis:auto"><img class="strip" src="anleitung/leiste_symbol.webp" alt="Set-Leiste nur mit Symbolen" loading="lazy"><figcaption>„Nur Symbol“: Es passen mehr Sets in die Leiste, nur das gewählte zeigt seinen Namen.</figcaption></figure>
+    <div class="shots two">
+      <figure><img class="phone" src="anleitung/ebenen_haupt.webp" alt="Zwei Ebenen Warm und Shimmer mit Reglern" loading="lazy"><figcaption>Warm 85 % und Shimmer 35 % spielen zusammen in G.</figcaption></figure>
+      <figure><img class="phone" src="anleitung/ebenen_menu.webp" alt="Auswahl-Menü der Sets mit Leer" loading="lazy"><figcaption>Tipp auf den Namen öffnet die Auswahl.</figcaption></figure>
     </div>
   </div>
 </section>
@@ -369,8 +368,8 @@
       <p class="kicker">Optional <span class="tag">neu</span></p>
       <h2>Klick &amp; zweites Pedal</h2>
       <h3>Der Klick</h3>
-      <p>Oben rechts zeigt die App Tempo und Takt, z. B. <span class="ui">● ○ ○ ○ 72 BPM</span>. Ein Tipp darauf startet oder stoppt den Klick. Die Eins leuchtet orange.</p>
-      <p>Einstellungen unter <span class="ui">⚙︎</span> → <span class="ui">♩ Klick &amp; Tempo</span>: Tempo mit − / + oder <span class="ui">Tap</span>, Taktart, Einzähler (1 oder 2 Takte).</p>
+      <p>Ganz oben steht die Klick-Leiste: <span class="ui">LED</span> <span class="ui">▶</span> <span class="ui">● ● ● ● 72</span> <span class="ui">🔊 Schalter</span>.</p><ul class="dots"><li><b>LED</b>: grün = bereit, rot = noch kein Ton. Läuft der Klick, blinkt sie im Takt, orange auf der Eins.</li><li><b>▶ / ❚❚</b> startet und stoppt den Klick.</li><li><b>Tipp auf die Zahl</b> öffnet das Tempo-Fenster: − / + (gedrückt halten = schnell), Tap und Taktart.</li><li><b>Schalter</b>: an = Klick mit Ton, aus = nur Anzeige.</li></ul>
+      <p>Weitere Einstellungen unter <span class="ui">⚙︎</span> → <span class="ui">♩ Klick &amp; Tempo</span>: Ausgabe, Kanäle, Lautstärke des Klicks und Einzähler (1 oder 2 Takte).</p>
       <table>
         <tr><th>Ausgabe</th><th>Wofür</th></tr>
         <tr><td><b>Nur Anzeige</b></td><td>Kein Ton, der Takt blinkt nur als Symbol. Ideal, wenn niemand einen Klick im Ohr braucht.</td></tr>
@@ -383,13 +382,14 @@
       <p>Koppel beide Pedale in den iOS-Einstellungen unter Bluetooth. Pedal 2 muss <b>andere Tasten</b> senden als Pedal 1, also an Pedal 2 einen anderen Modus wählen, z. B. Bild↑/↓. Dann <span class="ui">⚙︎</span> → <span class="ui">🦶 Pedal</span> → <span class="ui o">Pedal 2 lernen</span>.</p>
       <table>
         <tr><th>Pedal 2</th><th>kurz</th><th>lang</th></tr>
-        <tr><td><b>Links</b></td><td>nächstes Set (Klang)</td><td>Set zurück</td></tr>
+        <tr><td><b>Links</b></td><td>nächstes Set auf Ebene 2</td><td>Set auf Ebene 2 zurück</td></tr>
         <tr><td><b>Rechts</b></td><td>Klick an / aus</td><td>Einzähler, danach läuft der Klick weiter</td></tr>
       </table>
-      <p style="color:var(--dim);font-size:15px">Ein Set-Wechsel blendet die laufende Tonart direkt in den neuen Klang über. Meldet das Pedal kein langes Drücken, gilt: doppelt tippen = lange Funktion.</p>
+      <p style="color:var(--dim);font-size:15px">Ein Set-Wechsel blendet die laufende Tonart direkt in den neuen Klang über, „Leer“ schaltet Ebene 2 stumm. Meldet das Pedal kein langes Drücken, gilt: doppelt tippen = lange Funktion.</p>
     </div>
     <div class="shots" style="flex-direction:column;align-items:center">
-      <figure style="flex-basis:auto"><img class="strip" src="anleitung/klick_haupt.webp" alt="Klick-Anzeige oben rechts mit Taktpunkten und BPM" loading="lazy"><figcaption>Oben rechts: Taktpunkte und Tempo. Antippen startet den Klick.</figcaption></figure>
+      <figure style="flex-basis:auto"><img class="strip" src="anleitung/kopfzeile.webp" alt="Klick-Leiste mit LED, Play, Taktpunkten, Tempo und Ton-Schalter" loading="lazy"><figcaption>Klick-Leiste: LED, ▶, Takt und Tempo, Ton-Schalter, +, ⚙︎.</figcaption></figure>
+      <figure style="flex-basis:auto"><img class="phone" style="max-width:260px" src="anleitung/tempo.webp" alt="Tempo-Fenster" loading="lazy"><figcaption>Tipp auf die Zahl: Tempo-Fenster.</figcaption></figure>
       <div class="shots two" style="width:100%">
         <figure><img class="phone" src="anleitung/klick_einstellungen.webp" alt="Einstellungen Klick und Tempo" loading="lazy"><figcaption>Klick &amp; Tempo: Ausgabe, Kanäle, Lautstärke.</figcaption></figure>
         <figure><img class="phone" src="anleitung/pedal2.webp" alt="Pedal-Einstellungen mit Pedal 2" loading="lazy"><figcaption>Pedal 2 lernen und Belegung.</figcaption></figure>
@@ -433,7 +433,7 @@
       <h2>Aussehen &amp; Reihenfolge</h2>
       <h3>Symbole der Sets</h3>
       <p><span class="ui">⚙︎</span> → <span class="ui">Sets &amp; Anordnung</span>, ganz unten. Für Team-Sets und eigene Sets wählst du jeweils eines von 8 Symbolen. Es erscheint in der Farbe des jeweiligen Sets.</p>
-      <p>Dazu stellst du die Anzeige ein: <span class="ui">Beides</span>, <span class="ui">Nur Symbol</span> oder <span class="ui">Nur Name</span>. Mit „Nur Symbol“ passen die meisten Sets in die Leiste.</p>
+      <p>Dazu stellst du die Anzeige ein: <span class="ui">Beides</span>, <span class="ui">Nur Symbol</span> oder <span class="ui">Nur Name</span>. Die Symbole erscheinen in der Set-Auswahl und vor dem Namen der Ebenen.</p>
       <h3>Kacheln und Sets sortieren</h3>
       <p><span class="ui o">Kacheln &amp; Sets anordnen</span> antippen. Alles wackelt jetzt:</p>
       <ul class="dots">
