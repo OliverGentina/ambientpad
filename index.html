@@ -560,7 +560,7 @@ input[type=range]{accent-color:var(--accent)}
 
 <script>
 "use strict";
-const VERSION="2.7.0";
+const VERSION="2.7.1";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -2018,7 +2018,7 @@ document.getElementById("unlockVersion").textContent="Version "+VERSION;
 (function(){
   const cv=document.getElementById("nebel"),un=document.getElementById("unlock");if(!cv||!cv.getContext)return;
   const ctx=cv.getContext("2d",{alpha:false});
-  const LOOP=30,TAU=Math.PI*2,SCALE=6;      // 1 Zeichenpixel = 6 Bildschirmpunkte → von Natur aus weich
+  const LOOP=30,SPEED=3,TAU=Math.PI*2,SCALE=6;      // 1 Zeichenpixel = 6 Bildschirmpunkte → von Natur aus weich
   const B=[ // cx,cy (Anteil), r (Anteil der halben Diagonale), Farbe, Stärke, Bewegung ax,ay, Phase, Atmen
     {x:.20,y:.12,r:.95,c:[255,159,10], a:.95,ax:.07,ay:.05,ph:0.0,br:.06},
     {x:.98,y:.50,r:.95,c:[194,24,91],  a:.90,ax:.08,ay:.06,ph:2.1,br:.07},
@@ -2029,7 +2029,7 @@ document.getElementById("unlockVersion").textContent="Version "+VERSION;
   function size(){const w=Math.max(1,un.clientWidth),hh=Math.max(1,un.clientHeight);
     W=Math.ceil(w/SCALE);H=Math.ceil(hh/SCALE);cv.width=W;cv.height=H;D=Math.hypot(W,H)/2;}
   function frame(ms){
-    const t=(ms/1000%LOOP)/LOOP*TAU;
+    const t=(ms/1000%LOOP)/LOOP*TAU*SPEED;   // SPEED ganzzahlig → Loop bleibt nahtlos
     ctx.globalCompositeOperation="source-over";ctx.fillStyle="#000";ctx.fillRect(0,0,W,H);
     ctx.globalCompositeOperation="lighter";
     for(const b of B){
