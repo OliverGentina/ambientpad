@@ -55,8 +55,12 @@
   .box p{font-size:15.5px;margin:0}
   /* Tabelle */
   table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--line);font-size:15.5px;margin:10px 0}
-  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
   td .ui{white-space:normal}
+  td code,td b{overflow-wrap:anywhere}
+  td:first-child b{overflow-wrap:normal}
+  td:first-child,th:first-child{min-width:6.8em;hyphens:manual;-webkit-hyphens:manual}
+  @media(max-width:360px){td:first-child,th:first-child{min-width:5.6em;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere}}
   @media(max-width:420px){th,td{padding:9px 8px}}
   th{background:#faf8f4;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--dim)}
   tr:last-child td{border-bottom:0}
@@ -131,6 +135,7 @@
         <li><b>Mehrere Sound-Sets.</b> <i>Warm</i> und <i>Shimmer</i> sind schon dabei. Dazu kommen die <b>Team-Pads</b> aus SharePoint und auf Wunsch <b>eigene Pads</b> aus deinem OneDrive.</li>
         <li><b>Offline.</b> Was einmal geladen ist, spielt auch im Flugmodus.</li>
         <li><b>Fußpedal.</b> Mit einem Bluetooth-Umblätterpedal (z. B. Tavsou) bleiben beide Hände am Instrument.</li>
+        <li><b>Klick &amp; zweites Pedal.</b> Metronom nur als Anzeige oder getrennt fürs In-Ear, dazu ein zweites Pedal für Klang und Klick.</li>
         <li><b>Setlist aus Planning Center.</b> Lieder und Tonarten kommen direkt aus eurem Plan, das Pedal klickt von Lied zu Lied.</li>
       </ul>
       <div class="box tip"><b>Was du brauchst</b><p>iPhone oder iPad mit Safari, dein Gemeindekonto <b>vorname.nachname@chara.church</b> und für den Gottesdienst einen Lautsprecher oder ein Kabel zum Mischpult.</p></div>
@@ -356,6 +361,42 @@
   </div>
 </section>
 
+<!-- Klick & Pedal 2 -->
+<section class="page" data-title="Klick &amp; zweites Pedal">
+  <div class="inner">
+    <div>
+      <p class="kicker">Optional <span class="tag">neu</span></p>
+      <h2>Klick &amp; zweites Pedal</h2>
+      <h3>Der Klick</h3>
+      <p>Oben rechts zeigt die App Tempo und Takt, z. B. <span class="ui">● ○ ○ ○ 72 BPM</span>. Ein Tipp darauf startet oder stoppt den Klick. Die Eins leuchtet orange.</p>
+      <p>Einstellungen unter <span class="ui">⚙︎</span> → <span class="ui">♩ Klick &amp; Tempo</span>: Tempo mit − / + oder <span class="ui">Tap</span>, Taktart, Einzähler (1 oder 2 Takte).</p>
+      <table>
+        <tr><th>Ausgabe</th><th>Wofür</th></tr>
+        <tr><td><b>Nur Anzeige</b></td><td>Kein Ton, der Takt blinkt nur als Symbol. Ideal, wenn niemand einen Klick im Ohr braucht.</td></tr>
+        <tr><td><b>Split</b></td><td>Pad auf einem Kanal, Klick auf dem anderen (jeweils mono). Mit einem <b>Y-Kabel</b> (Stereo-Klinke → 2× Mono) geht ein Kanal ans Mischpult für die Gemeinde, der andere ins In-Ear der Band. Kanäle sind tauschbar.</td></tr>
+        <tr><td><b>Gemischt</b></td><td>Klick zusammen mit dem Pad auf beiden Kanälen, z. B. zum Üben mit Kopfhörer.</td></tr>
+      </table>
+      <div class="box warn"><b>Split nur per Kabel</b><p>Bluetooth verzögert den Ton um bis zu 0,3 Sekunden. Für einen Klick ist das zu ungenau, und iOS kann nicht auf zwei Bluetooth-Geräte gleichzeitig ausgeben. Für den Split also ein Kabel oder ein USB-Audio-Interface verwenden.</p></div>
+      <div class="box tip"><b>Tempo aus Planning Center</b><p>Ist im Arrangement eines Lieds ein Tempo (BPM) und eine Taktart hinterlegt, übernimmt der Klick sie beim Liedwechsel in der Setlist automatisch. Das Tempo steht dann auch in der Setlist-Leiste.</p></div>
+      <h3>Zweites Pedal</h3>
+      <p>Koppel beide Pedale in den iOS-Einstellungen unter Bluetooth. Pedal 2 muss <b>andere Tasten</b> senden als Pedal 1, also an Pedal 2 einen anderen Modus wählen, z. B. Bild↑/↓. Dann <span class="ui">⚙︎</span> → <span class="ui">🦶 Pedal</span> → <span class="ui o">Pedal 2 lernen</span>.</p>
+      <table>
+        <tr><th>Pedal 2</th><th>kurz</th><th>lang</th></tr>
+        <tr><td><b>Links</b></td><td>nächstes Set (Klang)</td><td>Set zurück</td></tr>
+        <tr><td><b>Rechts</b></td><td>Klick an / aus</td><td>Einzähler, danach läuft der Klick weiter</td></tr>
+      </table>
+      <p style="color:var(--dim);font-size:15px">Ein Set-Wechsel blendet die laufende Tonart direkt in den neuen Klang über. Meldet das Pedal kein langes Drücken, gilt: doppelt tippen = lange Funktion.</p>
+    </div>
+    <div class="shots" style="flex-direction:column;align-items:center">
+      <figure style="flex-basis:auto"><img class="strip" src="anleitung/klick_haupt.webp" alt="Klick-Anzeige oben rechts mit Taktpunkten und BPM" loading="lazy"><figcaption>Oben rechts: Taktpunkte und Tempo. Antippen startet den Klick.</figcaption></figure>
+      <div class="shots two" style="width:100%">
+        <figure><img class="phone" src="anleitung/klick_einstellungen.webp" alt="Einstellungen Klick und Tempo" loading="lazy"><figcaption>Klick &amp; Tempo: Ausgabe, Kanäle, Lautstärke.</figcaption></figure>
+        <figure><img class="phone" src="anleitung/pedal2.webp" alt="Pedal-Einstellungen mit Pedal 2" loading="lazy"><figcaption>Pedal 2 lernen und Belegung.</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- 10 Eigene Pads -->
 <section class="page" data-title="Eigene Pads (OneDrive)">
   <div class="inner">
@@ -470,6 +511,8 @@
         <tr><td>Alte Version / neue Funktion fehlt</td><td><span class="ui">⚙︎</span> → <span class="ui">ⓘ App &amp; Speicher</span> → <span class="ui">App aktualisieren</span>. Die Versionsnummer steht dort.</td></tr>
         <tr><td>Planning Center: Anmeldung schlägt fehl</td><td>Fehlermeldung als Screenshot an die Lobpreisleitung schicken. Meist liegt es an der Registrierung der App bei Planning Center.</td></tr>
         <tr><td>Setlist zeigt alte Lieder</td><td>Leiste antippen → <span class="ui">↻ Aktualisieren</span>.</td></tr>
+        <tr><td>Zwei Pedale reagieren gleich</td><td>Pedal 2 sendet dieselben Tasten wie Pedal 1. An Pedal 2 einen anderen Modus wählen und „Pedal 2 lernen“ wiederholen.</td></tr>
+        <tr><td>Klick hinkt hinterher</td><td>Über Bluetooth ist das normal. Für den Klick ein Kabel verwenden (Split).</td></tr>
         <tr><td>Speicher voll</td><td>Nicht benötigte Sets über „Anordnen“ → × entfernen. MP3 statt WAV verwenden.</td></tr>
       </table>
       <p style="margin-top:18px">Viel Freude beim Spielen! 🎹</p>

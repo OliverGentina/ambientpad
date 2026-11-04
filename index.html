@@ -334,6 +334,27 @@ input[type=range]{accent-color:var(--accent)}
 #unlockVersion{position:absolute!important;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 14px);text-align:center;font-size:12px;letter-spacing:.02em;color:rgba(255,255,255,.5)}
 #unlock #unlockBtn{border-radius:999px;font-size:20px;padding:14px 34px}
 @media (prefers-reduced-motion:reduce){#unlock .hello .g{fill-opacity:1;stroke-dashoffset:0!important}}
+
+/* ================= Klick-Anzeige ================= */
+#status{align-items:center}
+#clickWidget{appearance:none;border:0;background:var(--fill,rgba(118,118,128,.24));color:var(--label2,rgba(235,235,245,.6));border-radius:999px;display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;font:inherit;font-size:12.5px;cursor:pointer;min-height:26px}
+#clickWidget b{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
+#clickWidget small{font-size:10.5px}
+#clickDots{display:inline-flex;gap:3px}
+#clickDots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.22);transition:background .06s}
+#clickDots i.on{background:var(--sys-green,#30D158)}
+#clickDots i.on.one{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+#clickWidget.running{color:#fff;background:rgba(48,209,88,.18)}
+#clickWidget.pulse{animation:clickPulse .12s ease-out}
+@keyframes clickPulse{from{transform:scale(1.06)}to{transform:scale(1)}}
+#countIn{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);font:700 min(42vw,260px)/1 -apple-system,"SF Pro Display",sans-serif;color:#fff;opacity:0;pointer-events:none;z-index:25;text-shadow:0 6px 40px rgba(0,0,0,.6)}
+#countIn.show{animation:countPop .5s ease-out}
+@keyframes countPop{0%{opacity:.9;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-50%) scale(.9)}}
+.tempo{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tempo .btn{width:56px;font-size:26px;padding:0}
+.tempo .bpm{display:flex;flex-direction:column;align-items:center}
+.tempo .bpm b{font:600 44px/1 -apple-system,"SF Pro Display",sans-serif;font-variant-numeric:tabular-nums}
+.tempo .bpm small{color:var(--label2);font-size:13px}
 </style>
 </head>
 <body>
@@ -342,7 +363,8 @@ input[type=range]{accent-color:var(--accent)}
   <button class="btn" id="importBtn" aria-label="Sounds importieren" title="Sounds importieren" style="min-width:44px;font-size:22px;font-weight:500;padding-left:0;padding-right:0">+</button>
   <button class="btn" id="settingsBtn" aria-label="Einstellungen" style="min-width:44px">⚙︎</button>
 </header>
-<div id="status"><span>Audio: <b id="audioState" class="badc">aus</b> · Pedal: <b id="pedalState">–</b></span><span id="xfInfo"></span></div>
+<div id="status"><span>Audio: <b id="audioState" class="badc">aus</b> · Pedal: <b id="pedalState">–</b></span><span id="xfInfo" hidden></span><button id="clickWidget" aria-label="Klick"><span id="clickDots"></span><b id="clickBpm"></b><small>BPM</small></button></div>
+<div id="countIn" aria-hidden="true"></div>
 
 <div id="slBar" hidden>
   <button class="btn" id="slPrev" aria-label="Vorheriges Lied">‹</button>
@@ -408,6 +430,7 @@ input[type=range]{accent-color:var(--accent)}
     <button class="mrow feature" data-go="pco"><span class="mi">🎵</span><span class="mt"><b>Setlist aus Planning Center</b><small id="sum_pco"></small></span><span class="mc">›</span></button>
     <div class="menu">
       <button class="mrow" data-go="pedal"><span class="mi">🦶</span><span class="mt"><b>Pedal</b><small id="sum_pedal"></small></span><span class="mc">›</span></button>
+      <button class="mrow" data-go="click"><span class="mi">♩</span><span class="mt"><b>Klick &amp; Tempo</b><small id="sum_click"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="sound"><span class="mi">🎚</span><span class="mt"><b>Übergänge &amp; Klang</b><small id="sum_sound"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="onedrive"><span class="mi">☁️</span><span class="mt"><b>Meine Pads (OneDrive)</b><small id="sum_onedrive"></small></span><span class="mc">›</span></button>
       <button class="mrow" data-go="team"><span class="mi">👥</span><span class="mt"><b>Team-Pads</b><small id="sum_team"></small></span><span class="mc">›</span></button>
@@ -422,6 +445,30 @@ input[type=range]{accent-color:var(--accent)}
     <p id="pedalInfo"></p>
     <div class="row"><button class="btn accent" id="learnBtn">Pedal lernen</button><button class="btn" id="pedalReset">Standard</button></div>
     <p class="hint">Am Pedal einen Modus mit Pfeiltasten oder Bild↑/↓ wählen und den Repeat-Modus ausschalten.</p>
+    <h3>Pedal 2 · Sets &amp; Klick</h3>
+    <div class="group"><p id="pedal2Info"></p>
+      <div class="row"><button class="btn accent" id="learn2Btn">Pedal 2 lernen</button><button class="btn" id="pedal2Reset">Entfernen</button></div></div>
+    <p class="hint">Beide Pedale gleichzeitig in den iOS-Einstellungen unter Bluetooth koppeln. Sie müssen unterschiedliche Tasten senden – also verschiedene Modi am Pedal wählen.</p>
+  </section>
+
+  <!-- Klick & Tempo -->
+  <section class="spage" data-page="click" data-title="Klick &amp; Tempo">
+    <div class="group">
+      <div class="tempo"><button class="btn" id="c_minus" aria-label="Langsamer">−</button><div class="bpm"><b id="c_bpmVal"></b><small>BPM</small></div><button class="btn" id="c_plus" aria-label="Schneller">+</button></div>
+      <div class="row"><button class="btn" id="c_tap">Tap</button><button class="btn accent" id="c_test">Klick testen</button></div>
+      <label><span>Taktart</span><select id="c_meter"><option value="2">2/4</option><option value="3">3/4</option><option value="4">4/4</option><option value="5">5/4</option><option value="6">6/8</option><option value="7">7/8</option><option value="12">12/8</option></select></label>
+      <p class="hint">Aus der Setlist übernimmt der Klick Tempo und Taktart des Lieds, wenn sie in Planning Center hinterlegt sind.</p>
+    </div>
+    <h3>Ausgabe</h3>
+    <div class="group">
+      <div class="seg" id="c_out"><button class="segbtn" data-v="visual">Nur Anzeige</button><button class="segbtn" data-v="split">Split</button><button class="segbtn" data-v="mix">Gemischt</button></div>
+      <p class="hint" id="c_outHint"></p>
+      <div class="row" id="c_swapRow"><button class="btn" id="c_swap"></button></div>
+      <label id="c_volRow"><span>Lautstärke Klick</span><input type="range" id="c_vol" min="0" max="1" step="0.01"></label>
+    </div>
+    <h3>Einzähler</h3>
+    <div class="group"><div class="seg" id="c_count"><button class="segbtn" data-v="1">1 Takt</button><button class="segbtn" data-v="2">2 Takte</button></div>
+      <p class="hint">Einzähler: Pedal 2 rechts lang. Danach läuft der Klick weiter.</p></div>
   </section>
 
   <!-- Übergänge & Klang -->
@@ -552,7 +599,7 @@ input[type=range]{accent-color:var(--accent)}
 
 <!-- Pedal lernen -->
 <div class="sheet-bg" id="learnSheet"><div class="sheet">
-  <h2>Pedal lernen</h2>
+  <h2 id="learnTitle">Pedal lernen</h2>
   <div class="learnbox" id="learnBox"></div>
   <p id="learnSub"></p>
   <div class="row"><button class="btn" id="learnCancel">Abbrechen</button></div>
@@ -560,7 +607,7 @@ input[type=range]{accent-color:var(--accent)}
 
 <script>
 "use strict";
-const VERSION="2.7.2";
+const VERSION="2.8.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -676,7 +723,7 @@ function ensureCtx(){
     // „playback“: größere Audio-Puffer → keine Aussetzer, wenn das Gerät gleichzeitig Pads lädt
     try{ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"playback"});}
     catch(e){ctx=new (window.AudioContext||window.webkitAudioContext)();}
-    master=ctx.createGain();master.gain.value=S.master;master.connect(ctx.destination);
+    master=ctx.createGain();master.gain.value=S.master;routeAudio();
   }
   if(ctx.state!=="running")ctx.resume().catch(()=>{});
   return ctx;
@@ -871,7 +918,7 @@ function switchSet(s){
 const LONG_MS=600;
 const down={};            // side → {t, timer, longFired}
 let learning=null, lastSide=null, lastSideT=0, fallbackTimer=null, fallbackSide=null;
-function sideOf(key){ if(P.left.includes(key))return "left"; if(P.right.includes(key))return "right"; return null; }
+function sideOf(key){ if(typeof side2==="function"&&side2(key))return null; if(P.left.includes(key))return "left"; if(P.right.includes(key))return "right"; return null; }
 function action(side,long){
   if(side==="left"){ if(slOn()){long?stepSong(-1):stepSong(1);} else {long?stepSel(-1):stepSel(1);} }
   else{ long?fadeAll(S.fadeOut):toggleKey(selected); }
@@ -915,15 +962,19 @@ function startLearn(){
   learning={step:"left",events:[]};
   $("settingsSheet").classList.remove("open"); $("learnSheet").classList.add("open"); learnUI();
 }
+const isStdPedal=()=>JSON.stringify(P.left)===JSON.stringify(PEDAL_DEFAULT.left)&&JSON.stringify(P.right)===JSON.stringify(PEDAL_DEFAULT.right);
 function learnUI(){
   const L=learning; if(!L)return;
   const box=$("learnBox"),sub=$("learnSub");
+  $("learnTitle").textContent=L.which===2?"Pedal 2 lernen":"Pedal lernen";
   if(L.step==="left"){box.textContent="Tritt einmal kurz die LINKE Taste";sub.textContent="";}
   else if(L.step==="right"){box.textContent="Jetzt einmal kurz die RECHTE Taste";sub.textContent="Links = "+keyName(L.left);}
   else if(L.step==="hold"){box.textContent="Halte die LINKE Taste ca. 2 Sekunden gedrückt";sub.textContent="Damit prüfe ich, ob dein Pedal langes Drücken melden kann.";}
 }
 function learnKeyDown(e){
   const L=learning;
+  if(L.which===2&&!e.repeat&&(L.step==="left"||L.step==="right")&&!isStdPedal()&&(P.left.includes(e.key)||P.right.includes(e.key))){
+    $("learnSub").textContent=`${keyName(e.key)} gehört schon zu Pedal 1 – Pedal 2 bitte in einen anderen Modus schalten (z. B. Bild↑/↓ oder Leertaste/Enter).`;return;}
   if(L.step==="left"&&!e.repeat){L.left=e.key;L.step="right";learnUI();}
   else if(L.step==="right"&&!e.repeat){
     if(e.key===L.left){$("learnSub").textContent="Das war wieder die linke Taste – bitte die RECHTE.";return;}
@@ -943,14 +994,23 @@ function finishLearn(){
   if(firstDown&&firstUp&&firstUp.t-firstDown.t>800&&downs===1){hold=true;note="Langes Drücken wird erkannt.";}
   else if(downs>2){hold=false;note="Dein Pedal sendet beim Halten viele einzelne Tritte (Repeat-Modus). Schalte am Pedal den Repeat-Modus aus und lerne erneut – bis dahin gilt: links doppelt = zurück, beide Tasten = alles aus.";}
   else{hold=false;note="Dein Pedal meldet kein langes Drücken. Ersatz: links doppelt tippen = zurück, beide Tasten gleichzeitig = alles ausblenden.";}
+  if(L.which===2){
+    P2={left:[L.left],right:[L.right],hold};savePedal2();
+    // Tasten von Pedal 2 aus der Belegung von Pedal 1 entfernen (Standard enthält z. B. auch Bild↑/↓)
+    P.left=P.left.filter(k=>k!==L.left&&k!==L.right);P.right=P.right.filter(k=>k!==L.left&&k!==L.right);savePedal();
+    learning=null;
+    $("learnBox").textContent="Pedal 2 fertig ✓";$("learnSub").textContent=`Links = ${keyName(L.left)} (Sets), rechts = ${keyName(L.right)} (Klick). ${note.replace("links doppelt = zurück, beide Tasten = alles aus","doppelt tippen = lange Funktion").replace(/Ersatz:.*$/,"Ersatz: doppelt tippen = lange Funktion.")}`;
+    $("learnCancel").textContent="Schließen";updatePedalInfo();updatePedal2Info();return;
+  }
   P={left:[L.left],right:[L.right],hold}; savePedal();
+  if(P2){P2.left=P2.left.filter(k=>k!==L.left&&k!==L.right);P2.right=P2.right.filter(k=>k!==L.left&&k!==L.right);if(!P2.left.length||!P2.right.length)P2=null;savePedal2();updatePedal2Info();}
   learning=null;
   $("learnBox").textContent="Fertig ✓"; $("learnSub").textContent=`Links = ${keyName(P.left[0])}, rechts = ${keyName(P.right[0])}. ${note}`;
   $("learnCancel").textContent="Schließen"; updatePedalInfo();
 }
 $("learnBtn").onclick=startLearn;
 $("learnCancel").onclick=()=>{ if(learning&&learning.timer)clearTimeout(learning.timer); learning=null; $("learnSheet").classList.remove("open"); $("learnCancel").textContent="Abbrechen"; };
-$("pedalReset").onclick=()=>{P=Object.assign({},PEDAL_DEFAULT);savePedal();updatePedalInfo();toast("Pedal: Standardbelegung");};
+$("pedalReset").onclick=()=>{P=Object.assign({},PEDAL_DEFAULT);if(P2){const k=[...P2.left,...P2.right];P.left=P.left.filter(x=>!k.includes(x));P.right=P.right.filter(x=>!k.includes(x));}savePedal();updatePedalInfo();toast("Pedal: Standardbelegung");};
 function updatePedalInfo(){
   const l=P.left.map(keyName).join(" / "), r=P.right.map(keyName).join(" / ");
   $("pedalInfo").innerHTML=`Links: <b>${l}</b> · Rechts: <b>${r}</b><br>`+(P.hold
@@ -1680,12 +1740,13 @@ const saveSL=()=>store("apl.setlist",SL);
 const slOn=()=>!!(SL&&SL.on&&SL.songs&&SL.songs.length);
 const playable=i=>SL.songs[i]&&SL.songs[i].k!==null&&SL.songs[i].k!==undefined;
 const keyLabel=k=>KEYS[k][0];
-function fmtSong(s){return s.k===null||s.k===undefined?"keine Tonart":(s.minor?`${keyLabel(s.k)} (${s.key})`:keyLabel(s.k));}
+function fmtSong(s){return (s.k===null||s.k===undefined?"keine Tonart":(s.minor?`${keyLabel(s.k)} (${s.key})`:keyLabel(s.k)))+(s.bpm?` · ${Math.round(s.bpm)}`:"");}
 function nextPlayable(from,dir){let i=from;for(let n=0;n<SL.songs.length;n++){i+=dir;if(i<0||i>=SL.songs.length)return -1;if(playable(i))return i;}return -1;}
 function goSong(i,opts={}){
   if(!slOn()||i<0||i>=SL.songs.length)return;
   SL.pos=i;saveSL();
   const s=SL.songs[i];
+  if(s.bpm||s.meter)setTempo(s.bpm,s.meter);
   if(playable(i)){
     if(current&&!opts.noPlay){ if(pads[S.set][s.k]){setSelected(s.k);play(S.set,s.k);} else {setSelected(s.k);toast(`${keyLabel(s.k)} ist in „${setName(S.set)}“ nicht belegt`);} }
     else setSelected(s.k);
@@ -1732,9 +1793,11 @@ async function pcoPlanFromId(planId){
   throw Object.assign(new Error("Plan nicht gefunden"),{status:404});
 }
 async function pcoLoadPlan(stId,plan,stName){
-  const j=await pco(`/services/v2/service_types/${stId}/plans/${plan.id}/items?per_page=100`);
+  const j=await pco(`/services/v2/service_types/${stId}/plans/${plan.id}/items?per_page=100&include=arrangement`);
+  const arr={};for(const x of j.included||[])if(x.type==="Arrangement")arr[x.id]=x.attributes||{};
   const items=(j.data||[]).filter(x=>x.attributes&&x.attributes.item_type==="song").sort((a,b)=>(a.attributes.sequence||0)-(b.attributes.sequence||0));
-  const songs=items.map(x=>{const key=(x.attributes.key_name||"").trim(),p=pcoKey(key);return {title:x.attributes.title||"Lied",key,k:p?p.k:null,minor:p?p.minor:false};});
+  const songs=items.map(x=>{const key=(x.attributes.key_name||"").trim(),p=pcoKey(key);const ar=arr[x.relationships&&x.relationships.arrangement&&x.relationships.arrangement.data&&x.relationships.arrangement.data.id]||{};
+    return {title:x.attributes.title||"Lied",key,k:p?p.k:null,minor:p?p.minor:false,bpm:ar.bpm?+ar.bpm:null,meter:meterOf(ar.meter)};});
   const a=plan.attributes||{};
   SL={planId:plan.id,stId,title:[stName,a.title||a.series_title].filter(Boolean).join(" · ")||"Setlist",date:a.dates||"",songs,pos:0,on:true};
   const first=nextPlayable(-1,1);SL.pos=first>=0?first:0;saveSL();
@@ -1812,6 +1875,154 @@ $("pco_logout").onclick=()=>{PCT=null;savePCT();updatePcoInfo();toast("Von Plann
 $("pco_list").onclick=()=>{$("settingsSheet").classList.remove("open");if(!SL){openPcoSheet();return;}renderSlList();$("slSheet").classList.add("open");};
 renderSetlist();
 
+
+// ================= Klick (Metronom) =================
+// Ausgabe: "visual" = nur Anzeige · "split" = Pad auf einem, Klick auf dem anderen Kanal (Mono) · "mix" = Klick in beiden Kanälen
+const CLICK=Object.assign({out:"visual",swap:false,vol:.8,bpm:80,meter:4,countIn:1},load("apl.click",{}));
+const saveClick=()=>store("apl.click",CLICK);
+let clickGain=null,padMono=null,merger=null;
+function routeAudio(){
+  if(!ctx||!master)return;
+  try{master.disconnect();}catch(e){}
+  if(!clickGain){clickGain=ctx.createGain();}
+  try{clickGain.disconnect();}catch(e){}
+  if(padMono){try{padMono.disconnect();}catch(e){}}
+  if(merger){try{merger.disconnect();}catch(e){}}
+  clickGain.gain.value=CLICK.vol;
+  if(CLICK.out==="split"){
+    if(!padMono){padMono=ctx.createGain();padMono.channelCount=1;padMono.channelCountMode="explicit";padMono.channelInterpretation="speakers";}
+    if(!merger)merger=ctx.createChannelMerger(2);
+    const padCh=CLICK.swap?1:0, clickCh=CLICK.swap?0:1;
+    master.connect(padMono);padMono.connect(merger,0,padCh);clickGain.connect(merger,0,clickCh);merger.connect(ctx.destination);
+  }else{
+    master.connect(ctx.destination);
+    if(CLICK.out==="mix")clickGain.connect(ctx.destination);
+  }
+}
+let clickOn=false,clickTimer=null,nextBeatT=0,beatNo=0,countLeft=0;
+const beatLen=()=>60/Math.max(30,Math.min(260,CLICK.bpm));
+function beep(t,accent){
+  if(CLICK.out==="visual"||!clickGain)return;
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.type="sine";o.frequency.value=accent?1660:1100;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(accent?1:.7,t+.002);g.gain.exponentialRampToValueAtTime(.001,t+.05);
+  o.connect(g);g.connect(clickGain);o.start(t);o.stop(t+.06);
+}
+function flash(t,b,isCount){
+  const ms=Math.max(0,(t-ctx.currentTime)*1000);
+  setTimeout(()=>{
+    if(!clickOn)return;
+    const dots=document.querySelectorAll("#clickDots i");
+    dots.forEach((d,i)=>d.className=i===b?(b===0?"on one":"on"):"");
+    const w=$("clickWidget");w.classList.remove("pulse");void w.offsetWidth;w.classList.add("pulse");
+    const c=$("countIn");
+    if(isCount){c.textContent=b+1;c.classList.remove("show");void c.offsetWidth;c.classList.add("show");}
+    else c.classList.remove("show");
+  },ms);
+}
+function schedule(){
+  while(nextBeatT<ctx.currentTime+.12){
+    const b=beatNo%CLICK.meter,isCount=countLeft>0;
+    beep(nextBeatT,b===0);flash(nextBeatT,b,isCount);
+    if(isCount)countLeft--;
+    nextBeatT+=beatLen();beatNo++;
+  }
+}
+function renderClick(){
+  const w=$("clickWidget");if(!w)return;
+  w.classList.toggle("running",clickOn);
+  $("clickBpm").textContent=Math.round(CLICK.bpm);
+  const dots=$("clickDots");if(dots.children.length!==CLICK.meter){dots.innerHTML="<i></i>".repeat(CLICK.meter);}
+  if(!clickOn)[...dots.children].forEach(d=>d.className="");
+  w.setAttribute("aria-label",`Klick ${clickOn?"aus":"an"} · ${Math.round(CLICK.bpm)} BPM`);
+  const s=$("c_bpmVal");if(s)s.textContent=Math.round(CLICK.bpm);
+}
+function startClick(withCount){
+  ensureCtx();routeAudio();
+  clickOn=true;beatNo=0;countLeft=withCount?CLICK.meter*CLICK.countIn:0;
+  nextBeatT=ctx.currentTime+.08;clearInterval(clickTimer);clickTimer=setInterval(schedule,25);schedule();
+  renderClick();
+}
+function stopClick(){clickOn=false;clearInterval(clickTimer);clickTimer=null;$("countIn").classList.remove("show");renderClick();}
+function toggleClick(){unlockAudio();clickOn?stopClick():startClick(false);toast(clickOn?`Klick an · ${Math.round(CLICK.bpm)} BPM`:"Klick aus");}
+function countIn(){unlockAudio();startClick(true);toast(`Einzähler · ${Math.round(CLICK.bpm)} BPM`);}
+function setTempo(bpm,meter){
+  if(bpm)CLICK.bpm=Math.max(30,Math.min(260,Math.round(bpm*10)/10));
+  if(meter)CLICK.meter=meter;
+  saveClick();
+  if(clickOn&&ctx){// neues Tempo ab der nächsten Eins, ohne Stolpern
+    const left=(CLICK.meter-beatNo%CLICK.meter)%CLICK.meter;beatNo=beatNo+left;
+  }
+  renderClick();
+}
+let taps=[];
+function tapTempo(){
+  const now=performance.now();taps=taps.filter(t=>now-t<2500);taps.push(now);
+  if(taps.length>=2){const d=(taps[taps.length-1]-taps[0])/(taps.length-1);setTempo(60000/d);}
+  const el=$("c_tap");if(el)el.textContent=taps.length>=2?`Tap · ${Math.round(CLICK.bpm)}`:"Tap";
+}
+function meterOf(s){const m=String(s||"").match(/^\s*(\d+)\s*\/\s*(\d+)/);if(!m)return null;const n=+m[1];return n>=2&&n<=12?n:null;}
+$("clickWidget").onclick=toggleClick;
+// ---- Einstellungen ----
+function renderClickSettings(){
+  document.querySelectorAll("#c_out .segbtn").forEach(b=>b.classList.toggle("on",b.dataset.v===CLICK.out));
+  document.querySelectorAll("#c_count .segbtn").forEach(b=>b.classList.toggle("on",+b.dataset.v===CLICK.countIn));
+  $("c_swapRow").style.display=CLICK.out==="split"?"":"none";
+  $("c_swap").textContent=CLICK.swap?"Klick links · Pad rechts":"Pad links · Klick rechts";
+  $("c_vol").value=CLICK.vol;$("c_volRow").style.display=CLICK.out==="visual"?"none":"";
+  $("c_meter").value=String(CLICK.meter);renderClick();
+  $("c_outHint").textContent={visual:"Kein Klick-Ton – der Takt blinkt nur oben als Symbol.",
+    split:"Pad und Klick getrennt: per Y-Kabel (Stereo-Klinke → 2× Mono) einen Kanal ans Mischpult, den anderen ins In-Ear.",
+    mix:"Klick auf beiden Kanälen zusammen mit dem Pad – z. B. für Kopfhörer beim Üben."}[CLICK.out];
+}
+document.querySelectorAll("#c_out .segbtn").forEach(b=>b.onclick=()=>{CLICK.out=b.dataset.v;saveClick();routeAudio();renderClickSettings();});
+document.querySelectorAll("#c_count .segbtn").forEach(b=>b.onclick=()=>{CLICK.countIn=+b.dataset.v;saveClick();renderClickSettings();});
+$("c_swap").onclick=()=>{CLICK.swap=!CLICK.swap;saveClick();routeAudio();renderClickSettings();};
+$("c_vol").oninput=()=>{CLICK.vol=+$("c_vol").value;saveClick();if(clickGain)clickGain.gain.setTargetAtTime(CLICK.vol,ctx.currentTime,.02);};
+$("c_meter").onchange=()=>{setTempo(null,+$("c_meter").value);renderClickSettings();};
+$("c_minus").onclick=()=>setTempo(CLICK.bpm-1);
+$("c_plus").onclick=()=>setTempo(CLICK.bpm+1);
+$("c_tap").onclick=tapTempo;
+$("c_test").onclick=()=>{toggleClick();$("c_test").textContent=clickOn?"Klick stoppen":"Klick testen";};
+renderClickSettings();
+
+// ================= Pedal 2 =================
+// links kurz = nächstes Set · lang = Set zurück · rechts kurz = Klick an/aus · lang = Einzähler
+let P2=load("apl.pedal2",null);
+const savePedal2=()=>{try{P2?localStorage.setItem("apl.pedal2",JSON.stringify(P2)):localStorage.removeItem("apl.pedal2");}catch(e){}};
+function side2(key){if(!P2)return null;if(P2.left.includes(key))return "left";if(P2.right.includes(key))return "right";return null;}
+function stepSet(dir){const keys=allSetKeys(),i=keys.indexOf(S.set);if(keys.length<2)return;switchSet(keys[((i+dir)%keys.length+keys.length)%keys.length]);}
+function action2(side,long){
+  if(side==="left")stepSet(long?-1:1);
+  else long?countIn():toggleClick();
+}
+const down2={};let tap2=null;
+function pedal2Down(e,side){
+  e.preventDefault();markPedal(e.key);if(e.repeat||down2[side])return;unlockAudio();
+  const d={longFired:false,timer:null};
+  if(P2.hold)d.timer=setTimeout(()=>{d.longFired=true;action2(side,true);},LONG_MS);
+  down2[side]=d;
+}
+function pedal2Up(e,side){
+  e.preventDefault();const d=down2[side];delete down2[side];if(!d)return;clearTimeout(d.timer);if(d.longFired)return;
+  if(P2.hold){action2(side,false);return;}
+  // ohne Halte-Erkennung: Doppeltipp = „lang“
+  if(tap2&&tap2.side===side){clearTimeout(tap2.timer);tap2=null;action2(side,true);return;}
+  tap2={side,timer:setTimeout(()=>{tap2=null;action2(side,false);},380)};
+}
+window.addEventListener("keydown",e=>{if(typing(e)||learning)return;const s=side2(e.key);if(!s)return;e.stopImmediatePropagation();pedal2Down(e,s);},true);
+window.addEventListener("keyup",e=>{if(typing(e)||learning)return;const s=side2(e.key);if(!s)return;e.stopImmediatePropagation();pedal2Up(e,s);},true);
+function updatePedal2Info(){
+  const el=$("pedal2Info");if(!el)return;
+  el.innerHTML=P2?`Links: <b>${P2.left.map(keyName).join(" / ")}</b> · Rechts: <b>${P2.right.map(keyName).join(" / ")}</b><br>`+(P2.hold
+    ?"Links kurz = nächstes Set · lang = Set zurück<br>Rechts kurz = Klick an/aus · lang = Einzähler"
+    :"Links = nächstes Set · doppelt = Set zurück<br>Rechts = Klick an/aus · doppelt = Einzähler"):"Noch nicht eingerichtet. Ein zweites Pedal in einem anderen Modus koppeln (z. B. Bild↑/↓, wenn Pedal 1 Pfeiltasten sendet) und lernen.";
+  $("pedal2Reset").style.display=P2?"":"none";
+}
+$("learn2Btn").onclick=()=>{learning={step:"left",events:[],which:2};$("settingsSheet").classList.remove("open");$("learnSheet").classList.add("open");learnUI();};
+$("pedal2Reset").onclick=()=>{P2=null;savePedal2();updatePedal2Info();toast("Pedal 2 entfernt");};
+updatePedal2Info();
+
 // ================= Standard-Pads offline speichern =================
 let offlineCount=0;
 async function cacheBundledPads(){
@@ -1863,6 +2074,7 @@ function settingsSummaries(){
   $("sum_sound").textContent=`Wechsel ${f(S.xfade)} · Fade Out ${f(S.fadeOut)} · Pads ${({90:"1½ Min.",150:"2½ Min.",240:"4 Min.",0:"ganz"})[S.maxLoop]||""}`;
   $("sum_onedrive").textContent=!msClientId()?"Nicht eingerichtet":msSessionValid()?`Angemeldet · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}${remotePlan?" · Neues verfügbar":""}`:`${remoteSets.length} Set${remoteSets.length===1?"":"s"} auf dem Gerät · nicht angemeldet`;
   document.querySelector('.mrow[data-go="onedrive"]').classList.toggle("badge",!!remotePlan);
+  $("sum_click").textContent=`${Math.round(CLICK.bpm)} BPM · ${CLICK.meter===6?"6/8":CLICK.meter+"/"+(CLICK.meter>=6?8:4)} · ${{visual:"nur Anzeige",split:"Split",mix:"gemischt"}[CLICK.out]}${clickOn?" · läuft":""}`;
   $("sum_pco").textContent=SL?`${slOn()?"An":"Aus"} · ${SL.title}`:(pcoValid()?"Verbunden · noch keine Setlist":"Lieder & Tonarten aus Planning Center");
   $("sum_team").textContent=teamUrl()?`${teamSets.length} Team-Set${teamSets.length===1?"":"s"} auf dem Gerät`:"Noch kein Team-Ordner hinterlegt";
   $("sum_sets").textContent=allSetKeys().map(setLabel).join(", ")+(HIDDEN.length?` · ${HIDDEN.length} ausgeblendet`:"");
@@ -1988,6 +2200,7 @@ async function forceUpdate(){
     grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
     book:'<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2zM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
     info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+    metro:'<path d="M9 3h6l4 18H5z"/><path d="M12 15l5-9"/>',
     vol1:'<path d="M11 5L6 9H2v6h4l5 4V5z"/>',
     vol3:'<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'
   };
@@ -1999,10 +2212,10 @@ async function forceUpdate(){
   $("slPrev").innerHTML=ic("left"); $("slFwd").innerHTML=ic("right");
   const r=$("master").parentElement.children; r[0].outerHTML=`<span class="vol">${ic("vol1")}</span>`; r[r.length-1].outerHTML=`<span class="vol">${ic("vol3")}</span>`;
   $("unlockBtn").innerHTML=ic("vol3")+"Start";
-  const MAP={pco:["music",""],pedal:["pedal","var(--sys-gray)"],sound:["sliders","var(--sys-pink)"],onedrive:["cloud","var(--sys-blue)"],
+  const MAP={click:["metro","var(--sys-green)"],pco:["music",""],pedal:["pedal","var(--sys-gray)"],sound:["sliders","var(--sys-pink)"],onedrive:["cloud","var(--sys-blue)"],
              team:["team","var(--sys-teal)"],sets:["grid","var(--sys-indigo)"],app:["info","var(--sys-gray)"]};
   document.querySelectorAll(".mrow").forEach(row=>{
-    const k=row.dataset.go||(row.id==="guideLink"?"guide":"");const m=k==="guide"?["book","var(--sys-green)"]:MAP[k];
+    const k=row.dataset.go||(row.id==="guideLink"?"guide":"");const m=k==="guide"?["book","var(--sys-teal)"]:MAP[k];
     const mi=row.querySelector(".mi");if(m&&mi){mi.innerHTML=ic(m[0]);if(m[1])mi.style.background=m[1];}
     const mc=row.querySelector(".mc");if(mc)mc.innerHTML=ic("right");
   });

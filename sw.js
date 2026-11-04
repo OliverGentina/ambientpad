@@ -1,10 +1,10 @@
 // Offline-Speicher für AmbientPad Live.
 // Bei jeder neuen Version VERSION erhöhen.
-const VERSION = "2.7.2";
+const VERSION = "2.8.0";
 const CACHE = "ambientpad-" + VERSION;
 const PADCACHE = "ambientpad-pads-v1";   // Standard-Pads: bleiben über App-Updates hinweg erhalten
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "anleitung.html",
-  "anleitung/anordnen.webp", "anleitung/auswahl.webp", "anleitung/einstellungen.webp", "anleitung/ipad.webp", "anleitung/leiste.webp", "anleitung/leiste_symbol.webp", "anleitung/onedrive.webp", "anleitung/pco_laden.webp", "anleitung/pco_liste.webp", "anleitung/pco_menu.webp", "anleitung/pco_seite.webp", "anleitung/pco_setlist.webp", "anleitung/pedal.webp", "anleitung/spielen.webp", "anleitung/start.webp", "anleitung/symbole.webp", "anleitung/team.webp", "anleitung/zuweisen.webp"];
+  "anleitung/anordnen.webp", "anleitung/auswahl.webp", "anleitung/einstellungen.webp", "anleitung/ipad.webp", "anleitung/klick_einstellungen.webp", "anleitung/klick_haupt.webp", "anleitung/leiste.webp", "anleitung/leiste_symbol.webp", "anleitung/onedrive.webp", "anleitung/pco_laden.webp", "anleitung/pco_liste.webp", "anleitung/pco_menu.webp", "anleitung/pco_seite.webp", "anleitung/pco_setlist.webp", "anleitung/pedal.webp", "anleitung/pedal2.webp", "anleitung/spielen.webp", "anleitung/start.webp", "anleitung/symbole.webp", "anleitung/team.webp", "anleitung/zuweisen.webp"];
 
 self.addEventListener("install", e => {
   // cache:"reload" umgeht den Browser-Zwischenspeicher → wirklich die neuen Dateien
