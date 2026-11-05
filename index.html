@@ -587,8 +587,16 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
     <p id="pedalInfo"></p>
     <div class="row"><button class="btn accent" id="learnBtn">Pedal lernen</button><button class="btn" id="pedalReset">Standard</button></div>
     <p class="hint">Am Pedal einen Modus mit Pfeiltasten oder Bild↑/↓ wählen und den Repeat-Modus ausschalten.</p>
-    <div class="group" id="p_bothRow"><label><span>Beide Tasten gleichzeitig</span><select id="p_both"><option value="fade">Alles ausblenden</option><option value="volume">Lautstärke-Modus</option></select></label>
-      <p class="hint">Dein Pedal meldet kein langes Drücken. Wähle, was ein gleichzeitiger Tritt auf beide Tasten tun soll. Im Lautstärke-Modus: rechts = lauter, links = leiser (je 5 %), zurück automatisch nach 3 Sekunden.</p></div>
+    <h3>Belegung</h3>
+    <div class="group" id="p_map">
+      <label><span>Links 1×</span><select id="pm_lt"><option value="next">Vor (Tonart / Lied)</option><option value="prev">Zurück (Tonart / Lied)</option><option value="fade">Fade In / Out</option><option value="volume">Lautstärke-Modus</option><option value="none">– nichts –</option></select></label>
+      <label><span>Links 2× (doppelt)</span><select id="pm_ld"><option value="next">Vor (Tonart / Lied)</option><option value="prev">Zurück (Tonart / Lied)</option><option value="fade">Fade In / Out</option><option value="volume">Lautstärke-Modus</option><option value="none">– nichts –</option></select></label>
+      <label><span>Rechts 1×</span><select id="pm_rt"><option value="next">Vor (Tonart / Lied)</option><option value="prev">Zurück (Tonart / Lied)</option><option value="fade">Fade In / Out</option><option value="volume">Lautstärke-Modus</option><option value="none">– nichts –</option></select></label>
+      <label><span>Rechts 2× (doppelt)</span><select id="pm_rd"><option value="next">Vor (Tonart / Lied)</option><option value="prev">Zurück (Tonart / Lied)</option><option value="fade">Fade In / Out</option><option value="volume">Lautstärke-Modus</option><option value="none">– nichts –</option></select></label>
+      <label><span>Zeit für Doppeltipp <b id="v_dbl"></b></span><input type="range" id="p_dbl" min="200" max="700" step="25"></label>
+      <p class="hint">„Vor“ und „Zurück“ gehen durch die Tonarten – bei aktiver Setlist von Lied zu Lied. Ist für eine Taste kein Doppeltipp belegt, reagiert der einfache Tritt sofort; sonst wartet die App die Doppeltipp-Zeit ab. Im Lautstärke-Modus: rechts = lauter, links = leiser (5 %); zurück automatisch nach 3 s oder per Doppeltipp.</p>
+      <div class="row"><button class="btn" id="pm_reset">Standard-Belegung</button></div>
+    </div>
     <h3>Pedal 2 · Sets &amp; Klick</h3>
     <div class="group"><p id="pedal2Info"></p>
       <div class="row"><button class="btn accent" id="learn2Btn">Pedal 2 lernen</button><button class="btn" id="pedal2Reset">Entfernen</button></div></div>
@@ -757,7 +765,7 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
 
 <script>
 "use strict";
-const VERSION="3.1.0";
+const VERSION="3.2.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1114,37 +1122,40 @@ const LONG_MS=600;
 const down={};            // side → {t, timer, longFired}
 let learning=null, lastSide=null, lastSideT=0, fallbackTimer=null, fallbackSide=null;
 function sideOf(key){ if(typeof side2==="function"&&side2(key))return null; if(P.left.includes(key))return "left"; if(P.right.includes(key))return "right"; return null; }
-function action(side,long){
-  if(side==="left"){ if(slOn()){long?stepSong(-1):stepSong(1);} else {long?stepSel(-1):stepSel(1);} }
-  else{ long?fadeAll(S.fadeOut):toggleKey(selected); }
+// ---- Pedal 1: frei belegbare Gesten (links/rechts × einmal/doppelt) ----
+const PEDAL_ACTIONS={next:"Vor (Tonart / Lied)",prev:"Zurück (Tonart / Lied)",fade:"Fade In / Out",volume:"Lautstärke-Modus",none:"– nichts –"};
+const PMAP_DEFAULT={lt:"next",ld:"prev",rt:"fade",rd:"volume"};
+P.map=Object.assign({},PMAP_DEFAULT,P.map||{});if(!P.dbl)P.dbl=350;
+function runPedal(act){
+  if(act==="next"){slOn()?stepSong(1):stepSel(1);}
+  else if(act==="prev"){slOn()?stepSong(-1):stepSel(-1);}
+  else if(act==="fade"){toggleKey(selected);}
+  else if(act==="volume"){volMode?exitVol():enterVol();}
 }
-// ---- Lautstärke-Modus: beide Tasten gleichzeitig → rechts = lauter, links = leiser (halten = stufenlos) ----
-let volMode=false,volExitT=null,volRampT=null,volRampI=null,volLast={left:0,right:0};
+// ---- Lautstärke-Modus: rechts = lauter, links = leiser (halten = stufenlos, falls das Pedal Halten meldet) ----
+let volMode=false,volExitT=null,volRampT=null,volRampI=null,volTap={left:0,right:0},volPrev={left:null,right:null};
 function volHud(){$("volHudVal").textContent=Math.round(S.master*100)+" %";$("volHudBar").style.width=Math.round(S.master*100)+"%";
-  $("volHudHint").innerHTML=P.hold?"rechts halten = lauter · links halten = leiser<br>zurück automatisch nach 3 s":"rechts = lauter · links = leiser<br>zurück automatisch nach 3 s";}
+  $("volHudHint").innerHTML="rechts = lauter · links = leiser"+(P.hold?" · halten = stufenlos":"")+"<br>zurück automatisch nach 3 s";}
 function volArm(){clearTimeout(volExitT);volExitT=setTimeout(()=>exitVol(),3000);}
-function enterVol(){volMode=true;volHud();$("volHud").hidden=false;updateLed();volArm();}
+function enterVol(){volMode=true;volTap={left:0,right:0};volHud();$("volHud").hidden=false;updateLed();volArm();}
 function exitVol(){volMode=false;clearTimeout(volExitT);clearTimeout(volRampT);clearInterval(volRampI);$("volHud").hidden=true;updateLed();}
 function volNudge(d){S.master=Math.round(Math.min(1,Math.max(0,S.master+d))*100)/100;saveSettings();applyMix(0.03);renderLayers();volHud();volArm();}
+const VOL_STEP=.05;
 function volKeyDown(side){
-  const now=performance.now(),other=side==="left"?"right":"left";
-  if(now-volLast[other]<180){exitVol();return;}             // beide gleichzeitig → zurück
-  volLast[side]=now;const dir=side==="right"?1:-1;
-  volNudge(dir*(P.hold?.02:.05));
+  const now=performance.now(),dir=side==="right"?1:-1,dbl=P.map[side==="left"?"ld":"rd"];
+  // Doppeltipp auf die Taste, die den Lautstärke-Modus öffnet → Modus verlassen (zweiten Schritt rückgängig)
+  if(dbl==="volume"&&now-volTap[side]<P.dbl){if(volPrev[side]!=null){S.master=volPrev[side];saveSettings();applyMix(0.03);renderLayers();}exitVol();return;}
+  volTap[side]=now;volPrev[side]=S.master;volNudge(dir*VOL_STEP);
   clearTimeout(volRampT);clearInterval(volRampI);
-  volRampT=setTimeout(()=>{volRampI=setInterval(()=>volNudge(dir*.01),60);},300);
+  volRampT=setTimeout(()=>{volRampI=setInterval(()=>volNudge(dir*.01),60);},350);
 }
 function volKeyUp(){clearTimeout(volRampT);clearInterval(volRampI);}
-function bothPressed(){ if(P.hold||P.both==="volume")enterVol(); else {fadeAll(S.fadeOut);toast("Alles ausblenden");} }
-function pedalEvent(side,isLong){
-  if(P.hold){action(side,isLong);return;}
-  // Fallback ohne Halten
-  const now=performance.now();
-  if(fallbackTimer&&fallbackSide&&fallbackSide!==side){clearTimeout(fallbackTimer);fallbackTimer=null;fallbackSide=null;bothPressed();return;}
-  if(side==="left"&&lastSide==="left"&&now-lastSideT<450){lastSide=null;if(slOn()){stepSong(-1);stepSong(-1);}else stepSel(-2);return;}
-  clearTimeout(fallbackTimer);fallbackSide=side;
-  fallbackTimer=setTimeout(()=>{fallbackTimer=null;fallbackSide=null;action(side,false);},130);
-  lastSide=side;lastSideT=now;
+const pend={left:null,right:null};
+function pedalTap(side){
+  const t=P.map[side==="left"?"lt":"rt"],d=P.map[side==="left"?"ld":"rd"];
+  if(d==="none"){runPedal(t);return;}                    // kein Doppeltipp belegt → sofort reagieren
+  if(pend[side]){clearTimeout(pend[side]);pend[side]=null;runPedal(d);return;}
+  pend[side]=setTimeout(()=>{pend[side]=null;runPedal(t);},P.dbl);
 }
 const typing=e=>e.target&&e.target.tagName==="INPUT"&&(e.target.type==="text"||e.target.type==="password");
 window.addEventListener("keydown",e=>{
@@ -1154,24 +1165,17 @@ window.addEventListener("keydown",e=>{
   e.preventDefault(); markPedal(e.key);
   if(e.repeat||down[side])return;
   unlockAudio();
-  if(volMode){down[side]={vol:true};volKeyDown(side);return;}
-  const now=performance.now(),other=side==="left"?"right":"left",o=down[other];
-  const d={t:now,longFired:false,timer:null};
-  if(P.hold&&o&&!o.longFired&&!o.combo&&now-o.t<250){   // beide Tasten gleichzeitig
-    clearTimeout(o.timer);o.combo=true;d.combo=true;down[side]=d;volLast={left:now,right:now};bothPressed();return;}
-  if(P.hold)d.timer=setTimeout(()=>{d.longFired=true;pedalEvent(side,true);},LONG_MS);
-  down[side]=d;
+  down[side]={t:performance.now()};
+  if(volMode){down[side].vol=true;volKeyDown(side);return;}
+  pedalTap(side);
 },true);
 window.addEventListener("keyup",e=>{
   if(typing(e))return;
   if(learning){e.preventDefault();learnKeyUp(e);return;}
   const side=sideOf(e.key); if(!side)return;
   e.preventDefault();
-  const d=down[side]; delete down[side]; if(!d)return;
-  if(d.vol){volKeyUp();return;}
-  if(d.combo){clearTimeout(d.timer);return;}
-  clearTimeout(d.timer);
-  if(!d.longFired)pedalEvent(side,false);
+  const d=down[side]; delete down[side];
+  if(d&&d.vol)volKeyUp();
 },true);
 function markPedal(key){ $("pedalState").textContent="✓ "+keyName(key); $("pedalState").className="okc"; }
 function keyName(k){return {" ":"Leertaste","ArrowLeft":"←","ArrowRight":"→","ArrowUp":"↑","ArrowDown":"↓","PageUp":"Bild↑","PageDown":"Bild↓","Enter":"Enter"}[k]||k;}
@@ -1197,7 +1201,12 @@ function learnKeyDown(e){
   if(L.step==="left"&&!e.repeat){L.left=e.key;L.step="right";learnUI();}
   else if(L.step==="right"&&!e.repeat){
     if(e.key===L.left){$("learnSub").textContent="Das war wieder die linke Taste – bitte die RECHTE.";return;}
-    L.right=e.key;L.step="hold";L.events=[];learnUI();
+    L.right=e.key;
+    if(L.which!==2){P={left:[L.left],right:[L.right],hold:false,map:P.map,dbl:P.dbl};savePedal();
+      if(P2){P2.left=P2.left.filter(k=>k!==L.left&&k!==L.right);P2.right=P2.right.filter(k=>k!==L.left&&k!==L.right);if(!P2.left.length||!P2.right.length)P2=null;savePedal2();updatePedal2Info();}
+      learning=null;$("learnBox").textContent="Fertig ✓";$("learnSub").textContent=`Links = ${keyName(L.left)}, rechts = ${keyName(L.right)}. Die Belegung stellst du unter „Belegung“ ein.`;
+      $("learnCancel").textContent="Schließen";updatePedalInfo();return;}
+    L.step="hold";L.events=[];learnUI();
   }
   else if(L.step==="hold"&&e.key===L.left){
     L.events.push({t:performance.now(),type:"down",repeat:e.repeat});
@@ -1221,23 +1230,23 @@ function finishLearn(){
     $("learnBox").textContent="Pedal 2 fertig ✓";$("learnSub").textContent=`Links = ${keyName(L.left)} (Sets), rechts = ${keyName(L.right)} (Klick). ${note.replace("links doppelt = zurück, beide Tasten = alles aus","doppelt tippen = lange Funktion").replace(/Ersatz:.*$/,"Ersatz: doppelt tippen = lange Funktion.")}`;
     $("learnCancel").textContent="Schließen";updatePedalInfo();updatePedal2Info();return;
   }
-  P={left:[L.left],right:[L.right],hold}; savePedal();
+  P={left:[L.left],right:[L.right],hold,map:P.map,dbl:P.dbl}; savePedal();
   if(P2){P2.left=P2.left.filter(k=>k!==L.left&&k!==L.right);P2.right=P2.right.filter(k=>k!==L.left&&k!==L.right);if(!P2.left.length||!P2.right.length)P2=null;savePedal2();updatePedal2Info();}
   learning=null;
   $("learnBox").textContent="Fertig ✓"; $("learnSub").textContent=`Links = ${keyName(P.left[0])}, rechts = ${keyName(P.right[0])}. ${note}`;
   $("learnCancel").textContent="Schließen"; updatePedalInfo();
 }
 $("learnBtn").onclick=startLearn;
-$("p_both").onchange=()=>{P.both=$("p_both").value;savePedal();updatePedalInfo();};
+for(const k of ["lt","ld","rt","rd"])$("pm_"+k).onchange=()=>{P.map[k]=$("pm_"+k).value;savePedal();updatePedalInfo();};
+$("p_dbl").oninput=()=>{P.dbl=+$("p_dbl").value;savePedal();updatePedalInfo();};
+$("pm_reset").onclick=()=>{P.map=Object.assign({},PMAP_DEFAULT);P.dbl=350;savePedal();updatePedalInfo();toast("Standard-Belegung");};
 $("learnCancel").onclick=()=>{ if(learning&&learning.timer)clearTimeout(learning.timer); learning=null; $("learnSheet").classList.remove("open"); $("learnCancel").textContent="Abbrechen"; };
-$("pedalReset").onclick=()=>{P=Object.assign({},PEDAL_DEFAULT);if(P2){const k=[...P2.left,...P2.right];P.left=P.left.filter(x=>!k.includes(x));P.right=P.right.filter(x=>!k.includes(x));}savePedal();updatePedalInfo();toast("Pedal: Standardbelegung");};
+$("pedalReset").onclick=()=>{P=Object.assign({},PEDAL_DEFAULT,{map:Object.assign({},PMAP_DEFAULT),dbl:350});if(P2){const k=[...P2.left,...P2.right];P.left=P.left.filter(x=>!k.includes(x));P.right=P.right.filter(x=>!k.includes(x));}savePedal();updatePedalInfo();toast("Pedal: Standardbelegung");};
 function updatePedalInfo(){
-  const l=P.left.map(keyName).join(" / "), r=P.right.map(keyName).join(" / ");
-  $("pedalInfo").innerHTML=`Links: <b>${l}</b> · Rechts: <b>${r}</b><br>`+(P.hold
-    ?"Links kurz = nächste Tonart · lang = zurück<br>Rechts kurz = Start/Stopp · lang = alles ausblenden"
-    :"Links = nächste Tonart · doppelt = zurück<br>Rechts = Start/Stopp · beide gleichzeitig = "+(P.both==="volume"?"Lautstärke-Modus":"alles ausblenden"))+
-    (P.hold?"<br>Beide gleichzeitig = Lautstärke-Modus":"");
-  const bs=$("p_both");if(bs){bs.value=P.both==="volume"?"volume":"fade";$("p_bothRow").style.display=P.hold?"none":"";}
+  const l=P.left.map(keyName).join(" / "), r=P.right.map(keyName).join(" / "),A=k=>PEDAL_ACTIONS[P.map[k]];
+  $("pedalInfo").innerHTML=`Links: <b>${l}</b> · Rechts: <b>${r}</b><br>Links 1× = ${A("lt")} · 2× = ${A("ld")}<br>Rechts 1× = ${A("rt")} · 2× = ${A("rd")}`;
+  for(const k of ["lt","ld","rt","rd"]){const s=$("pm_"+k);if(s)s.value=P.map[k];}
+  const d=$("p_dbl");if(d){d.value=P.dbl;$("v_dbl").textContent=(P.dbl/1000).toFixed(2).replace(".",",")+" s";}
 }
 
 // ================= Oberfläche =================

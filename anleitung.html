@@ -87,7 +87,7 @@
   .ptabs{display:flex;background:#efebe4;border-radius:10px;padding:3px;gap:2px;margin-bottom:12px}
   .ptabs button{flex:1;border:0;background:none;border-radius:8px;font:600 14px var(--font);color:var(--dim);padding:8px 4px;cursor:pointer}
   .ptabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-  .pgrid{display:grid;grid-template-columns:1fr minmax(180px,260px) 1fr;grid-template-areas:"l p r" ". b .";gap:10px 14px;align-items:center}
+  .pgrid{display:grid;grid-template-columns:1fr minmax(180px,260px) 1fr;grid-template-areas:"l p r";gap:10px 14px;align-items:center}
   .pedal{grid-area:p;width:100%;height:auto;filter:drop-shadow(0 8px 16px rgba(0,0,0,.18))}
   .pedal text{font:700 28px var(--font);fill:#fff;opacity:.85}
   .pedal .brand{font:600 8px var(--font);letter-spacing:.2em;opacity:.35}
@@ -104,7 +104,7 @@
   .pcard i{font-style:normal;font-size:12px;color:var(--dim)}
   .pcard b{font-size:15px}
   .pnote{margin:12px 2px 0;font-size:14.5px;color:#3a3a3e}
-  @media(max-width:620px){.pgrid{grid-template-columns:1fr 1fr;grid-template-areas:"p p" "l r" "b b"}.pedal{max-width:260px;justify-self:center}}
+  @media(max-width:620px){.pgrid{grid-template-columns:1fr 1fr;grid-template-areas:"p p" "l r"}.pedal{max-width:260px;justify-self:center}}
   /* Fuß */
   footer{display:flex;align-items:center;gap:10px;padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);border-top:1px solid var(--line);background:var(--bg)}
   .nav{border:0;border-radius:999px;font:700 15px var(--font);padding:12px 18px;cursor:pointer;background:var(--card);color:var(--ink);border:1px solid var(--line);min-width:52px}
@@ -324,13 +324,13 @@
     <div>
       <p class="kicker">Pedal</p>
       <h2>Mit dem Fußpedal steuern</h2>
-      <p>Geeignet ist ein Bluetooth-Umblätterpedal mit zwei Tasten, z. B. von <b>Tavsou</b>. Jede Taste kennt <b>kurz</b> (antippen) und <b>lang</b> (gut eine halbe Sekunde halten). Tippe unten auf einen Modus, um die Belegung zu sehen.</p>
+      <p>Geeignet ist ein Bluetooth-Umblätterpedal mit zwei Tasten, z. B. von <b>Tavsou</b>. Jede Taste kennt <b>1× tippen</b> und <b>2× tippen</b> (kurz hintereinander) – zusammen vier Gesten, die du frei belegen kannst. Tippe unten auf einen Modus, um die Belegung zu sehen.</p>
       <div class="pdemo">
         <div class="ptabs" role="tablist">
           <button class="on" data-m="normal">Normal</button><button data-m="setlist">Setlist</button><button data-m="volume">Lautstärke</button><button data-m="p2">Pedal 2</button>
         </div>
         <div class="pgrid">
-          <div class="pcard l"><span class="ph">Links</span><div><i>kurz</i><b data-k="lk"></b></div><div><i>lang</i><b data-k="ll"></b></div></div>
+          <div class="pcard l"><span class="ph">Links</span><div><i data-k="a1"></i><b data-k="lk"></b></div><div><i data-k="a2"></i><b data-k="ll"></b></div></div>
           <svg class="pedal" viewBox="0 0 260 170" role="img" aria-label="Stilisiertes Pedal mit zwei Tasten">
             <defs><linearGradient id="pb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a3c"/><stop offset="1" stop-color="#1c1c1e"/></linearGradient>
               <radialGradient id="kb" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="#5a5a5e"/><stop offset="1" stop-color="#2c2c2e"/></radialGradient></defs>
@@ -341,8 +341,7 @@
             <g class="key kr"><circle cx="182" cy="96" r="40" fill="url(#kb)" stroke="#000" stroke-opacity=".6" stroke-width="2"/><text x="182" y="104" text-anchor="middle">R</text></g>
             <text class="brand" x="130" y="146" text-anchor="middle">BLUETOOTH</text>
           </svg>
-          <div class="pcard r"><span class="ph">Rechts</span><div><i>kurz</i><b data-k="rk"></b></div><div><i>lang</i><b data-k="rl"></b></div></div>
-          <div class="pcard both"><span class="ph">Beide gleichzeitig</span><b data-k="both"></b></div>
+          <div class="pcard r"><span class="ph">Rechts</span><div><i data-k="a1"></i><b data-k="rk"></b></div><div><i data-k="a2"></i><b data-k="rl"></b></div></div>
         </div>
         <p class="pnote" data-k="note"></p>
       </div>
@@ -350,9 +349,10 @@
       <ol class="steps">
         <li>Stelle das Pedal auf den Modus mit <b>Pfeiltasten</b> oder <b>Bild↑/Bild↓</b> (siehe Anleitung des Pedals) und schalte den <b>Repeat-Modus aus</b>.</li>
         <li>iPhone/iPad: <span class="ui">Einstellungen</span> → <span class="ui">Bluetooth</span> → Pedal antippen.</li>
-        <li>In der App: <span class="ui">⚙︎</span> → <span class="ui">🦶 Pedal</span> → <span class="ui o">Pedal lernen</span>. Folge der Anzeige: links kurz, rechts kurz, dann links etwa 2 Sekunden halten.</li>
+        <li>In der App: <span class="ui">⚙︎</span> → <span class="ui">🦶 Pedal</span> → <span class="ui o">Pedal lernen</span>: einmal links, einmal rechts treten.</li>
+        <li>Unter <b>Belegung</b> für Links 1×, Links 2×, Rechts 1× und Rechts 2× wählen: Vor, Zurück, Fade In/Out, Lautstärke-Modus oder nichts.</li>
       </ol>
-      <div class="box"><b>Pedal kennt kein „lang“?</b><p>Manche Pedale melden langes Drücken nicht. Die App merkt das beim Lernen und stellt um: <b>links doppelt tippen</b> = Tonart zurück. Was <b>beide Tasten gleichzeitig</b> tun, wählst du unter ⚙︎ → Pedal: <i>Alles ausblenden</i> oder <i>Lautstärke-Modus</i>. Im Lautstärke-Modus ändert dann jeder Tritt die Lautstärke um 5 %.</p></div>
+      <div class="box"><b>Doppeltipp-Zeit</b><p>Ist für eine Taste ein Doppeltipp belegt, wartet die App nach dem ersten Tritt kurz ab (Standard 0,35 s), ob ein zweiter kommt. Ist kein Doppeltipp belegt, reagiert der Tritt sofort. Die Zeit stellst du unter ⚙︎ → Pedal ein – kürzer = schneller, länger = sicherer für langsame Doppeltritte.</p></div>
       <div class="box tip"><b>Bildschirmtastatur weg?</b><p>Solange ein Pedal verbunden ist, blendet iOS die Tastatur in anderen Apps aus. Bluetooth am Pedal aus- und wieder einschalten hilft.</p></div>
     </div>
   </div>
@@ -373,10 +373,11 @@
       </ol>
       <h3>Pedal im Setlist-Modus</h3>
       <table>
-        <tr><th></th><th>kurz</th><th>lang</th></tr>
+        <tr><th></th><th>1×</th><th>2×</th></tr>
         <tr><td><b>Links</b></td><td>nächstes Lied (ein laufendes Pad blendet direkt über)</td><td>Lied zurück</td></tr>
-        <tr><td><b>Rechts</b></td><td>Pad Start / Stopp</td><td>alles ausblenden</td></tr>
+        <tr><td><b>Rechts</b></td><td>Pad Fade In / Out</td><td>Lautstärke-Modus</td></tr>
       </table>
+      <p style="color:var(--dim);font-size:14.5px">Standard-Belegung – frei änderbar unter ⚙︎ → Pedal.</p>
       <p>Ohne Pedal blätterst du mit <span class="ui">‹</span> <span class="ui">›</span> in der Leiste. Ein Tipp auf die Leiste öffnet die ganze Liste, und ein Tipp auf ein Lied springt direkt dorthin.</p>
       <h3>So liest die App die Tonarten</h3>
       <ul class="dots">
@@ -611,14 +612,14 @@ tocSheet.addEventListener("click",e=>{if(e.target===tocSheet)tocSheet.classList.
 
 // Pedal-Grafik: Belegung je Modus
 const PMODES={
-  normal:{lk:"nächste Tonart",ll:"Tonart zurück",rk:"Tonart starten / ausblenden",rl:"alles ausblenden",both:"Lautstärke-Modus an",
-    note:"Die Reihenfolge der Tonarten folgt den Kacheln – mit dem Quintenzirkel springst du C → G → D …"},
-  setlist:{lk:"nächstes Lied (laufendes Pad blendet über)",ll:"Lied zurück",rk:"Pad starten / ausblenden",rl:"alles ausblenden",both:"Lautstärke-Modus an",
-    note:"Gilt, solange eine Setlist aus Planning Center aktiv ist. Lieder ohne Tonart werden übersprungen."},
-  volume:{lk:"etwas leiser",ll:"stufenlos leiser, solange du hältst",rk:"etwas lauter",rl:"stufenlos lauter, solange du hältst",both:"zurück zum normalen Modus",
-    note:"Die LED oben in der App wird blau, in der Mitte erscheint groß die Lautstärke. Nach 3 Sekunden ohne Tritt geht es automatisch zurück – du kannst nicht „hängen bleiben“. Geregelt wird die Gesamtlautstärke; die Überblendung zwischen Pad 1 und Pad 2 bleibt."},
-  p2:{lk:"nächstes Set für Pad 2 (inkl. „Leer“)",ll:"Set für Pad 2 zurück",rk:"Klick an / aus",rl:"Einzähler, danach läuft der Klick",both:"–",
-    note:"Optional: ein zweites Pedal, das andere Tasten sendet (z. B. Bild↑/↓). Einrichten unter ⚙︎ → Pedal → „Pedal 2 lernen“."}
+  normal:{a1:"1× tippen",a2:"2× tippen",lk:"vor (nächste Tonart)",ll:"zurück",rk:"Fade In / Out",rl:"Lautstärke-Modus",
+    note:"Das ist die Standard-Belegung. Jede der vier Gesten kannst du unter ⚙︎ → Pedal → „Belegung“ frei wählen: Vor, Zurück, Fade In/Out, Lautstärke-Modus oder nichts."},
+  setlist:{a1:"1× tippen",a2:"2× tippen",lk:"nächstes Lied (laufendes Pad blendet über)",ll:"Lied zurück",rk:"Fade In / Out",rl:"Lautstärke-Modus",
+    note:"„Vor“ und „Zurück“ springen von Lied zu Lied, solange eine Setlist aus Planning Center aktiv ist. Lieder ohne Tonart werden übersprungen."},
+  volume:{a1:"1× tippen",a2:"halten",lk:"5 % leiser",ll:"stufenlos leiser (falls das Pedal Halten meldet)",rk:"5 % lauter",rl:"stufenlos lauter (falls das Pedal Halten meldet)",
+    note:"Die LED oben in der App wird blau, in der Mitte erscheint groß die Lautstärke. Zurück geht es automatisch nach 3 Sekunden ohne Tritt – oder mit einem Doppeltipp auf die Taste, die den Lautstärke-Modus geöffnet hat. Geregelt wird die Gesamtlautstärke; die Überblendung bleibt."},
+  p2:{a1:"kurz",a2:"lang",lk:"nächstes Set für Pad 2 (inkl. „Leer“)",ll:"Set für Pad 2 zurück",rk:"Klick an / aus",rl:"Einzähler, danach läuft der Klick",
+    note:"Optional: ein zweites Pedal, das andere Tasten sendet (z. B. Bild↑/↓). Einrichten unter ⚙︎ → Pedal → „Pedal 2 lernen“. Meldet es kein Halten, gilt doppelt tippen = lang."}
 };
 document.querySelectorAll(".pdemo").forEach(box=>{
   const set=m=>{box.dataset.m=m;const d=PMODES[m];box.querySelectorAll("[data-k]").forEach(el=>el.textContent=d[el.dataset.k]);
