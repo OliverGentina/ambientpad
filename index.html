@@ -443,6 +443,50 @@ header #clickWidget .num{min-width:2.6em}
 #symGroup .seg{display:none}
 .group .ghead{font-size:17px;font-weight:600}
 .symcat>b{font-size:15px;font-weight:500;color:var(--label2)}
+
+/* ================= Überblendregler · Gesamtlautstärke · Mute ================= */
+#layers,#masterRow,#fadeAllBtn,#stopBtn{display:none!important}
+#mixPanel{display:flex;flex-direction:column;background:var(--gray6);border-radius:16px;padding:6px 14px}
+.xrow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:40px}
+.pn{appearance:none;border:0;background:none;color:#fff;font:600 15px -apple-system,sans-serif;display:flex;align-items:center;gap:6px;padding:4px 0;max-width:48%;min-width:0;cursor:pointer}
+.pn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pn .chev{color:var(--accent);font-size:12px;flex:none}
+.pn .dot{width:10px;height:10px;border-radius:50%;flex:none;display:flex}
+.pn .dot.hassym{width:12px;height:12px;border-radius:0}
+.pn.r{flex-direction:row-reverse;text-align:right}
+.pn.empty{color:var(--label3)}
+.xf{position:relative;height:46px;display:flex;align-items:center}
+.xf::after{content:"";position:absolute;left:50%;top:17px;bottom:13px;width:2px;margin-left:-1px;background:rgba(255,255,255,.35);border-radius:1px;pointer-events:none}
+.xf .lbl{position:absolute;top:-4px;font-size:11px;color:var(--label2);font-variant-numeric:tabular-nums;pointer-events:none}
+.xf .lbl.l{left:0}.xf .lbl.r{right:0}
+#xfader{-webkit-appearance:none;appearance:none;width:100%;height:46px;background:transparent;margin:0;padding:0;position:relative;z-index:1;accent-color:auto}
+#xfader::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--ca,#FF9F0A),var(--cb,#4fc3f7))}
+#xfader::-moz-range-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--ca,#FF9F0A),var(--cb,#4fc3f7))}
+#xfader::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;margin-top:-12px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.45);border:0}
+#xfader::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:0;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.xf.off{opacity:.38}.xf.off .lbl{display:none}
+.xf.off #xfader::-webkit-slider-runnable-track{background:var(--gray4)}
+.xf.off #xfader::-webkit-slider-thumb{background:#8e8e93;box-shadow:none}
+.xhint{font-size:12px;color:var(--label3);text-align:center;margin:-6px 0 4px}
+.xhint[hidden]{display:none}
+.mrow2{display:flex;align-items:center;gap:12px;min-height:58px;border-top:.5px solid var(--sep);margin-top:4px}
+.mrow2>svg{width:20px;height:20px;fill:none;stroke:var(--label2);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.mrow2 input{flex:1;min-width:0;accent-color:var(--accent)}
+.mrow2 .pct{width:40px;text-align:right;font-size:13px;color:var(--label2);font-variant-numeric:tabular-nums}
+#muteBtn{width:48px;height:48px;border-radius:50%;border:0;background:var(--fill);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
+#muteBtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#muteBtn .off{display:none}
+#muteBtn.muted{background:var(--sys-red)}#muteBtn.muted .on{display:none}#muteBtn.muted .off{display:inline}
+body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
+#led.mute{background:var(--sys-red)!important;box-shadow:0 0 8px rgba(255,69,58,.8)!important}
+#led.vol{background:#0A84FF!important;box-shadow:0 0 10px rgba(10,132,255,.9)!important}
+#volHud{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);width:min(300px,78vw);background:rgba(28,28,30,.96);border:1px solid rgba(10,132,255,.6);border-radius:22px;padding:20px 22px;z-index:40;box-shadow:0 20px 60px rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:none}
+#volHud[hidden]{display:none}
+#volHud b{font:600 46px/1 -apple-system,"SF Pro Display",sans-serif;font-variant-numeric:tabular-nums}
+#volHud .bar{width:100%;height:10px;border-radius:5px;background:var(--gray4);overflow:hidden}
+#volHud .bar i{display:block;height:100%;background:linear-gradient(90deg,#0A84FF,#64D2FF);border-radius:5px;transition:width .08s}
+#volHud small{color:var(--label2);font-size:13px;text-align:center;line-height:1.4}
+#volHud .t{font-size:13px;font-weight:600;color:#0A84FF;letter-spacing:.04em;text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -471,20 +515,15 @@ header #clickWidget .num{min-width:2.6em}
   <button class="btn accent" id="arrangeDone" style="min-height:52px;font-size:18px">Fertig</button>
 </div>
 <footer id="mainFooter">
-  <div id="layers">
-    <div class="layer" id="layerA"><button class="lname" data-l="a"><i class="sw"></i><span></span><b class="chev">▾</b></button><input type="range" min="0" max="1" step="0.01" aria-label="Lautstärke Ebene 1"><span class="pct"></span></div>
-    <div class="layer" id="layerB"><button class="lname" data-l="b"><i class="sw"></i><span></span><b class="chev">▾</b></button><input type="range" min="0" max="1" step="0.01" aria-label="Lautstärke Ebene 2"><span class="pct"></span></div>
-  </div>
-  <div class="row" id="masterRow">
-    <span aria-hidden="true">🔈</span>
-    <input class="grow" type="range" id="master" min="0" max="1" step="0.01" aria-label="Master-Lautstärke">
-    <span aria-hidden="true">🔊</span>
-  </div>
-  <div class="row">
-    <button class="btn grow" id="fadeAllBtn" style="min-height:56px;font-size:19px">Fade Out</button>
-    <button class="btn danger" id="stopBtn" style="min-height:56px;min-width:56px;font-size:20px" aria-label="Alles sofort stoppen">■</button>
+  <div id="mixPanel">
+    <div class="xrow"><button class="pn" id="pnA" data-l="a"><i class="dot"></i><span></span><b class="chev">▾</b></button><button class="pn r" id="pnB" data-l="b"><i class="dot"></i><span></span><b class="chev">▾</b></button></div>
+    <div class="xf" id="xf"><span class="lbl l" id="xfA"></span><span class="lbl r" id="xfB"></span><input type="range" id="xfader" min="0" max="1" step="0.005" aria-label="Überblenden zwischen Pad 1 und Pad 2"></div>
+    <p class="xhint" id="xhint">Pad 2 wählen, um zu überblenden</p>
+    <div class="mrow2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg><input type="range" id="master" min="0" max="1" step="0.01" aria-label="Gesamtlautstärke"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg><span class="pct" id="masterPct"></span>
+      <button id="muteBtn" aria-label="Stumm schalten" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path class="on" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/><path class="off" d="M16 9l6 6M22 9l-6 6"/></svg></button></div>
   </div>
 </footer>
+<div id="volHud" hidden><span class="t">Lautstärke-Modus</span><b id="volHudVal"></b><div class="bar"><i id="volHudBar"></i></div><small id="volHudHint"></small></div>
 
 <div id="toast" role="status"></div>
 <div id="lmenuBg" hidden></div><div id="lmenu" role="menu" hidden></div>
@@ -548,6 +587,8 @@ header #clickWidget .num{min-width:2.6em}
     <p id="pedalInfo"></p>
     <div class="row"><button class="btn accent" id="learnBtn">Pedal lernen</button><button class="btn" id="pedalReset">Standard</button></div>
     <p class="hint">Am Pedal einen Modus mit Pfeiltasten oder Bild↑/↓ wählen und den Repeat-Modus ausschalten.</p>
+    <div class="group" id="p_bothRow"><label><span>Beide Tasten gleichzeitig</span><select id="p_both"><option value="fade">Alles ausblenden</option><option value="volume">Lautstärke-Modus</option></select></label>
+      <p class="hint">Dein Pedal meldet kein langes Drücken. Wähle, was ein gleichzeitiger Tritt auf beide Tasten tun soll. Im Lautstärke-Modus: rechts = lauter, links = leiser (je 5 %), zurück automatisch nach 3 Sekunden.</p></div>
     <h3>Pedal 2 · Sets &amp; Klick</h3>
     <div class="group"><p id="pedal2Info"></p>
       <div class="row"><button class="btn accent" id="learn2Btn">Pedal 2 lernen</button><button class="btn" id="pedal2Reset">Entfernen</button></div></div>
@@ -716,7 +757,7 @@ header #clickWidget .num{min-width:2.6em}
 
 <script>
 "use strict";
-const VERSION="3.0.2";
+const VERSION="3.1.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -764,6 +805,10 @@ delete S.layer;delete S.mixA;delete S.mixB;
 if(S.volA==null)S.volA=S.master!=null?S.master:.9;
 if(S.volB==null)S.volB=.5;
 if(S.setB==null)S.setB="";
+// Ab 3.1: Überblendregler S.xf (0 = nur Pad 1, 1 = nur Pad 2) + Gesamtlautstärke S.master
+if(S.xf==null)S.xf=S.setB?Math.min(1,Math.max(0,S.volB/((S.volA||0)+(S.volB||0)||1))):.3;
+if(S.master==null)S.master=.9;
+let muted=false;
 // Reihenfolge der Kacheln (Tonart-Indizes 0–11), gilt für alle Sets
 const ORDER_CHROM=[0,1,2,3,4,5,6,7,8,9,10,11], ORDER_FIFTHS=[0,7,2,9,4,11,6,1,8,3,10,5];
 let ORDER=(o=>Array.isArray(o)&&o.length===12&&[...o].sort((a,b)=>a-b).every((v,i)=>v===i)?o:ORDER_CHROM.slice())(load("apl.order",null));
@@ -843,8 +888,9 @@ function ensureCtx(){
     catch(e){ctx=new (window.AudioContext||window.webkitAudioContext)();}
     ctx.onstatechange=()=>{if(typeof updateLed==="function")updateLed();};
     master=ctx.createGain();master.gain.value=1;routeAudio();
-    layerA=ctx.createGain();layerA.gain.value=S.volA;layerA.connect(master);
-    layerB=ctx.createGain();layerB.gain.value=S.volB;layerB.connect(master);
+    const g=xfGains();master.gain.value=muted?0:S.master;
+    layerA=ctx.createGain();layerA.gain.value=g[0];layerA.connect(master);
+    layerB=ctx.createGain();layerB.gain.value=g[1];layerB.connect(master);
   }
   if(ctx.state!=="running")ctx.resume().catch(()=>{});
   return ctx;
@@ -1072,11 +1118,29 @@ function action(side,long){
   if(side==="left"){ if(slOn()){long?stepSong(-1):stepSong(1);} else {long?stepSel(-1):stepSel(1);} }
   else{ long?fadeAll(S.fadeOut):toggleKey(selected); }
 }
+// ---- Lautstärke-Modus: beide Tasten gleichzeitig → rechts = lauter, links = leiser (halten = stufenlos) ----
+let volMode=false,volExitT=null,volRampT=null,volRampI=null,volLast={left:0,right:0};
+function volHud(){$("volHudVal").textContent=Math.round(S.master*100)+" %";$("volHudBar").style.width=Math.round(S.master*100)+"%";
+  $("volHudHint").innerHTML=P.hold?"rechts halten = lauter · links halten = leiser<br>zurück automatisch nach 3 s":"rechts = lauter · links = leiser<br>zurück automatisch nach 3 s";}
+function volArm(){clearTimeout(volExitT);volExitT=setTimeout(()=>exitVol(),3000);}
+function enterVol(){volMode=true;volHud();$("volHud").hidden=false;updateLed();volArm();}
+function exitVol(){volMode=false;clearTimeout(volExitT);clearTimeout(volRampT);clearInterval(volRampI);$("volHud").hidden=true;updateLed();}
+function volNudge(d){S.master=Math.round(Math.min(1,Math.max(0,S.master+d))*100)/100;saveSettings();applyMix(0.03);renderLayers();volHud();volArm();}
+function volKeyDown(side){
+  const now=performance.now(),other=side==="left"?"right":"left";
+  if(now-volLast[other]<180){exitVol();return;}             // beide gleichzeitig → zurück
+  volLast[side]=now;const dir=side==="right"?1:-1;
+  volNudge(dir*(P.hold?.02:.05));
+  clearTimeout(volRampT);clearInterval(volRampI);
+  volRampT=setTimeout(()=>{volRampI=setInterval(()=>volNudge(dir*.01),60);},300);
+}
+function volKeyUp(){clearTimeout(volRampT);clearInterval(volRampI);}
+function bothPressed(){ if(P.hold||P.both==="volume")enterVol(); else {fadeAll(S.fadeOut);toast("Alles ausblenden");} }
 function pedalEvent(side,isLong){
   if(P.hold){action(side,isLong);return;}
   // Fallback ohne Halten
   const now=performance.now();
-  if(fallbackTimer&&fallbackSide&&fallbackSide!==side){clearTimeout(fallbackTimer);fallbackTimer=null;fallbackSide=null;fadeAll(S.fadeOut);toast("Alles ausblenden");return;}
+  if(fallbackTimer&&fallbackSide&&fallbackSide!==side){clearTimeout(fallbackTimer);fallbackTimer=null;fallbackSide=null;bothPressed();return;}
   if(side==="left"&&lastSide==="left"&&now-lastSideT<450){lastSide=null;if(slOn()){stepSong(-1);stepSong(-1);}else stepSel(-2);return;}
   clearTimeout(fallbackTimer);fallbackSide=side;
   fallbackTimer=setTimeout(()=>{fallbackTimer=null;fallbackSide=null;action(side,false);},130);
@@ -1090,7 +1154,11 @@ window.addEventListener("keydown",e=>{
   e.preventDefault(); markPedal(e.key);
   if(e.repeat||down[side])return;
   unlockAudio();
-  const d={t:performance.now(),longFired:false,timer:null};
+  if(volMode){down[side]={vol:true};volKeyDown(side);return;}
+  const now=performance.now(),other=side==="left"?"right":"left",o=down[other];
+  const d={t:now,longFired:false,timer:null};
+  if(P.hold&&o&&!o.longFired&&!o.combo&&now-o.t<250){   // beide Tasten gleichzeitig
+    clearTimeout(o.timer);o.combo=true;d.combo=true;down[side]=d;volLast={left:now,right:now};bothPressed();return;}
   if(P.hold)d.timer=setTimeout(()=>{d.longFired=true;pedalEvent(side,true);},LONG_MS);
   down[side]=d;
 },true);
@@ -1100,6 +1168,8 @@ window.addEventListener("keyup",e=>{
   const side=sideOf(e.key); if(!side)return;
   e.preventDefault();
   const d=down[side]; delete down[side]; if(!d)return;
+  if(d.vol){volKeyUp();return;}
+  if(d.combo){clearTimeout(d.timer);return;}
   clearTimeout(d.timer);
   if(!d.longFired)pedalEvent(side,false);
 },true);
@@ -1158,13 +1228,16 @@ function finishLearn(){
   $("learnCancel").textContent="Schließen"; updatePedalInfo();
 }
 $("learnBtn").onclick=startLearn;
+$("p_both").onchange=()=>{P.both=$("p_both").value;savePedal();updatePedalInfo();};
 $("learnCancel").onclick=()=>{ if(learning&&learning.timer)clearTimeout(learning.timer); learning=null; $("learnSheet").classList.remove("open"); $("learnCancel").textContent="Abbrechen"; };
 $("pedalReset").onclick=()=>{P=Object.assign({},PEDAL_DEFAULT);if(P2){const k=[...P2.left,...P2.right];P.left=P.left.filter(x=>!k.includes(x));P.right=P.right.filter(x=>!k.includes(x));}savePedal();updatePedalInfo();toast("Pedal: Standardbelegung");};
 function updatePedalInfo(){
   const l=P.left.map(keyName).join(" / "), r=P.right.map(keyName).join(" / ");
   $("pedalInfo").innerHTML=`Links: <b>${l}</b> · Rechts: <b>${r}</b><br>`+(P.hold
     ?"Links kurz = nächste Tonart · lang = zurück<br>Rechts kurz = Start/Stopp · lang = alles ausblenden"
-    :"Links = nächste Tonart · doppelt = zurück<br>Rechts = Start/Stopp · beide gleichzeitig = alles ausblenden");
+    :"Links = nächste Tonart · doppelt = zurück<br>Rechts = Start/Stopp · beide gleichzeitig = "+(P.both==="volume"?"Lautstärke-Modus":"alles ausblenden"))+
+    (P.hold?"<br>Beide gleichzeitig = Lautstärke-Modus":"");
+  const bs=$("p_both");if(bs){bs.value=P.both==="volume"?"volume":"fade";$("p_bothRow").style.display=P.hold?"none":"";}
 }
 
 // ================= Oberfläche =================
@@ -2260,27 +2333,37 @@ updatePedal2Info();
 
 
 // ================= Zwei Ebenen: Regler & Set-Auswahl =================
+// Gleichleistungs-Kurve: empfundene Lautstärke bleibt über den ganzen Regelweg gleich
+function xfGains(){if(!S.setB)return [1,0];const x=Math.min(1,Math.max(0,S.xf));return [Math.cos(x*Math.PI/2),Math.sin(x*Math.PI/2)];}
+function applyMix(tc){
+  if(!ctx||!layerA)return;const g=xfGains(),t=ctx.currentTime;tc=tc||0.04;
+  layerA.gain.setTargetAtTime(g[0],t,tc);layerB.gain.setTargetAtTime(g[1],t,tc);
+  master.gain.setTargetAtTime(muted?0:S.master,t,tc);
+}
 function renderLayers(){
   for(const L of ["a","b"]){
-    const row=$(L==="a"?"layerA":"layerB"),s=layerSet(L),empty=L==="b"&&!s;
-    row.classList.toggle("empty",empty);
-    const sp=row.querySelector(".lname span");sp.textContent=empty?"Leer":setName(s);
-    const sw=row.querySelector(".sw"),sym=!empty&&symCat(s);
-    sw.innerHTML=sym?setSymbol(s,12):"";sw.classList.toggle("hassym",!!sym);
-    sw.style.background=empty?"#48484A":sym?"none":setColor(s);
-    row.style.setProperty("--lc",empty?"#48484A":setColor(s));
-    const vol=L==="a"?S.volA:S.volB,inp=row.querySelector("input");
-    if(document.activeElement!==inp)inp.value=vol;
-    row.querySelector(".pct").textContent=empty?"–":Math.round(vol*100)+" %";
-    inp.disabled=empty;
+    const btn=$(L==="a"?"pnA":"pnB"),s=layerSet(L),empty=L==="b"&&!s;
+    btn.classList.toggle("empty",empty);
+    btn.querySelector("span").textContent=empty?"Leer":setName(s);
+    const dot=btn.querySelector(".dot"),sym=!empty&&symCat(s);
+    dot.innerHTML=sym?setSymbol(s,12):"";dot.classList.toggle("hassym",!!sym);
+    dot.style.background=empty?"#48484A":sym?"none":setColor(s);
   }
+  const xf=$("xf"),inp=$("xfader"),on=!!S.setB;
+  xf.classList.toggle("off",!on);inp.disabled=!on;$("xhint").hidden=on;
+  xf.style.setProperty("--ca",setColor(S.set));xf.style.setProperty("--cb",on?setColor(S.setB):"#48484A");
+  if(!on||document.activeElement!==inp)inp.value=on?S.xf:0;
+  $("xfA").textContent=Math.round((1-S.xf)*100)+" %";$("xfB").textContent=Math.round(S.xf*100)+" %";
+  $("master").value=S.master;$("masterPct").textContent=Math.round(S.master*100)+" %";
 }
-for(const L of ["a","b"]){
-  const row=$(L==="a"?"layerA":"layerB"),inp=row.querySelector("input");
-  inp.oninput=()=>{const v=+inp.value;if(L==="a")S.volA=v;else S.volB=v;saveSettings();
-    const g=L==="a"?layerA:layerB;if(g)g.gain.setTargetAtTime(v,ctx.currentTime,0.04);row.querySelector(".pct").textContent=Math.round(v*100)+" %";};
-  row.querySelector(".lname").onclick=e=>{unlockAudio();openLayerMenu(L,e.currentTarget);};
+$("xfader").oninput=()=>{if(!S.setB)return;S.xf=+$("xfader").value;saveSettings();applyMix(0.03);renderLayers();};
+for(const L of ["a","b"])$(L==="a"?"pnA":"pnB").onclick=e=>{unlockAudio();openLayerMenu(L,e.currentTarget);};
+function setMute(on){
+  muted=!!on;document.body.classList.toggle("muted",muted);
+  const b=$("muteBtn");b.classList.toggle("muted",muted);b.setAttribute("aria-pressed",muted);b.setAttribute("aria-label",muted?"Ton wieder an":"Stumm schalten");
+  applyMix(0.1);updateLed();toast(muted?"Stumm – Pads laufen weiter":"Ton wieder an");
 }
+$("muteBtn").onclick=()=>{unlockAudio();setMute(!muted);};
 function openLayerMenu(L,anchor){
   const m=$("lmenu"),cur=layerSet(L),other=L==="a"?S.setB:S.set;m.innerHTML="";
   const add=(key,label,dim)=>{const b=document.createElement("button");b.setAttribute("role","menuitemradio");
@@ -2300,7 +2383,7 @@ function openLayerMenu(L,anchor){
 function closeLayerMenu(){$("lmenu").hidden=true;$("lmenuBg").hidden=true;}
 $("lmenuBg").onclick=closeLayerMenu;
 // LED: grün = bereit, rot = kein Ton
-function updateLed(){const l=$("led"),ok=ctx&&ctx.state==="running";l.classList.toggle("off",!ok);l.title=ok?"Audio bereit":"Kein Ton – „Start“ antippen";}
+function updateLed(){const l=$("led"),ok=ctx&&ctx.state==="running";l.classList.toggle("off",!ok);l.classList.toggle("mute",ok&&muted);l.classList.toggle("vol",!!(typeof volMode!=="undefined"&&volMode));l.title=ok?"Audio bereit":"Kein Ton – „Start“ antippen";}
 setInterval(updateLed,1000);updateLed();$("unlockBtn").addEventListener("click",()=>setTimeout(updateLed,150));
 renderLayers();
 
@@ -2376,9 +2459,7 @@ $("settingsBtn").onclick=()=>{showSettingsPage("main");updateTeamInfo();updatePc
 $("settingsClose").onclick=()=>$("settingsSheet").classList.remove("open");
 for(const sh of ["assignSheet","settingsSheet"])$(sh).addEventListener("click",e=>{if(e.target===$(sh))$(sh).classList.remove("open");});
 const masterEl=$("master");masterEl.value=S.master;
-masterEl.oninput=()=>{S.master=+masterEl.value;saveSettings();if(master)master.gain.setTargetAtTime(S.master,ctx.currentTime,0.03);};
-$("fadeAllBtn").onclick=()=>fadeAll(S.fadeOut);
-$("stopBtn").onclick=()=>fadeAll(0.15);
+masterEl.oninput=()=>{S.master=+masterEl.value;saveSettings();applyMix(0.03);$("masterPct").textContent=Math.round(S.master*100)+" %";};
 async function updateStorage(){
   try{const e=await navigator.storage.estimate();
     $("storageInfo").textContent=`Belegt: ${(e.usage/1048576).toFixed(0)} MB von ca. ${(e.quota/1048576/1024).toFixed(1)} GB verfügbar.`;}catch(_){ $("storageInfo").textContent="Speicherangabe nicht verfügbar."; }
@@ -2489,9 +2570,8 @@ async function forceUpdate(){
   const $=id=>document.getElementById(id);
 
   $("settingsBtn").innerHTML=ic("gear");
-  $("stopBtn").innerHTML='<svg class="ico f" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>';
+
   $("slPrev").innerHTML=ic("left"); $("slFwd").innerHTML=ic("right");
-  const r=$("master").parentElement.children; r[0].outerHTML=`<span class="vol">${ic("vol1")}</span>`; r[r.length-1].outerHTML=`<span class="vol">${ic("vol3")}</span>`;
   $("unlockBtn").innerHTML=ic("vol3")+"Start";
   const MAP={click:["metro","var(--sys-green)"],pco:["music",""],pedal:["pedal","var(--sys-gray)"],sound:["sliders","var(--sys-pink)"],onedrive:["cloud","var(--sys-blue)"],
              team:["team","var(--sys-teal)"],sets:["grid","var(--sys-indigo)"],app:["info","var(--sys-gray)"]};

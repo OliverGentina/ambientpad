@@ -81,6 +81,30 @@
   .toc button:hover{border-color:var(--accent)}
   .tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e5f6f8;color:#167c8c;vertical-align:3px;margin-left:6px}
   .account{display:inline-block;font:600 17px ui-monospace,Menlo,monospace;background:var(--card);border:1px dashed var(--accent);border-radius:10px;padding:6px 11px;margin:2px 0 4px;word-break:break-all}
+
+  /* Pedal-Grafik */
+  .pdemo{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:14px 0 18px}
+  .ptabs{display:flex;background:#efebe4;border-radius:10px;padding:3px;gap:2px;margin-bottom:12px}
+  .ptabs button{flex:1;border:0;background:none;border-radius:8px;font:600 14px var(--font);color:var(--dim);padding:8px 4px;cursor:pointer}
+  .ptabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .pgrid{display:grid;grid-template-columns:1fr minmax(180px,260px) 1fr;grid-template-areas:"l p r" ". b .";gap:10px 14px;align-items:center}
+  .pedal{grid-area:p;width:100%;height:auto;filter:drop-shadow(0 8px 16px rgba(0,0,0,.18))}
+  .pedal text{font:700 28px var(--font);fill:#fff;opacity:.85}
+  .pedal .brand{font:600 8px var(--font);letter-spacing:.2em;opacity:.35}
+  .pedal .led{fill:#30D158;transition:fill .3s}
+  .pdemo[data-m="volume"] .pedal .led{fill:#0A84FF}
+  .pedal .key circle{transition:transform .25s,filter .25s;transform-box:fill-box;transform-origin:center}
+  .pedal .key.pulse circle{animation:kp .5s ease-out}
+  @keyframes kp{40%{transform:scale(.93);filter:brightness(1.6)}}
+  .pcard{background:#faf8f4;border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-height:100%}
+  .pcard.l{grid-area:l}.pcard.r{grid-area:r}.pcard.both{grid-area:b;text-align:center}
+  .pcard .ph{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+  .pdemo[data-m="volume"] .pcard .ph{color:#0A84FF}
+  .pcard div{display:flex;flex-direction:column;line-height:1.3}
+  .pcard i{font-style:normal;font-size:12px;color:var(--dim)}
+  .pcard b{font-size:15px}
+  .pnote{margin:12px 2px 0;font-size:14.5px;color:#3a3a3e}
+  @media(max-width:620px){.pgrid{grid-template-columns:1fr 1fr;grid-template-areas:"p p" "l r" "b b"}.pedal{max-width:260px;justify-self:center}}
   /* Fuß */
   footer{display:flex;align-items:center;gap:10px;padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);border-top:1px solid var(--line);background:var(--bg)}
   .nav{border:0;border-radius:999px;font:700 15px var(--font);padding:12px 18px;cursor:pointer;background:var(--card);color:var(--ink);border:1px solid var(--line);min-width:52px}
@@ -194,10 +218,9 @@
         <tr><td>eine Tonart, z. B. <span class="ui">G</span></td><td>Das Pad blendet weich ein und läuft als Schleife. Die Kachel leuchtet.</td></tr>
         <tr><td>dieselbe Tonart noch einmal</td><td>Das Pad blendet langsam aus.</td></tr>
         <tr><td>eine andere Tonart</td><td>Sanfte Überblendung in die neue Tonart.</td></tr>
-        <tr><td><span class="ui">Fade Out</span></td><td>Alles blendet langsam aus, z. B. am Ende eines Songs.</td></tr>
-        <tr><td><span class="ui" style="background:#e5484d;color:#fff;border-color:#e5484d">■</span></td><td>Sofort-Stopp, nur für den Notfall.</td></tr>
+        <tr><td>den <span class="ui">🔊</span>-Knopf unten rechts</td><td>Stumm schalten (Mute). Die Pads laufen weiter, nochmal tippen = Ton wieder da. Der Klick bleibt hörbar.</td></tr>
       </table>
-      <p>Die Gesamtlautstärke regelst du mit den Lautstärketasten am Gerät. Die beiden Regler unten mischen die zwei Klänge (nächste Seite).</p>
+      <p>Unten stellst du mit dem Überblendregler das Verhältnis der zwei Klänge ein und darunter die Gesamtlautstärke (nächste Seite).</p>
       <div class="box"><b>Kreuz oder b?</b><p>Kacheln mit zwei Namen sind dieselbe Tonart: D♭ = C♯, E♭ = D♯, F♯ = G♭, A♭ = G♯, B♭ = A♯.</p></div>
       <div class="box"><b>Eigenen Sound auf eine Kachel legen</b><p>Halte eine Kachel gedrückt und tippe auf <span class="ui o">Datei wählen …</span>. Das geht nur in <i>Warm</i> und <i>Shimmer</i>. Team-Sets kommen immer aus SharePoint.</p></div>
     </div>
@@ -214,17 +237,20 @@
     <div>
       <p class="kicker">Grundlagen</p>
       <h2>Zwei Pads mischen</h2>
-      <p>Unten gibt es zwei <b>Ebenen</b>, jede mit eigenem Set und eigenem Regler. Tippst du eine Tonart an, spielen beide Ebenen gleichzeitig in dieser Tonart. Mit den Reglern mischst du sie, z. B. viel <i>Warm</i> und ein wenig <i>Shimmer</i>, oder du überblendest langsam von einem Klang in den anderen.</p>
+      <p>Links unten steht <b>Pad 1</b>, rechts <b>Pad 2</b>. Tippst du eine Tonart an, spielen beide gleichzeitig in dieser Tonart.</p>
+      <ul class="dots">
+        <li><b>Überblendregler</b> (wie ein Panorama-Regler): ganz links nur Pad 1, ganz rechts nur Pad 2, in der Mitte beide gleich. Die Lautstärke bleibt dabei gleich – kein Loch, kein Buckel.</li>
+        <li><b>Gesamtlautstärke</b> darunter regelt alles zusammen. Per Pedal: beide Tasten gleichzeitig → Lautstärke-Modus (siehe „Fußpedal“).</li>
+        <li><b>Mute</b> <span class="ui">🔊</span> rechts daneben: alles stumm, die Pads laufen weiter. Nochmal tippen = Ton wieder da.</li>
+      </ul>
       <ol class="steps">
-        <li><b>Tipp auf den Namen</b> einer Ebene, z. B. <span class="ui">Warm ▾</span>: Es öffnet sich die Auswahl mit allen Sets, sortiert nach Mitgeliefert, Team (▲) und Meine Pads (●).</li>
-        <li>Set antippen, fertig. Ein laufendes Pad blendet in dieselbe Tonart des neuen Sets über.</li>
-        <li>Für die zweite Ebene steht ganz oben <span class="ui">Leer – nur ein Pad</span>. Dann klingt nur Ebene 1.</li>
+        <li><b>Tipp auf einen Namen</b>, z. B. <span class="ui">Warm ▾</span>: Es öffnet sich die Auswahl mit allen Sets – Mitgeliefert, Team (▲), Meine Pads (●).</li>
+        <li>Für Pad 2 steht ganz oben <span class="ui">Leer – nur ein Pad</span>. Dann ist der Überblendregler grau und gesperrt, und nur Pad 1 klingt.</li>
       </ol>
-      <div class="box tip"><b>Gut zu wissen</b><p>Fehlt einem Set eine Tonart, spielt in dieser Tonart nur die andere Ebene. Die Belegung und die Regler bleiben gespeichert.</p></div>
-      <div class="box"><b>Mit Pedal 2</b><p>Pedal 2 links schaltet das Set der <b>zweiten Ebene</b> weiter (lang = zurück), einschließlich „Leer“.</p></div>
+      <div class="box tip"><b>Gut zu wissen</b><p>Fehlt einem Set eine Tonart, spielt in dieser Tonart nur das andere Pad. Auswahl, Reglerstellung und Lautstärke bleiben gespeichert.</p></div>
     </div>
     <div class="shots two">
-      <figure><img class="phone" src="anleitung/ebenen_haupt.webp" alt="Zwei Ebenen Warm und Shimmer mit Reglern" loading="lazy"><figcaption>Warm 85 % und Shimmer 35 % spielen zusammen in G.</figcaption></figure>
+      <figure><img class="phone" src="anleitung/ebenen_haupt.webp" alt="Pad 1 Warm und Pad 2 Shimmer mit Überblendregler und Gesamtlautstärke" loading="lazy"><figcaption>Warm und Shimmer, überblendet 65 : 35.</figcaption></figure>
       <figure><img class="phone" src="anleitung/ebenen_menu.webp" alt="Auswahl-Menü der Sets mit Leer" loading="lazy"><figcaption>Tipp auf den Namen öffnet die Auswahl.</figcaption></figure>
     </div>
   </div>
@@ -294,27 +320,41 @@
 
 <!-- 9 Pedal -->
 <section class="page" data-title="Fußpedal">
-  <div class="inner">
+  <div class="inner wide">
     <div>
-      <p class="kicker">Optional</p>
+      <p class="kicker">Pedal</p>
       <h2>Mit dem Fußpedal steuern</h2>
-      <p>Geeignet ist ein Bluetooth-Umblätterpedal mit zwei Tasten, z. B. von <b>Tavsou</b>.</p>
+      <p>Geeignet ist ein Bluetooth-Umblätterpedal mit zwei Tasten, z. B. von <b>Tavsou</b>. Jede Taste kennt <b>kurz</b> (antippen) und <b>lang</b> (gut eine halbe Sekunde halten). Tippe unten auf einen Modus, um die Belegung zu sehen.</p>
+      <div class="pdemo">
+        <div class="ptabs" role="tablist">
+          <button class="on" data-m="normal">Normal</button><button data-m="setlist">Setlist</button><button data-m="volume">Lautstärke</button><button data-m="p2">Pedal 2</button>
+        </div>
+        <div class="pgrid">
+          <div class="pcard l"><span class="ph">Links</span><div><i>kurz</i><b data-k="lk"></b></div><div><i>lang</i><b data-k="ll"></b></div></div>
+          <svg class="pedal" viewBox="0 0 260 170" role="img" aria-label="Stilisiertes Pedal mit zwei Tasten">
+            <defs><linearGradient id="pb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a3c"/><stop offset="1" stop-color="#1c1c1e"/></linearGradient>
+              <radialGradient id="kb" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="#5a5a5e"/><stop offset="1" stop-color="#2c2c2e"/></radialGradient></defs>
+            <rect x="8" y="22" width="244" height="132" rx="26" fill="url(#pb)" stroke="#000" stroke-opacity=".5"/>
+            <rect x="20" y="34" width="220" height="108" rx="18" fill="none" stroke="#fff" stroke-opacity=".06"/>
+            <circle class="led" cx="130" cy="44" r="5"/>
+            <g class="key kl"><circle cx="78" cy="96" r="40" fill="url(#kb)" stroke="#000" stroke-opacity=".6" stroke-width="2"/><text x="78" y="104" text-anchor="middle">L</text></g>
+            <g class="key kr"><circle cx="182" cy="96" r="40" fill="url(#kb)" stroke="#000" stroke-opacity=".6" stroke-width="2"/><text x="182" y="104" text-anchor="middle">R</text></g>
+            <text class="brand" x="130" y="146" text-anchor="middle">BLUETOOTH</text>
+          </svg>
+          <div class="pcard r"><span class="ph">Rechts</span><div><i>kurz</i><b data-k="rk"></b></div><div><i>lang</i><b data-k="rl"></b></div></div>
+          <div class="pcard both"><span class="ph">Beide gleichzeitig</span><b data-k="both"></b></div>
+        </div>
+        <p class="pnote" data-k="note"></p>
+      </div>
       <h3>Einmalig koppeln</h3>
       <ol class="steps">
         <li>Stelle das Pedal auf den Modus mit <b>Pfeiltasten</b> oder <b>Bild↑/Bild↓</b> (siehe Anleitung des Pedals) und schalte den <b>Repeat-Modus aus</b>.</li>
         <li>iPhone/iPad: <span class="ui">Einstellungen</span> → <span class="ui">Bluetooth</span> → Pedal antippen.</li>
         <li>In der App: <span class="ui">⚙︎</span> → <span class="ui">🦶 Pedal</span> → <span class="ui o">Pedal lernen</span>. Folge der Anzeige: links kurz, rechts kurz, dann links etwa 2 Sekunden halten.</li>
       </ol>
-      <h3>Belegung</h3>
-      <table>
-        <tr><th></th><th>kurz</th><th>lang</th></tr>
-        <tr><td><b>Links</b></td><td>nächste Tonart</td><td>Tonart zurück</td></tr>
-        <tr><td><b>Rechts</b></td><td>Start / Stopp</td><td>alles ausblenden</td></tr>
-      </table>
-      <div class="box"><b>Pedal kennt kein „lang“?</b><p>Manche Pedale melden langes Drücken nicht. Die App merkt das beim Lernen und stellt um: <b>links doppelt tippen</b> = zurück, <b>beide Tasten gleichzeitig</b> = alles ausblenden.</p></div>
+      <div class="box"><b>Pedal kennt kein „lang“?</b><p>Manche Pedale melden langes Drücken nicht. Die App merkt das beim Lernen und stellt um: <b>links doppelt tippen</b> = Tonart zurück. Was <b>beide Tasten gleichzeitig</b> tun, wählst du unter ⚙︎ → Pedal: <i>Alles ausblenden</i> oder <i>Lautstärke-Modus</i>. Im Lautstärke-Modus ändert dann jeder Tritt die Lautstärke um 5 %.</p></div>
       <div class="box tip"><b>Bildschirmtastatur weg?</b><p>Solange ein Pedal verbunden ist, blendet iOS die Tastatur in anderen Apps aus. Bluetooth am Pedal aus- und wieder einschalten hilft.</p></div>
     </div>
-    <div class="shots"><figure><img class="phone" src="anleitung/pedal.webp" alt="Einstellungsseite Pedal" loading="lazy"><figcaption>„Pedal lernen“ erkennt dein Pedal automatisch.</figcaption></figure></div>
   </div>
 </section>
 
@@ -568,6 +608,24 @@ fillToc(document.getElementById("tocCover"),false);fillToc(document.getElementBy
 document.getElementById("tocBtn").onclick=()=>tocSheet.classList.add("open");
 document.getElementById("tocClose").onclick=()=>tocSheet.classList.remove("open");
 tocSheet.addEventListener("click",e=>{if(e.target===tocSheet)tocSheet.classList.remove("open");});
+
+// Pedal-Grafik: Belegung je Modus
+const PMODES={
+  normal:{lk:"nächste Tonart",ll:"Tonart zurück",rk:"Tonart starten / ausblenden",rl:"alles ausblenden",both:"Lautstärke-Modus an",
+    note:"Die Reihenfolge der Tonarten folgt den Kacheln – mit dem Quintenzirkel springst du C → G → D …"},
+  setlist:{lk:"nächstes Lied (laufendes Pad blendet über)",ll:"Lied zurück",rk:"Pad starten / ausblenden",rl:"alles ausblenden",both:"Lautstärke-Modus an",
+    note:"Gilt, solange eine Setlist aus Planning Center aktiv ist. Lieder ohne Tonart werden übersprungen."},
+  volume:{lk:"etwas leiser",ll:"stufenlos leiser, solange du hältst",rk:"etwas lauter",rl:"stufenlos lauter, solange du hältst",both:"zurück zum normalen Modus",
+    note:"Die LED oben in der App wird blau, in der Mitte erscheint groß die Lautstärke. Nach 3 Sekunden ohne Tritt geht es automatisch zurück – du kannst nicht „hängen bleiben“. Geregelt wird die Gesamtlautstärke; die Überblendung zwischen Pad 1 und Pad 2 bleibt."},
+  p2:{lk:"nächstes Set für Pad 2 (inkl. „Leer“)",ll:"Set für Pad 2 zurück",rk:"Klick an / aus",rl:"Einzähler, danach läuft der Klick",both:"–",
+    note:"Optional: ein zweites Pedal, das andere Tasten sendet (z. B. Bild↑/↓). Einrichten unter ⚙︎ → Pedal → „Pedal 2 lernen“."}
+};
+document.querySelectorAll(".pdemo").forEach(box=>{
+  const set=m=>{box.dataset.m=m;const d=PMODES[m];box.querySelectorAll("[data-k]").forEach(el=>el.textContent=d[el.dataset.k]);
+    box.querySelectorAll(".ptabs button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+    box.querySelectorAll(".key").forEach((k,i)=>{k.classList.remove("pulse");void k.getBBox();setTimeout(()=>k.classList.add("pulse"),i*180);});};
+  box.querySelectorAll(".ptabs button").forEach(b=>b.onclick=()=>set(b.dataset.m));set("normal");
+});
 // Start auf Seite aus #
 const h=parseInt(location.hash.slice(1),10);
 requestAnimationFrame(()=>{cur=-1;go(h>0?h-1:0,false);});
