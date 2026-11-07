@@ -711,6 +711,10 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
       <div class="row"><button class="btn" id="updateBtn">App aktualisieren</button></div>
     </div>
     <div class="group">
+      <label class="trow"><input type="checkbox" id="checkOn"><span><b>Kurz-Check beim Start</b><small>Flugmodus, Nicht stören, Medienlautstärke – einmal am Tag beim ersten Start abfragen</small></span></label>
+      <div class="row"><button class="btn" id="checkNow">Kurz-Check jetzt anzeigen</button></div>
+    </div>
+    <div class="group">
       <p id="storageInfo">–</p>
       <p id="offlineInfo"></p>
     </div>
@@ -746,6 +750,19 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
   <div class="synclist" id="slList"></div>
 </div></div>
 
+<!-- Checkliste vor dem Gottesdienst -->
+<div class="sheet-bg" id="checkSheet"><div class="sheet">
+  <h2>Kurz-Check vor dem Spielen</h2>
+  <p>Bitte am Gerät einstellen und abhaken – die App kann das nicht selbst umschalten.</p>
+  <div class="synclist" id="checkList">
+    <label class="trow"><input type="checkbox" data-c="air"><span><b>✈︎ Flugmodus an, danach nur Bluetooth wieder ein</b><small>Kontrollzentrum: Flugzeug antippen, dann Bluetooth. Keine Anrufe, keine Störgeräusche.</small></span></label>
+    <label class="trow"><input type="checkbox" data-c="dnd"><span><b>☾ „Nicht stören“ an, Tastentöne &amp; Systemklänge aus</b><small>Einstellungen → Töne &amp; Haptik: Tastaturklicks und Sperrton aus.</small></span></label>
+    <label class="trow"><input type="checkbox" data-c="vol"><span><b>🔊 Medienlautstärke auf 100 %</b><small>Mit den Lautstärketasten ganz hoch – die Lautstärke regelst du am Pult.</small></span></label>
+  </div>
+  <p class="hint">Im Flugmodus gibt es keinen Live-Abgleich mit Planning Center und keine neuen Pads aus OneDrive. Setlist und Pads daher vorher laden – geladene Pads und Setlist funktionieren offline.</p>
+  <div class="row"><button class="btn" id="checkSkip">Überspringen</button><button class="btn accent" id="checkDone" disabled>Alles erledigt</button></div>
+</div></div>
+
 <!-- Team-Sets auswählen -->
 <div class="sheet-bg" id="teamSheet"><div class="sheet">
   <h2>Team-Pads hinzufügen</h2>
@@ -765,7 +782,7 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
 
 <script>
 "use strict";
-const VERSION="3.2.0";
+const VERSION="3.3.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -2504,6 +2521,21 @@ $("unlockBtn").addEventListener("click",()=>{
   setTimeout(()=>{updateAudioState();if(!ctx||ctx.state!=="running")$("unlockHint").textContent="Noch gesperrt – bitte nochmal tippen.";},400);
 });
 document.addEventListener("touchend",unlockAudio,{passive:true});
+// ================= Kurz-Check beim Start (einmal pro Tag, vom Nutzer bestätigt) =================
+const CHECK=Object.assign({on:true,day:""},load("apl.check",{}));
+const saveCheck=()=>store("apl.check",CHECK);
+const today=()=>new Date().toLocaleDateString("sv");
+function openCheck(){
+  document.querySelectorAll("#checkList input").forEach(c=>c.checked=false);$("checkDone").disabled=true;
+  $("checkSheet").classList.add("open");
+}
+document.querySelectorAll("#checkList input").forEach(c=>c.onchange=()=>{$("checkDone").disabled=![...document.querySelectorAll("#checkList input")].every(x=>x.checked);});
+$("checkDone").onclick=()=>{CHECK.day=today();saveCheck();$("checkSheet").classList.remove("open");toast("Bereit für den Gottesdienst ✓");};
+$("checkSkip").onclick=()=>{$("checkSheet").classList.remove("open");};
+$("checkOn").checked=CHECK.on;$("checkOn").onchange=()=>{CHECK.on=$("checkOn").checked;saveCheck();};
+$("checkNow").onclick=()=>{$("settingsSheet").classList.remove("open");openCheck();};
+$("unlockBtn").addEventListener("click",()=>{if(CHECK.on&&CHECK.day!==today())setTimeout(openCheck,450);});
+
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){keepAwake();if(ctx&&ctx.state!=="running")$("unlock").classList.remove("hidden");}});
 setInterval(()=>{if(ctx)updateAudioState();},1000);
 

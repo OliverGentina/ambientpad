@@ -1,6 +1,6 @@
 // Offline-Speicher für AmbientPad Live.
 // Bei jeder neuen Version VERSION erhöhen.
-const VERSION = "3.2.0";
+const VERSION = "3.3.0";
 const CACHE = "ambientpad-" + VERSION;
 const PADCACHE = "ambientpad-pads-v1";   // Standard-Pads: bleiben über App-Updates hinweg erhalten
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "anleitung.html",
