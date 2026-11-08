@@ -359,6 +359,9 @@ input[type=range]{accent-color:var(--accent)}
 .tempo .bpm{display:flex;flex-direction:column;align-items:center}
 .tempo .bpm b{font:600 44px/1 -apple-system,"SF Pro Display",sans-serif;font-variant-numeric:tabular-nums}
 .tempo .bpm small{color:var(--label2);font-size:13px}
+.tempo.cnt input{width:90px;background:transparent;border:0;color:inherit;text-align:center;font:600 44px/1 -apple-system,"SF Pro Display",sans-serif;font-variant-numeric:tabular-nums;padding:0;-moz-appearance:textfield;appearance:textfield}
+.tempo.cnt input::-webkit-inner-spin-button,.tempo.cnt input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.tempo.cnt input:focus{outline:none;border-bottom:2px solid var(--accent)}
 
 /* ================= Kopfzeile neu: LED · Klick · Tempo · Ton · + · ⚙︎ ================= */
 header{background:var(--gray6);border-radius:16px;padding:8px 10px;gap:8px;min-height:56px}
@@ -662,8 +665,8 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
       <label id="c_volRow"><span>Lautstärke Klick</span><input type="range" id="c_vol" min="0" max="1" step="0.01"></label>
     </div>
     <h3>Einzähler</h3>
-    <div class="group"><div class="seg" id="c_count"><button class="segbtn" data-v="1">1 Takt</button><button class="segbtn" data-v="2">2 Takte</button></div>
-      <p class="hint">Den Einzähler legst du unter ⚙︎ → Pedal auf eine Pedal-Geste. Danach läuft der Klick weiter.</p></div>
+    <div class="group"><div class="tempo cnt"><button class="btn" id="c_cntMinus" aria-label="Weniger Takte">−</button><div class="bpm"><input id="c_cnt" type="number" inputmode="numeric" min="0" max="4" step="1" aria-label="Takte Einzähler"><small id="c_cntUnit">Takte</small></div><button class="btn" id="c_cntPlus" aria-label="Mehr Takte">+</button></div>
+      <p class="hint">Den Einzähler legst du unter ⚙︎ → Pedal auf eine Pedal-Geste. Danach läuft der Klick weiter. 0 Takte = ohne Einzählen.</p></div>
     <h3>Automatik</h3>
     <div class="group"><label class="trow"><input type="checkbox" id="c_follow"><span><b>Klick folgt dem Pad</b><small>Fade In eines Pads startet den Klick, Fade Out stoppt ihn sofort. Tonart- und Liedwechsel lassen ihn weiterlaufen.</small></span></label></div>
   </section>
@@ -850,7 +853,7 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
 
 <script>
 "use strict";
-const VERSION="3.5.0";
+const VERSION="3.5.1";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1252,7 +1255,7 @@ function pedalTap(side,map=P.map,pd=pend){
   if(pd[side]){clearTimeout(pd[side]);pd[side]=null;runPedal(d);return;}
   pd[side]=setTimeout(()=>{pd[side]=null;runPedal(t);},P.dbl);
 }
-const typing=e=>e.target&&e.target.tagName==="INPUT"&&(e.target.type==="text"||e.target.type==="password");
+const typing=e=>e.target&&e.target.tagName==="INPUT"&&(e.target.type==="text"||e.target.type==="password"||e.target.type==="number");
 window.addEventListener("keydown",e=>{
   if(typing(e))return;
   if(learning){e.preventDefault();learnKeyDown(e);return;}
@@ -2340,7 +2343,7 @@ function startClick(withCount){
 }
 function stopClick(){clickOn=false;clearInterval(clickTimer);clickTimer=null;$("countIn").classList.remove("show");renderClick();}
 function toggleClick(){unlockAudio();clickOn?stopClick():startClick(false);toast(clickOn?`Klick an · ${Math.round(CLICK.bpm)} BPM`:"Klick aus");}
-function countIn(){unlockAudio();startClick(true);toast(`Einzähler · ${Math.round(CLICK.bpm)} BPM`);}
+function countIn(){unlockAudio();startClick(true);toast(CLICK.countIn?`Einzähler ${CLICK.countIn} ${CLICK.countIn===1?"Takt":"Takte"} · ${Math.round(CLICK.bpm)} BPM`:`Klick an · ${Math.round(CLICK.bpm)} BPM`);}
 function setTempo(bpm,meter){
   if(bpm)CLICK.bpm=Math.max(30,Math.min(260,Math.round(bpm*10)/10));
   if(meter)CLICK.meter=meter;
@@ -2379,7 +2382,8 @@ holdRepeat($("t_plus"),()=>setTempo(CLICK.bpm+1));
 // ---- Einstellungen ----
 function renderClickSettings(){
   document.querySelectorAll("#c_out .segbtn").forEach(b=>b.classList.toggle("on",b.dataset.v===CLICK.out));
-  document.querySelectorAll("#c_count .segbtn").forEach(b=>b.classList.toggle("on",+b.dataset.v===CLICK.countIn));
+  if(document.activeElement!==$("c_cnt"))$("c_cnt").value=CLICK.countIn;$("c_cntUnit").textContent=CLICK.countIn===1?"Takt":CLICK.countIn===0?"Takte · aus":"Takte";
+  $("c_cntMinus").disabled=CLICK.countIn<=0;$("c_cntPlus").disabled=CLICK.countIn>=4;
   $("c_swapRow").style.display=CLICK.out==="split"?"":"none";
   $("c_swap").textContent=CLICK.swap?"Klick links · Pad rechts":"Pad links · Klick rechts";
   $("c_vol").value=CLICK.vol;$("c_volRow").style.display=CLICK.out==="visual"?"none":"";
@@ -2389,7 +2393,12 @@ function renderClickSettings(){
     mix:"Klick auf beiden Kanälen zusammen mit dem Pad – z. B. für Kopfhörer beim Üben."}[CLICK.out];
 }
 document.querySelectorAll("#c_out .segbtn").forEach(b=>b.onclick=()=>{CLICK.out=b.dataset.v;if(CLICK.out!=="visual")CLICK.audioOut=CLICK.out;saveClick();routeAudio();renderClickSettings();});
-document.querySelectorAll("#c_count .segbtn").forEach(b=>b.onclick=()=>{CLICK.countIn=+b.dataset.v;saveClick();renderClickSettings();});
+function setCount(n){n=Math.round(+n);if(!isFinite(n))n=CLICK.countIn;CLICK.countIn=Math.max(0,Math.min(4,n));saveClick();renderClickSettings();}
+$("c_cntMinus").onclick=()=>setCount(CLICK.countIn-1);
+$("c_cntPlus").onclick=()=>setCount(CLICK.countIn+1);
+$("c_cnt").onchange=()=>{const v=$("c_cnt").value;setCount(v===""?CLICK.countIn:v);$("c_cnt").value=CLICK.countIn;};
+$("c_cnt").onkeydown=e=>{if(e.key==="Enter")$("c_cnt").blur();};
+$("c_cnt").onblur=()=>{$("c_cnt").value=CLICK.countIn;};
 $("c_follow").onchange=()=>{CLICK.follow=$("c_follow").checked;saveClick();toast(CLICK.follow?"Klick folgt dem Pad":"Klick unabhängig vom Pad");};
 $("c_swap").onclick=()=>{CLICK.swap=!CLICK.swap;saveClick();routeAudio();renderClickSettings();};
 $("c_vol").oninput=()=>{CLICK.vol=+$("c_vol").value;saveClick();if(clickGain)clickGain.gain.setTargetAtTime(CLICK.vol,ctx.currentTime,.02);};
