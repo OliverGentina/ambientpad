@@ -513,6 +513,14 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
 #checkList .trow.tg label input{width:22px;height:22px;accent-color:var(--accent);flex:none}
 .trow.tg label span{display:flex;flex-direction:column}
 .trow.tg .btn{flex:none;min-height:38px;font-size:14px;padding:6px 12px}
+
+/* iOS-Kippschalter für Optionszeilen in den Einstellungen */
+.group>label.trow{background:transparent!important;padding:4px 0!important;justify-content:space-between;flex-direction:row-reverse!important;gap:14px}
+.group>label.trow b{color:var(--fg,#fff);font-weight:600;font-size:16px}
+.group>label.trow input{appearance:none;-webkit-appearance:none;width:51px!important;height:31px!important;border-radius:16px;background:rgba(120,120,128,.36);position:relative;flex:none;margin:0;cursor:pointer;transition:background .2s}
+.group>label.trow input::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25);transition:transform .2s}
+.group>label.trow input:checked{background:var(--sys-green,#30d158)}
+.group>label.trow input:checked::after{transform:translateX(20px)}
 </style>
 </head>
 <body>
@@ -616,17 +624,25 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
     <p class="hint">Am Pedal einen Modus mit Pfeiltasten oder Bild↑/↓ wählen und den Repeat-Modus ausschalten.</p>
     <h3>Belegung</h3>
     <div class="group" id="p_map">
-      <label><span>Links 1×</span><select id="pm_lt"><option value="next">Vor (Tonart / Lied)</option><option value="prev">Zurück (Tonart / Lied)</option><option value="fade">Fade In / Out</option><option value="volume">Lautstärke-Modus</option><option value="none">– nichts –</option></select></label>
-      <label><span>Links 2× (doppelt)</span><select id="pm_ld"><option value="next">Vor (Tonart / Lied)</option><option value="prev">Zurück (Tonart / Lied)</option><option value="fade">Fade In / Out</option><option value="volume">Lautstärke-Modus</option><option value="none">– nichts –</option></select></label>
-      <label><span>Rechts 1×</span><select id="pm_rt"><option value="next">Vor (Tonart / Lied)</option><option value="prev">Zurück (Tonart / Lied)</option><option value="fade">Fade In / Out</option><option value="volume">Lautstärke-Modus</option><option value="none">– nichts –</option></select></label>
-      <label><span>Rechts 2× (doppelt)</span><select id="pm_rd"><option value="next">Vor (Tonart / Lied)</option><option value="prev">Zurück (Tonart / Lied)</option><option value="fade">Fade In / Out</option><option value="volume">Lautstärke-Modus</option><option value="none">– nichts –</option></select></label>
+      <label><span>Links 1×</span><select id="pm_lt"></select></label>
+      <label><span>Links 2× (doppelt)</span><select id="pm_ld"></select></label>
+      <label><span>Rechts 1×</span><select id="pm_rt"></select></label>
+      <label><span>Rechts 2× (doppelt)</span><select id="pm_rd"></select></label>
       <label><span>Zeit für Doppeltipp <b id="v_dbl"></b></span><input type="range" id="p_dbl" min="200" max="700" step="25"></label>
-      <p class="hint">„Vor“ und „Zurück“ gehen durch die Tonarten – bei aktiver Setlist von Lied zu Lied. Ist für eine Taste kein Doppeltipp belegt, reagiert der einfache Tritt sofort; sonst wartet die App die Doppeltipp-Zeit ab. Im Lautstärke-Modus: rechts = lauter, links = leiser (5 %); zurück automatisch nach 3 s oder per Doppeltipp.</p>
+      <p class="hint">„Vor“ und „Zurück“ gehen durch die Tonarten – bei aktiver Setlist von Lied zu Lied. „Einzähler“ zählt ein, danach läuft der Klick weiter. Ist für eine Taste kein Doppeltipp belegt, reagiert der einfache Tritt sofort; sonst wartet die App die Doppeltipp-Zeit ab. Im Lautstärke-Modus: rechts = lauter, links = leiser (5 %); zurück automatisch nach 3 s oder per Doppeltipp.</p>
       <div class="row"><button class="btn" id="pm_reset">Standard-Belegung</button></div>
     </div>
-    <h3>Pedal 2 · Sets &amp; Klick</h3>
+    <h3>Pedal 2</h3>
     <div class="group"><p id="pedal2Info"></p>
       <div class="row"><button class="btn accent" id="learn2Btn">Pedal 2 lernen</button><button class="btn" id="pedal2Reset">Entfernen</button></div></div>
+    <div class="group" id="p2_map">
+      <label><span>Links 1×</span><select id="pm2_lt"></select></label>
+      <label><span>Links 2× (doppelt)</span><select id="pm2_ld"></select></label>
+      <label><span>Rechts 1×</span><select id="pm2_rt"></select></label>
+      <label><span>Rechts 2× (doppelt)</span><select id="pm2_rd"></select></label>
+      <p class="hint">Die Zeit für den Doppeltipp gilt für beide Pedale.</p>
+      <div class="row"><button class="btn" id="pm2_reset">Standard-Belegung</button></div>
+    </div>
     <p class="hint">Beide Pedale gleichzeitig in den iOS-Einstellungen unter Bluetooth koppeln. Sie müssen unterschiedliche Tasten senden – also verschiedene Modi am Pedal wählen.</p>
   </section>
 
@@ -647,7 +663,9 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
     </div>
     <h3>Einzähler</h3>
     <div class="group"><div class="seg" id="c_count"><button class="segbtn" data-v="1">1 Takt</button><button class="segbtn" data-v="2">2 Takte</button></div>
-      <p class="hint">Einzähler: Pedal 2 rechts lang. Danach läuft der Klick weiter.</p></div>
+      <p class="hint">Den Einzähler legst du unter ⚙︎ → Pedal auf eine Pedal-Geste. Danach läuft der Klick weiter.</p></div>
+    <h3>Automatik</h3>
+    <div class="group"><label class="trow"><input type="checkbox" id="c_follow"><span><b>Klick folgt dem Pad</b><small>Fade In eines Pads startet den Klick, Fade Out stoppt ihn sofort. Tonart- und Liedwechsel lassen ihn weiterlaufen.</small></span></label></div>
   </section>
 
   <!-- Übergänge & Klang -->
@@ -832,7 +850,7 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
 
 <script>
 "use strict";
-const VERSION="3.4.0";
+const VERSION="3.5.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -1152,18 +1170,19 @@ function stopLayer(L,dur){
 function playKey(k){
   const a=hasPad(S.set,k), b=hasPad(S.setB,k);
   if(!a&&!b){toast(`${KEYS[k][0]} ist in „${setName(S.set)}“${S.setB?` und „${setName(S.setB)}“`:""} nicht belegt`);return false;}
+  if(!anyCur()&&CLICK.follow&&!clickOn)startClick(false);   // Fade In aus der Stille → Klick mit starten
   if(a)play(S.set,k,"a"); else stopLayer("a",S.xfade);
   if(b)play(S.setB,k,"b"); else stopLayer("b",S.xfade);
   return true;
 }
 function stopCurrent(dur){ loadingKey=null; stopLayer("a",dur); stopLayer("b",dur); render(); }
 function stopMatching(fn,dur){ if(current&&fn(current)){stopLayer("a",dur);} if(curB&&fn(curB)){stopLayer("b",dur);} render(); }
-function fadeAll(dur){ request++; requestB++; loadingKey=null; if(ctx)for(const v of voices)fadeOutVoice(v,dur); current=null; curB=null; render(); }
+function fadeAll(dur){ if(CLICK.follow&&clickOn&&anyCur())stopClick(); request++; requestB++; loadingKey=null; if(ctx)for(const v of voices)fadeOutVoice(v,dur); current=null; curB=null; render(); }
 function isPlaying(k){return playingKey()===k;}
 
 function toggleKey(k){
   setSelected(k);
-  if(isPlaying(k)){stopCurrent(S.fadeOut);return;}
+  if(isPlaying(k)){stopCurrent(S.fadeOut);if(CLICK.follow&&clickOn)stopClick();return;}
   playKey(k);
 }
 function setSelected(k){ selected=((k%12)+12)%12; store("apl.selected",selected); render(); clearTimeout(setSelected.t); setSelected.t=setTimeout(()=>{prefetch(S.set,selected);if(S.setB)prefetch(S.setB,selected);},250); }
@@ -1190,7 +1209,12 @@ const down={};            // side → {t, timer, longFired}
 let learning=null, lastSide=null, lastSideT=0, fallbackTimer=null, fallbackSide=null;
 function sideOf(key){ if(typeof side2==="function"&&side2(key))return null; if(P.left.includes(key))return "left"; if(P.right.includes(key))return "right"; return null; }
 // ---- Pedal 1: frei belegbare Gesten (links/rechts × einmal/doppelt) ----
-const PEDAL_ACTIONS={next:"Vor (Tonart / Lied)",prev:"Zurück (Tonart / Lied)",fade:"Fade In / Out",volume:"Lautstärke-Modus",none:"– nichts –"};
+const PEDAL_ACTIONS={next:"Vor (Tonart / Lied)",prev:"Zurück (Tonart / Lied)",fade:"Fade In / Out",volume:"Lautstärke-Modus",click:"Klick an / aus",count:"Einzähler",setnext:"Set Ebene 2 vor",setprev:"Set Ebene 2 zurück",none:"– nichts –"};
+const P2_ACTIONS=["next","prev","fade","click","count","setnext","setprev","none"];   // ohne Lautstärke-Modus (der gehört zu Pedal 1)
+function fillPedalSelects(){for(const k of ["lt","ld","rt","rd"]){const a=$("pm_"+k),b=$("pm2_"+k);
+  if(a&&!a.options.length)a.innerHTML=Object.entries(PEDAL_ACTIONS).map(([v,t])=>`<option value="${v}">${t}</option>`).join("");
+  if(b&&!b.options.length)b.innerHTML=P2_ACTIONS.map(v=>`<option value="${v}">${PEDAL_ACTIONS[v]}</option>`).join("");}}
+fillPedalSelects();
 const PMAP_DEFAULT={lt:"next",ld:"prev",rt:"fade",rd:"volume"};
 P.map=Object.assign({},PMAP_DEFAULT,P.map||{});if(!P.dbl)P.dbl=350;
 function runPedal(act){
@@ -1198,6 +1222,10 @@ function runPedal(act){
   else if(act==="prev"){slOn()?stepSong(-1):stepSel(-1);}
   else if(act==="fade"){toggleKey(selected);}
   else if(act==="volume"){volMode?exitVol():enterVol();}
+  else if(act==="click"){toggleClick();}
+  else if(act==="count"){countIn();}
+  else if(act==="setnext"){stepSet(1);}
+  else if(act==="setprev"){stepSet(-1);}
 }
 // ---- Lautstärke-Modus: rechts = lauter, links = leiser (halten = stufenlos, falls das Pedal Halten meldet) ----
 let volMode=false,volExitT=null,volRampT=null,volRampI=null,volTap={left:0,right:0},volPrev={left:null,right:null};
@@ -1218,11 +1246,11 @@ function volKeyDown(side){
 }
 function volKeyUp(){clearTimeout(volRampT);clearInterval(volRampI);}
 const pend={left:null,right:null};
-function pedalTap(side){
-  const t=P.map[side==="left"?"lt":"rt"],d=P.map[side==="left"?"ld":"rd"];
+function pedalTap(side,map=P.map,pd=pend){
+  const t=map[side==="left"?"lt":"rt"],d=map[side==="left"?"ld":"rd"];
   if(d==="none"){runPedal(t);return;}                    // kein Doppeltipp belegt → sofort reagieren
-  if(pend[side]){clearTimeout(pend[side]);pend[side]=null;runPedal(d);return;}
-  pend[side]=setTimeout(()=>{pend[side]=null;runPedal(t);},P.dbl);
+  if(pd[side]){clearTimeout(pd[side]);pd[side]=null;runPedal(d);return;}
+  pd[side]=setTimeout(()=>{pd[side]=null;runPedal(t);},P.dbl);
 }
 const typing=e=>e.target&&e.target.tagName==="INPUT"&&(e.target.type==="text"||e.target.type==="password");
 window.addEventListener("keydown",e=>{
@@ -1273,6 +1301,7 @@ function learnKeyDown(e){
       if(P2){P2.left=P2.left.filter(k=>k!==L.left&&k!==L.right);P2.right=P2.right.filter(k=>k!==L.left&&k!==L.right);if(!P2.left.length||!P2.right.length)P2=null;savePedal2();updatePedal2Info();}
       learning=null;$("learnBox").textContent="Fertig ✓";$("learnSub").textContent=`Links = ${keyName(L.left)}, rechts = ${keyName(L.right)}. Die Belegung stellst du unter „Belegung“ ein.`;
       $("learnCancel").textContent="Schließen";updatePedalInfo();return;}
+    if(L.which===2){finishLearn();return;}
     L.step="hold";L.events=[];learnUI();
   }
   else if(L.step==="hold"&&e.key===L.left){
@@ -1290,11 +1319,11 @@ function finishLearn(){
   else if(downs>2){hold=false;note="Dein Pedal sendet beim Halten viele einzelne Tritte (Repeat-Modus). Schalte am Pedal den Repeat-Modus aus und lerne erneut – bis dahin gilt: links doppelt = zurück, beide Tasten = alles aus.";}
   else{hold=false;note="Dein Pedal meldet kein langes Drücken. Ersatz: links doppelt tippen = zurück, beide Tasten gleichzeitig = alles ausblenden.";}
   if(L.which===2){
-    P2={left:[L.left],right:[L.right],hold};savePedal2();
+    P2={left:[L.left],right:[L.right],map:(P2&&P2.map)||Object.assign({},P2MAP_DEFAULT)};savePedal2();
     // Tasten von Pedal 2 aus der Belegung von Pedal 1 entfernen (Standard enthält z. B. auch Bild↑/↓)
     P.left=P.left.filter(k=>k!==L.left&&k!==L.right);P.right=P.right.filter(k=>k!==L.left&&k!==L.right);savePedal();
     learning=null;
-    $("learnBox").textContent="Pedal 2 fertig ✓";$("learnSub").textContent=`Links = ${keyName(L.left)} (Sets), rechts = ${keyName(L.right)} (Klick). ${note.replace("links doppelt = zurück, beide Tasten = alles aus","doppelt tippen = lange Funktion").replace(/Ersatz:.*$/,"Ersatz: doppelt tippen = lange Funktion.")}`;
+    $("learnBox").textContent="Pedal 2 fertig ✓";$("learnSub").textContent=`Links = ${keyName(L.left)}, rechts = ${keyName(L.right)}. Die Belegung stellst du unter „Pedal 2“ ein.`;
     $("learnCancel").textContent="Schließen";updatePedalInfo();updatePedal2Info();return;
   }
   P={left:[L.left],right:[L.right],hold,map:P.map,dbl:P.dbl}; savePedal();
@@ -2238,7 +2267,7 @@ renderSetlist();
 
 // ================= Klick (Metronom) =================
 // Ausgabe: "visual" = nur Anzeige · "split" = Pad auf einem, Klick auf dem anderen Kanal (Mono) · "mix" = Klick in beiden Kanälen
-const CLICK=Object.assign({out:"visual",swap:false,vol:.8,bpm:80,meter:4,countIn:1},load("apl.click",{}));
+const CLICK=Object.assign({out:"visual",swap:false,vol:.8,bpm:80,meter:4,countIn:1,follow:false},load("apl.click",{}));
 const saveClick=()=>store("apl.click",CLICK);
 let clickGain=null,padMono=null,merger=null;
 function routeAudio(){
@@ -2354,13 +2383,14 @@ function renderClickSettings(){
   $("c_swapRow").style.display=CLICK.out==="split"?"":"none";
   $("c_swap").textContent=CLICK.swap?"Klick links · Pad rechts":"Pad links · Klick rechts";
   $("c_vol").value=CLICK.vol;$("c_volRow").style.display=CLICK.out==="visual"?"none":"";
-  $("c_meter").value=String(CLICK.meter);renderClick();
+  $("c_meter").value=String(CLICK.meter);$("c_follow").checked=!!CLICK.follow;renderClick();
   $("c_outHint").textContent={visual:"Kein Klick-Ton – der Takt blinkt nur oben als Symbol.",
     split:"Pad und Klick getrennt: per Y-Kabel (Stereo-Klinke → 2× Mono) einen Kanal ans Mischpult, den anderen ins In-Ear.",
     mix:"Klick auf beiden Kanälen zusammen mit dem Pad – z. B. für Kopfhörer beim Üben."}[CLICK.out];
 }
 document.querySelectorAll("#c_out .segbtn").forEach(b=>b.onclick=()=>{CLICK.out=b.dataset.v;if(CLICK.out!=="visual")CLICK.audioOut=CLICK.out;saveClick();routeAudio();renderClickSettings();});
 document.querySelectorAll("#c_count .segbtn").forEach(b=>b.onclick=()=>{CLICK.countIn=+b.dataset.v;saveClick();renderClickSettings();});
+$("c_follow").onchange=()=>{CLICK.follow=$("c_follow").checked;saveClick();toast(CLICK.follow?"Klick folgt dem Pad":"Klick unabhängig vom Pad");};
 $("c_swap").onclick=()=>{CLICK.swap=!CLICK.swap;saveClick();routeAudio();renderClickSettings();};
 $("c_vol").oninput=()=>{CLICK.vol=+$("c_vol").value;saveClick();if(clickGain)clickGain.gain.setTargetAtTime(CLICK.vol,ctx.currentTime,.02);};
 $("c_meter").onchange=()=>{setTempo(null,+$("c_meter").value);renderClickSettings();};
@@ -2371,38 +2401,26 @@ $("c_test").onclick=()=>{toggleClick();$("c_test").textContent=clickOn?"Klick st
 renderClickSettings();
 
 // ================= Pedal 2 =================
-// links kurz = nächstes Set · lang = Set zurück · rechts kurz = Klick an/aus · lang = Einzähler
+// frei belegbar wie Pedal 1: links/rechts × einmal/doppelt
+const P2MAP_DEFAULT={lt:"setnext",ld:"setprev",rt:"click",rd:"count"};   // entspricht der früheren festen Belegung
 let P2=load("apl.pedal2",null);
+if(P2&&!P2.map){P2.map=Object.assign({},P2MAP_DEFAULT);delete P2.hold;}
 const savePedal2=()=>{try{P2?localStorage.setItem("apl.pedal2",JSON.stringify(P2)):localStorage.removeItem("apl.pedal2");}catch(e){}};
 function side2(key){if(!P2)return null;if(P2.left.includes(key))return "left";if(P2.right.includes(key))return "right";return null;}
 function stepSet(dir){const keys=["",...allSetKeys().filter(k=>k!==S.set)],i=Math.max(0,keys.indexOf(S.setB));setLayerB(keys[((i+dir)%keys.length+keys.length)%keys.length]);}
-function action2(side,long){
-  if(side==="left")stepSet(long?-1:1);
-  else long?countIn():toggleClick();
-}
-const down2={};let tap2=null;
-function pedal2Down(e,side){
-  e.preventDefault();markPedal(e.key);if(e.repeat||down2[side])return;unlockAudio();
-  const d={longFired:false,timer:null};
-  if(P2.hold)d.timer=setTimeout(()=>{d.longFired=true;action2(side,true);},LONG_MS);
-  down2[side]=d;
-}
-function pedal2Up(e,side){
-  e.preventDefault();const d=down2[side];delete down2[side];if(!d)return;clearTimeout(d.timer);if(d.longFired)return;
-  if(P2.hold){action2(side,false);return;}
-  // ohne Halte-Erkennung: Doppeltipp = „lang“
-  if(tap2&&tap2.side===side){clearTimeout(tap2.timer);tap2=null;action2(side,true);return;}
-  tap2={side,timer:setTimeout(()=>{tap2=null;action2(side,false);},380)};
-}
-window.addEventListener("keydown",e=>{if(typing(e)||learning)return;const s=side2(e.key);if(!s)return;e.stopImmediatePropagation();pedal2Down(e,s);},true);
-window.addEventListener("keyup",e=>{if(typing(e)||learning)return;const s=side2(e.key);if(!s)return;e.stopImmediatePropagation();pedal2Up(e,s);},true);
+const down2={},pend2={left:null,right:null};
+window.addEventListener("keydown",e=>{if(typing(e)||learning)return;const s=side2(e.key);if(!s)return;e.stopImmediatePropagation();e.preventDefault();markPedal(e.key);
+  if(e.repeat||down2[s])return;down2[s]=1;unlockAudio();pedalTap(s,P2.map,pend2);},true);
+window.addEventListener("keyup",e=>{if(typing(e)||learning)return;const s=side2(e.key);if(!s)return;e.stopImmediatePropagation();e.preventDefault();delete down2[s];},true);
 function updatePedal2Info(){
-  const el=$("pedal2Info");if(!el)return;
-  el.innerHTML=P2?`Links: <b>${P2.left.map(keyName).join(" / ")}</b> · Rechts: <b>${P2.right.map(keyName).join(" / ")}</b><br>`+(P2.hold
-    ?"Links kurz = nächstes Set auf Ebene 2 · lang = zurück<br>Rechts kurz = Klick an/aus · lang = Einzähler"
-    :"Links = nächstes Set auf Ebene 2 · doppelt = zurück<br>Rechts = Klick an/aus · doppelt = Einzähler"):"Noch nicht eingerichtet. Ein zweites Pedal in einem anderen Modus koppeln (z. B. Bild↑/↓, wenn Pedal 1 Pfeiltasten sendet) und lernen.";
-  $("pedal2Reset").style.display=P2?"":"none";
+  const el=$("pedal2Info");if(!el)return;const A=k=>PEDAL_ACTIONS[P2.map[k]];
+  el.innerHTML=P2?`Links: <b>${P2.left.map(keyName).join(" / ")}</b> · Rechts: <b>${P2.right.map(keyName).join(" / ")}</b><br>Links 1× = ${A("lt")} · 2× = ${A("ld")}<br>Rechts 1× = ${A("rt")} · 2× = ${A("rd")}`
+    :"Noch nicht eingerichtet. Ein zweites Pedal in einem anderen Modus koppeln (z. B. Bild↑/↓, wenn Pedal 1 Pfeiltasten sendet) und lernen.";
+  $("pedal2Reset").style.display=P2?"":"none";$("p2_map").style.display=P2?"":"none";
+  if(P2)for(const k of ["lt","ld","rt","rd"])$("pm2_"+k).value=P2.map[k];
 }
+for(const k of ["lt","ld","rt","rd"])$("pm2_"+k).onchange=()=>{if(!P2)return;P2.map[k]=$("pm2_"+k).value;savePedal2();updatePedal2Info();};
+$("pm2_reset").onclick=()=>{if(!P2)return;P2.map=Object.assign({},P2MAP_DEFAULT);savePedal2();updatePedal2Info();toast("Pedal 2: Standard-Belegung");};
 $("learn2Btn").onclick=()=>{learning={step:"left",events:[],which:2};$("settingsSheet").classList.remove("open");$("learnSheet").classList.add("open");learnUI();};
 $("pedal2Reset").onclick=()=>{P2=null;savePedal2();updatePedal2Info();toast("Pedal 2 entfernt");};
 updatePedal2Info();

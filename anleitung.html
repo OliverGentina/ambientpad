@@ -421,12 +421,14 @@
       <div class="box tip"><b>Tempo aus Planning Center</b><p>Ist im Arrangement eines Lieds ein Tempo (BPM) und eine Taktart hinterlegt, übernimmt der Klick sie beim Liedwechsel in der Setlist automatisch. Das Tempo steht dann auch in der Setlist-Leiste.</p></div>
       <h3>Zweites Pedal</h3>
       <p>Koppel beide Pedale in den iOS-Einstellungen unter Bluetooth. Pedal 2 muss <b>andere Tasten</b> senden als Pedal 1, also an Pedal 2 einen anderen Modus wählen, z. B. Bild↑/↓. Dann <span class="ui">⚙︎</span> → <span class="ui">🦶 Pedal</span> → <span class="ui o">Pedal 2 lernen</span>.</p>
+      <p>Pedal 2 ist genauso frei belegbar wie Pedal 1: links und rechts je 1× und 2× tippen. Die Standard-Belegung:</p>
       <table>
-        <tr><th>Pedal 2</th><th>kurz</th><th>lang</th></tr>
+        <tr><th>Pedal 2</th><th>1× tippen</th><th>2× tippen</th></tr>
         <tr><td><b>Links</b></td><td>nächstes Set auf Ebene 2</td><td>Set auf Ebene 2 zurück</td></tr>
         <tr><td><b>Rechts</b></td><td>Klick an / aus</td><td>Einzähler, danach läuft der Klick weiter</td></tr>
       </table>
-      <p style="color:var(--dim);font-size:15px">Ein Set-Wechsel blendet die laufende Tonart direkt in den neuen Klang über, „Leer“ schaltet Ebene 2 stumm. Meldet das Pedal kein langes Drücken, gilt: doppelt tippen = lange Funktion.</p>
+      <p style="color:var(--dim);font-size:15px">Zur Auswahl stehen für beide Pedale: Vor, Zurück, Fade In/Out, <b>Klick an/aus</b>, <b>Einzähler</b>, Set Ebene 2 vor/zurück oder nichts – Pedal 1 zusätzlich den Lautstärke-Modus. Wer nur ein Pedal hat, kann den Klick also auch auf Pedal 1 legen, z. B. auf „links 2×“. Ein Set-Wechsel blendet die laufende Tonart direkt in den neuen Klang über, „Leer“ schaltet Ebene 2 stumm.</p>
+      <div class="box tip"><b>Klick folgt dem Pad</b><p>Unter <span class="ui">⚙︎</span> → <span class="ui">♩ Klick &amp; Tempo</span> → <span class="ui">Automatik</span>: Ist der Schalter an, startet der Klick mit dem Fade In eines Pads und stoppt sofort, wenn du ausblendest. Beim Wechsel der Tonart oder des Lieds läuft er einfach weiter (mit dem neuen Tempo aus der Setlist). Gilt egal, ob du per Pedal oder per Tipp ein- und ausblendest.</p></div>
     </div>
     <div class="shots" style="flex-direction:column;align-items:center">
       <figure style="flex-basis:auto"><img class="strip" src="anleitung/kopfzeile.webp" alt="Klick-Leiste mit LED, Play, Taktpunkten, Tempo und Ton-Schalter" loading="lazy"><figcaption>Klick-Leiste: LED, ▶, Takt und Tempo, Ton-Schalter, ⚙︎.</figcaption></figure>
@@ -634,13 +636,13 @@ tocSheet.addEventListener("click",e=>{if(e.target===tocSheet)tocSheet.classList.
 // Pedal-Grafik: Belegung je Modus
 const PMODES={
   normal:{a1:"1× tippen",a2:"2× tippen",lk:"vor (nächste Tonart)",ll:"zurück",rk:"Fade In / Out",rl:"Lautstärke-Modus",
-    note:"Das ist die Standard-Belegung. Jede der vier Gesten kannst du unter ⚙︎ → Pedal → „Belegung“ frei wählen: Vor, Zurück, Fade In/Out, Lautstärke-Modus oder nichts."},
+    note:"Das ist die Standard-Belegung. Jede der vier Gesten kannst du unter ⚙︎ → Pedal → „Belegung“ frei wählen: Vor, Zurück, Fade In/Out, Lautstärke-Modus, Klick an/aus, Einzähler, Set Ebene 2 vor/zurück oder nichts."},
   setlist:{a1:"1× tippen",a2:"2× tippen",lk:"nächstes Lied (laufendes Pad blendet über)",ll:"Lied zurück",rk:"Fade In / Out",rl:"Lautstärke-Modus",
     note:"„Vor“ und „Zurück“ springen von Lied zu Lied, solange eine Setlist aus Planning Center aktiv ist. Lieder ohne Tonart werden übersprungen."},
   volume:{a1:"1× tippen",a2:"halten",lk:"5 % leiser",ll:"stufenlos leiser (falls das Pedal Halten meldet)",rk:"5 % lauter",rl:"stufenlos lauter (falls das Pedal Halten meldet)",
     note:"Die LED oben in der App wird blau, in der Mitte erscheint groß die Lautstärke. Zurück geht es automatisch nach 3 Sekunden ohne Tritt – oder mit einem Doppeltipp auf die Taste, die den Lautstärke-Modus geöffnet hat. Geregelt wird die Gesamtlautstärke; die Überblendung bleibt."},
-  p2:{a1:"kurz",a2:"lang",lk:"nächstes Set für Pad 2 (inkl. „Leer“)",ll:"Set für Pad 2 zurück",rk:"Klick an / aus",rl:"Einzähler, danach läuft der Klick",
-    note:"Optional: ein zweites Pedal, das andere Tasten sendet (z. B. Bild↑/↓). Einrichten unter ⚙︎ → Pedal → „Pedal 2 lernen“. Meldet es kein Halten, gilt doppelt tippen = lang."}
+  p2:{a1:"1× tippen",a2:"2× tippen",lk:"nächstes Set für Pad 2 (inkl. „Leer“)",ll:"Set für Pad 2 zurück",rk:"Klick an / aus",rl:"Einzähler, danach läuft der Klick",
+    note:"Optional: ein zweites Pedal, das andere Tasten sendet (z. B. Bild↑/↓). Einrichten unter ⚙︎ → Pedal → „Pedal 2 lernen“. Die Belegung ist frei wählbar wie bei Pedal 1 – hier die Standard-Belegung."}
 };
 document.querySelectorAll(".pdemo").forEach(box=>{
   const set=m=>{box.dataset.m=m;const d=PMODES[m];box.querySelectorAll("[data-k]").forEach(el=>el.textContent=d[el.dataset.k]);
