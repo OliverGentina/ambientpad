@@ -420,6 +420,10 @@ header #clickDots i{width:7px;height:7px}
 #tempoDlg .t small{color:var(--label2);font-size:13px}
 #tempoDlg .tap{border:0;border-radius:999px;background:var(--fill);color:var(--accent);font:600 17px -apple-system,sans-serif;min-height:48px;cursor:pointer}
 #tempoDlg .meter{display:flex;background:var(--fill);border-radius:9px;padding:2px}
+#tempoDlg .meter select{flex:1.2;border:0;background:none;color:#fff;font:500 14px -apple-system,sans-serif;min-height:32px;border-radius:7px;text-align:center;text-align-last:center;-webkit-appearance:none;appearance:none;cursor:pointer;padding:0 4px}
+#tempoDlg .meter select.on{background:#636366;font-weight:600}
+#tempoDlg .tap.pco{background:var(--accent);color:#000;font-size:15px;min-height:42px}
+#tempoDlg .tap.pco[hidden]{display:none}
 #tempoDlg .meter button{flex:1;border:0;background:none;color:#fff;font:500 14px -apple-system,sans-serif;min-height:32px;border-radius:7px;cursor:pointer}
 #tempoDlg .meter button.on{background:#636366;font-weight:600}
 #tempoDlg .hint{margin:0;font-size:12.5px;color:var(--label2);text-align:center}
@@ -497,8 +501,7 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
 .tdial{width:min(100%,340px);height:auto;color:#fff}
 .tdial .tl{font:500 12px -apple-system,sans-serif;fill:var(--label2)}
 #tNeedle{transition:transform .12s ease-out}
-.tdial .zone{opacity:.35;transition:opacity .2s}
-#tunerBox.ok .tdial .zone{opacity:1}
+
 #tunerBox.ok{color:#30D158}#tunerBox.lo,#tunerBox.hi{color:#FF9F0A}
 #tunerBox.idle .tdial{opacity:.5}
 .tnote{display:flex;align-items:center;gap:18px;margin-top:-6px}
@@ -510,7 +513,21 @@ body.muted .mrow2 input,body.muted .mrow2 .pct{opacity:.4}
 .thz{margin:0;font-size:17px;color:#fff;font-variant-numeric:tabular-nums}
 .tstr{margin:0;font-size:13px;color:var(--label2);min-height:1.2em}
 .tref{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-direction:row}
-.tref .tempo{gap:14px}.tref .tempo .btn{width:44px;min-height:44px;font-size:22px}.tref b{font-variant-numeric:tabular-nums;min-width:4.2em;text-align:center}
+.tref .tempo{gap:10px}.tref .tempo .btn{width:44px;min-height:44px;font-size:22px}
+.trefl{display:flex;flex-direction:column;align-items:flex-start;gap:2px}.trefl .linkbtn{font-size:14px;padding:0;min-height:0}.trefl .linkbtn[hidden]{display:none}
+.trefin{display:flex!important;flex-direction:row!important;align-items:baseline;gap:4px;margin:0!important;padding:0!important;background:none!important}
+#c_pcoRow[hidden]{display:none!important}
+.trefin input{width:3.3em;background:transparent;border:0;color:#fff;text-align:right;font:600 22px -apple-system,sans-serif;font-variant-numeric:tabular-nums;padding:0;-moz-appearance:textfield;appearance:textfield}
+.trefin input::-webkit-inner-spin-button,.trefin input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.trefin input:focus{outline:none;border-bottom:2px solid var(--accent)}
+.trefin span{color:var(--label2);font-size:15px}
+.tdial .tk{stroke:rgba(255,255,255,.28);stroke-width:1.2}
+.tdial .tk.m5{stroke:rgba(255,255,255,.5);stroke-width:1.6}
+.tdial .tk.m10{stroke:rgba(255,255,255,.8);stroke-width:2.2}
+.tdial .tk.z{stroke:#30D158}
+.tdial .zone2{fill:none;stroke:#30D158;stroke-width:5;opacity:.35;transition:opacity .2s}
+#tunerBox.ok .tdial .zone2{opacity:1}
+#tunerBox.ok .tdial .tk.z{stroke:#30D158}
 .trow.tg{display:flex;align-items:center;gap:10px}
 #checkList .trow.tg label{display:flex;flex-direction:row;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;margin:0;font-size:inherit;color:inherit}
 #checkList .trow.tg label input{width:22px;height:22px;accent-color:var(--accent);flex:none}
@@ -599,7 +616,8 @@ body.slist #grid{display:none!important}
 <div id="tempoDlg" role="dialog" aria-label="Tempo" hidden>
   <div class="t"><button id="t_minus" aria-label="Langsamer">−</button><div><b id="t_val"></b><small>BPM</small></div><button id="t_plus" aria-label="Schneller">+</button></div>
   <button class="tap" id="t_tap">Tap</button>
-  <div class="meter" id="t_meter"><button data-m="3">3/4</button><button data-m="4">4/4</button><button data-m="6">6/8</button></div>
+  <div class="meter" id="t_meter"><button data-m="3/4">3/4</button><button data-m="4/4">4/4</button><button data-m="6/8">6/8</button><select id="t_more" aria-label="Weitere Taktarten"><option value="">mehr …</option><optgroup label="Viertel"><option value="1/4">1/4</option><option value="2/4">2/4</option><option value="3/4">3/4</option><option value="4/4">4/4</option><option value="5/4">5/4</option><option value="6/4">6/4</option><option value="7/4">7/4</option></optgroup><optgroup label="Halbe"><option value="2/2">2/2</option><option value="3/2">3/2</option></optgroup><optgroup label="Achtel"><option value="3/8">3/8</option><option value="5/8">5/8</option><option value="6/8">6/8</option><option value="7/8">7/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option></optgroup></select></div>
+  <button class="tap pco" id="t_pco" hidden>In Planning Center speichern</button>
   <p class="hint">− / + gedrückt halten = schnell verstellen · Tap: im Tempo mehrmals tippen</p>
 </div>
 <div id="dropHint">Datei auf eine <b>Tonart</b> ziehen – oder auf einen <b>Set-Knopf</b> bzw. irgendwo loslassen: Zuordnung nach Tonart im Dateinamen</div>
@@ -685,8 +703,10 @@ body.slist #grid{display:none!important}
     <div class="group">
       <div class="tempo"><button class="btn" id="c_minus" aria-label="Langsamer">−</button><div class="bpm"><b id="c_bpmVal"></b><small>BPM</small></div><button class="btn" id="c_plus" aria-label="Schneller">+</button></div>
       <div class="row"><button class="btn" id="c_tap">Tap</button><button class="btn accent" id="c_test">Klick testen</button></div>
-      <label><span>Taktart</span><select id="c_meter"><option value="2">2/4</option><option value="3">3/4</option><option value="4">4/4</option><option value="5">5/4</option><option value="6">6/8</option><option value="7">7/8</option><option value="12">12/8</option></select></label>
-      <p class="hint">Aus der Setlist übernimmt der Klick Tempo und Taktart des Lieds, wenn sie in Planning Center hinterlegt sind.</p>
+      <label><span>Taktart</span><select id="c_meter"><optgroup label="Viertel"><option value="1/4">1/4</option><option value="2/4">2/4</option><option value="3/4">3/4</option><option value="4/4">4/4</option><option value="5/4">5/4</option><option value="6/4">6/4</option><option value="7/4">7/4</option></optgroup><optgroup label="Halbe"><option value="2/2">2/2</option><option value="3/2">3/2</option></optgroup><optgroup label="Achtel"><option value="3/8">3/8</option><option value="5/8">5/8</option><option value="6/8">6/8</option><option value="7/8">7/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option></optgroup></select></label>
+      <label class="trow"><input type="checkbox" id="c_accent"><span><b>Eins betonen</b><small>Die Eins jedes Takts klingt höher. Aus = alle Schläge gleich.</small></span></label>
+      <p class="hint">Aus der Setlist übernimmt der Klick Tempo und Taktart des Lieds, wenn sie in Planning Center hinterlegt sind. Bei Achtel-Taktarten zählt der Klick Achtel, das Tempo gilt dann pro Achtel.</p>
+      <div class="row" id="c_pcoRow" hidden><button class="btn accent" id="c_pcoSave">In Planning Center speichern</button></div>
     </div>
     <h3>Ausgabe</h3>
     <div class="group">
@@ -699,6 +719,7 @@ body.slist #grid{display:none!important}
     <div class="group"><div class="tempo cnt"><button class="btn" id="c_cntMinus" aria-label="Weniger Takte">−</button><div class="bpm"><input id="c_cnt" type="number" inputmode="numeric" min="0" max="4" step="1" aria-label="Takte Einzähler"><small id="c_cntUnit">Takte</small></div><button class="btn" id="c_cntPlus" aria-label="Mehr Takte">+</button></div>
       <p class="hint">Den Einzähler legst du unter ⚙︎ → Pedal auf eine Pedal-Geste. Danach läuft der Klick weiter. 0 Takte = ohne Einzählen.</p></div>
     <h3>Automatik</h3>
+    <div class="group"><label class="trow"><input type="checkbox" id="c_pcoAuto"><span><b>Tempo-Änderungen in Planning Center speichern</b><small>Änderst du Tempo oder Taktart eines Setlist-Lieds, schreibt die App sie automatisch ins Arrangement des Songs zurück. Achtung: das Arrangement gilt für alle Pläne, die es nutzen.</small></span></label></div>
     <div class="group"><label class="trow"><input type="checkbox" id="c_follow"><span><b>Klick folgt dem Pad</b><small>Fade In eines Pads startet den Klick, Fade Out stoppt ihn sofort. Tonart- und Liedwechsel lassen ihn weiterlaufen.</small></span></label></div>
   </section>
 
@@ -833,21 +854,16 @@ body.slist #grid{display:none!important}
 <div class="sheet-bg" id="tunerSheet"><div class="sheet">
   <div class="slhead"><h2>Tuner</h2><button class="linkbtn strong" id="tunerClose">Fertig</button></div>
   <div id="tunerBox" class="idle">
-    <svg class="tdial" viewBox="0 0 300 170" aria-hidden="true">
-      <path d="M30 150 A120 120 0 0 1 270 150" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="14" stroke-linecap="round"/>
-      <path d="M135 31.6 A120 120 0 0 1 165 31.6" fill="none" stroke="#30D158" stroke-width="14" stroke-linecap="round" class="zone"/>
-      <g class="ticks" stroke="rgba(255,255,255,.45)" stroke-width="2">
-        <line x1="150" y1="18" x2="150" y2="44"/><line x1="78.7" y1="40.5" x2="88.4" y2="54.9" transform="rotate(0)"/><line x1="221.3" y1="40.5" x2="211.6" y2="54.9"/>
-        <line x1="25" y1="150" x2="45" y2="150"/><line x1="275" y1="150" x2="255" y2="150"/></g>
-      <text x="22" y="168" class="tl">−50</text><text x="278" y="168" class="tl" text-anchor="end">+50</text><text x="150" y="12" class="tl" text-anchor="middle">0</text>
-      <g id="tNeedle" style="transform-origin:150px 150px"><line x1="150" y1="150" x2="150" y2="40" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="150" cy="150" r="9" fill="currentColor"/></g>
+    <svg class="tdial" viewBox="0 0 300 172" aria-hidden="true">
+      <g id="tScale"></g>
+      <g id="tNeedle" style="transform-origin:150px 158px"><line x1="150" y1="158" x2="150" y2="34" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="150" cy="158" r="8" fill="currentColor"/></g>
     </svg>
     <div class="tnote"><span class="flat">♭</span><b id="tNote">–</b><sub id="tOct"></sub><span class="sharp">♯</span></div>
     <p class="tcents" id="tCents"></p>
     <p class="thz" id="tHz">Spiel eine Saite an</p>
     <p class="tstr" id="tString"></p>
   </div>
-  <div class="group tref"><span>Kammerton A</span><div class="tempo"><button class="btn" id="tRefMinus" aria-label="tiefer">−</button><b id="tRef">440 Hz</b><button class="btn" id="tRefPlus" aria-label="höher">+</button></div></div>
+  <div class="group tref"><div class="trefl"><span>Kammerton A</span><button class="linkbtn" id="tRefReset">auf 440 Hz</button></div><div class="tempo"><button class="btn" id="tRefMinus" aria-label="tiefer">−</button><label class="trefin"><input id="tRef" type="number" inputmode="decimal" min="415" max="466" step="1" aria-label="Kammerton in Hertz"><span>Hz</span></label><button class="btn" id="tRefPlus" aria-label="höher">+</button></div></div>
   <p class="hint" id="tStatus"></p>
 </div></div>
 
@@ -884,7 +900,7 @@ body.slist #grid{display:none!important}
 
 <script>
 "use strict";
-const VERSION="3.6.0";
+const VERSION="3.7.0";
 // ================= Grundlagen =================
 const KEYS=[["C",null],["D♭","C♯"],["D",null],["E♭","D♯"],["E",null],["F",null],["F♯","G♭"],["G",null],["A♭","G♯"],["A",null],["B♭","A♯"],["B",null]];
 const SETCOLORS=["#ff9f33","#4fc3f7"];
@@ -2075,9 +2091,12 @@ async function pcoToken(){
   try{pcoStore(await pcoTokenRequest({grant_type:"refresh_token",refresh_token:PCT.rt}));return PCT.at;}
   catch(e){if(e.status===400||e.status===401){PCT.rtExp=0;savePCT();}return null;}
 }
-async function pco(path){
+async function pco(path,opt={}){
   const t=await pcoToken();if(!t)throw Object.assign(new Error("Nicht angemeldet"),{status:401});
-  const res=await fetch(path.startsWith("http")?path:PCO_BASE+path,{headers:{Authorization:"Bearer "+t}});
+  const init={headers:{Authorization:"Bearer "+t}};
+  if(opt.method){init.method=opt.method;}
+  if(opt.body){init.headers["Content-Type"]="application/json";init.body=JSON.stringify(opt.body);}
+  const res=await fetch(path.startsWith("http")?path:PCO_BASE+path,init);
   if(!res.ok)throw Object.assign(new Error("HTTP "+res.status),{status:res.status});
   return res.json();
 }
@@ -2108,7 +2127,7 @@ function fmtSong(s){return (s.k===null||s.k===undefined?"keine Tonart":(s.minor?
 function nextPlayable(from,dir){let i=from;for(let n=0;n<SL.songs.length;n++){i+=dir;if(i<0||i>=SL.songs.length)return -1;if(playable(i))return i;}return -1;}
 function goSong(i,opts={}){
   if(!slOn()||i<0||i>=SL.songs.length)return;
-  SL.pos=i;saveSL();
+  SL.pos=i;SL.touched=null;clearTimeout(pcoTempoTimer);saveSL();
   const s=SL.songs[i];
   if(s.bpm||s.meter)setTempo(s.bpm,s.meter);
   if(playable(i)){
@@ -2124,7 +2143,7 @@ function stepSong(dir){
   goSong(i);
 }
 let slView=load("apl.slview","pads");
-const meterLabel=m=>m?(m===6||m===12||m===9?m+"/8":m+"/4"):"–";
+const meterLabel=m=>{const pm=parseMeter(m);return pm?pm.n+"/"+pm.d:"–";};
 function renderSlTable(){
   const list=slOn()&&slView==="list";
   document.body.classList.toggle("slist",list);$("slTable").hidden=!list;
@@ -2200,8 +2219,9 @@ async function pcoFetchSongs(stId,planId){
   const j=await pco(`/services/v2/service_types/${stId}/plans/${planId}/items?per_page=100&include=arrangement`);
   const arr={};for(const x of j.included||[])if(x.type==="Arrangement")arr[x.id]=x.attributes||{};
   const items=(j.data||[]).filter(x=>x.attributes&&x.attributes.item_type==="song").sort((a,b)=>(a.attributes.sequence||0)-(b.attributes.sequence||0));
-  return items.map(x=>{const key=(x.attributes.key_name||"").trim(),p=pcoKey(key);const ar=arr[x.relationships&&x.relationships.arrangement&&x.relationships.arrangement.data&&x.relationships.arrangement.data.id]||{};
-    return {id:x.id,title:x.attributes.title||"Lied",key,k:p?p.k:null,minor:p?p.minor:false,bpm:ar.bpm?+ar.bpm:null,meter:meterOf(ar.meter)};});
+  const rel=(x,n)=>x.relationships&&x.relationships[n]&&x.relationships[n].data&&x.relationships[n].data.id||null;
+  return items.map(x=>{const key=(x.attributes.key_name||"").trim(),p=pcoKey(key),arrId=rel(x,"arrangement");const ar=arr[arrId]||{};
+    return {id:x.id,title:x.attributes.title||"Lied",key,k:p?p.k:null,minor:p?p.minor:false,bpm:ar.bpm?+ar.bpm:null,meter:meterOf(ar.meter),songId:rel(x,"song"),arrId};});
 }
 async function pcoLoadPlan(stId,plan,stName){
   const songs=await pcoFetchSongs(stId,plan.id);
@@ -2271,7 +2291,7 @@ $("slReload").onclick=async()=>{
 };
 $("slOther").onclick=()=>{$("slSheet").classList.remove("open");openPcoSheet();};
 // ---- Nächste Veranstaltung & Live-Abgleich ----
-const songSig=songs=>JSON.stringify(songs.map(s=>[s.id||s.title,s.key,s.bpm,s.meter]));
+const songSig=songs=>JSON.stringify(songs.map(s=>[s.id||s.title,s.key,s.bpm,s.meter,s.arrId||null]));
 async function pcoUpcoming(perType){
   const types=((await pco("/services/v2/service_types?per_page=100")).data||[]),rows=[];
   await Promise.all(types.map(async t=>{
@@ -2341,7 +2361,18 @@ renderSetlist();
 
 // ================= Klick (Metronom) =================
 // Ausgabe: "visual" = nur Anzeige · "split" = Pad auf einem, Klick auf dem anderen Kanal (Mono) · "mix" = Klick in beiden Kanälen
-const CLICK=Object.assign({out:"visual",swap:false,vol:.8,bpm:80,meter:4,countIn:1,follow:false},load("apl.click",{}));
+const CLICK=Object.assign({out:"visual",swap:false,vol:.8,bpm:80,meter:4,den:4,countIn:1,follow:false,accent:true,pcoAuto:false},load("apl.click",{}));
+// Taktart: Zähler (Schläge) + Nenner. Alte Speicherstände kannten nur die Zahl (6 = 6/8).
+function parseMeter(x){
+  if(x===null||x===undefined||x==="")return null;
+  if(typeof x==="number")return x>=1&&x<=16?{n:x,d:(x===6||x===7||x===9||x===12)?8:4}:null;
+  if(typeof x==="object"&&x.n)return x;
+  const m=String(x).match(/^\s*(\d+)\s*\/\s*(\d+)/);if(!m)return null;
+  const n=+m[1],d=+m[2];return n>=1&&n<=16&&[1,2,4,8,16].includes(d)?{n,d}:null;
+}
+if(!CLICK.den||typeof CLICK.meter!=="number"){const pm=parseMeter(CLICK.meter)||{n:4,d:4};CLICK.meter=pm.n;CLICK.den=pm.d;}
+else if(!load("apl.click",{}).den){CLICK.den=(CLICK.meter===6||CLICK.meter===7||CLICK.meter===12)?8:4;}
+const meterStr=()=>`${CLICK.meter}/${CLICK.den}`;
 const saveClick=()=>store("apl.click",CLICK);
 let clickGain=null,padMono=null,merger=null;
 function routeAudio(){
@@ -2387,7 +2418,7 @@ function flash(t,b,isCount){
 function schedule(){
   while(nextBeatT<ctx.currentTime+.12){
     const b=beatNo%CLICK.meter,isCount=countLeft>0;
-    beep(nextBeatT,b===0);flash(nextBeatT,b,isCount);
+    beep(nextBeatT,b===0&&CLICK.accent!==false);flash(nextBeatT,b,isCount);
     if(isCount)countLeft--;
     nextBeatT+=beatLen();beatNo++;
   }
@@ -2403,7 +2434,9 @@ function renderClick(){
   pl.innerHTML=clickOn?'<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>':'<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>';
   $("clickSound").checked=CLICK.out!=="visual";
   const tv=$("t_val");if(tv)tv.textContent=Math.round(CLICK.bpm);
-  document.querySelectorAll("#t_meter button").forEach(b=>b.classList.toggle("on",+b.dataset.m===CLICK.meter));
+  const ms=meterStr();let quick=false;document.querySelectorAll("#t_meter button").forEach(b=>{const on=b.dataset.m===ms;b.classList.toggle("on",on);quick=quick||on;});
+  const tm=$("t_more");if(tm){tm.value=quick?"":ms;tm.classList.toggle("on",!quick);tm.options[0].textContent=quick?"mehr …":"mehr …";}
+  updatePcoTempoUI();
   const s=$("c_bpmVal");if(s)s.textContent=Math.round(CLICK.bpm);
 }
 function startClick(withCount){
@@ -2417,7 +2450,7 @@ function toggleClick(){unlockAudio();clickOn?stopClick():startClick(false);toast
 function countIn(){unlockAudio();startClick(true);toast(CLICK.countIn?`Einzähler ${CLICK.countIn} ${CLICK.countIn===1?"Takt":"Takte"} · ${Math.round(CLICK.bpm)} BPM`:`Klick an · ${Math.round(CLICK.bpm)} BPM`);}
 function setTempo(bpm,meter){
   if(bpm)CLICK.bpm=Math.max(30,Math.min(260,Math.round(bpm*10)/10));
-  if(meter)CLICK.meter=meter;
+  const pm=parseMeter(meter);if(pm){CLICK.meter=pm.n;CLICK.den=pm.d;}
   saveClick();
   if(clickOn&&ctx){// neues Tempo ab der nächsten Eins, ohne Stolpern
     const left=(CLICK.meter-beatNo%CLICK.meter)%CLICK.meter;beatNo=beatNo+left;
@@ -2427,10 +2460,37 @@ function setTempo(bpm,meter){
 let taps=[];
 function tapTempo(){
   const now=performance.now();taps=taps.filter(t=>now-t<2500);taps.push(now);
-  if(taps.length>=2){const d=(taps[taps.length-1]-taps[0])/(taps.length-1);setTempo(60000/d);}
+  if(taps.length>=2){const d=(taps[taps.length-1]-taps[0])/(taps.length-1);userTempo(60000/d);}
   const el=$("c_tap");if(el)el.textContent=taps.length>=2?`Tap · ${Math.round(CLICK.bpm)}`:"Tap";
 }
-function meterOf(s){const m=String(s||"").match(/^\s*(\d+)\s*\/\s*(\d+)/);if(!m)return null;const n=+m[1];return n>=2&&n<=12?n:null;}
+function meterOf(s){const pm=parseMeter(s);return pm?`${pm.n}/${pm.d}`:null;}
+// ---- Tempo vom Nutzer geändert → ggf. nach Planning Center zurückschreiben ----
+let pcoTempoTimer=null,pcoTempoBusy=false;
+function userTempo(bpm,meter){setTempo(bpm,meter);if(slOn()){SL.touched=SL.pos;}updatePcoTempoUI();
+  clearTimeout(pcoTempoTimer);if(CLICK.pcoAuto&&pcoTempoDirty())pcoTempoTimer=setTimeout(()=>savePcoTempo(true),2500);}
+function curSong(){return slOn()?SL.songs[SL.pos]:null;}
+function pcoTempoDirty(){const s=curSong();if(!s||SL.touched!==SL.pos||!s.arrId||!s.songId)return false;
+  const sm=parseMeter(s.meter);return Math.round(CLICK.bpm)!==Math.round(s.bpm||0)||!sm||sm.n!==CLICK.meter||sm.d!==CLICK.den;}
+function updatePcoTempoUI(){const d=pcoTempoDirty(),s=curSong();
+  for(const id of ["t_pco","c_pcoRow"]){const el=$(id);if(el)el.hidden=!d||!!CLICK.pcoAuto&&id==="c_pcoRow";}
+  const t=$("t_pco");if(t&&d)t.textContent=pcoTempoBusy?"Speichere …":CLICK.pcoAuto?`Wird gespeichert: ${Math.round(CLICK.bpm)} BPM · ${meterStr()}`:`„${s.title}“ in Planning Center speichern`;
+}
+async function savePcoTempo(auto){
+  const s=curSong();if(!s||!pcoTempoDirty()||pcoTempoBusy)return;
+  const bpm=Math.round(CLICK.bpm),meter=meterStr();
+  pcoTempoBusy=true;updatePcoTempoUI();
+  try{
+    await pco(`/services/v2/songs/${s.songId}/arrangements/${s.arrId}`,{method:"PATCH",body:{data:{type:"Arrangement",id:String(s.arrId),attributes:{bpm,meter}}}});
+    for(const x of SL.songs)if(x.arrId===s.arrId){x.bpm=bpm;x.meter=meter;}
+    SL.sig=songSig(SL.songs);SL.touched=null;saveSL();renderSetlist();
+    toast(`„${s.title}“: ${bpm} BPM · ${meter} in Planning Center gespeichert`);
+  }catch(e){
+    if(e.status===401){toast("Bitte neu mit Planning Center verbinden");}
+    else if(e.status===403)toast("Keine Berechtigung: Arrangements in Planning Center bearbeiten ist für dein Konto nicht freigegeben");
+    else toast(navigator.onLine?"Speichern in Planning Center fehlgeschlagen ("+(e.status||e.message)+")":"Kein Internet – Tempo nicht gespeichert");
+  }
+  pcoTempoBusy=false;updatePcoTempoUI();
+}
 $("clickPlay").onclick=toggleClick;
 $("clickWidget").onclick=()=>openTempo();
 $("clickSound").onchange=()=>{
@@ -2442,14 +2502,17 @@ function openTempo(){taps=[];$("t_tap").textContent="Tap";renderClick();$("tempo
 function closeTempo(){$("tempoBg").hidden=true;$("tempoDlg").hidden=true;}
 $("tempoBg").onclick=closeTempo;
 $("t_tap").onclick=()=>{tapTempo();$("t_tap").textContent=taps.length>=2?`Tap · ${Math.round(CLICK.bpm)}`:"Tap · weiter tippen";};
-document.querySelectorAll("#t_meter button").forEach(b=>b.onclick=()=>setTempo(null,+b.dataset.m));
+document.querySelectorAll("#t_meter button").forEach(b=>b.onclick=()=>userTempo(null,b.dataset.m));
+$("t_more").onchange=()=>{const v=$("t_more").value;if(v)userTempo(null,v);};
+$("t_pco").onclick=()=>savePcoTempo(false);
+$("c_pcoSave").onclick=()=>savePcoTempo(false);
 function holdRepeat(el,fn){let t1=null,t2=null;
   const stop=()=>{clearTimeout(t1);clearInterval(t2);t1=t2=null;};
   el.addEventListener("pointerdown",e=>{e.preventDefault();fn();t1=setTimeout(()=>{t2=setInterval(fn,70);},420);});
   ["pointerup","pointerleave","pointercancel"].forEach(ev=>el.addEventListener(ev,stop));
   el.addEventListener("click",e=>e.preventDefault());}
-holdRepeat($("t_minus"),()=>setTempo(CLICK.bpm-1));
-holdRepeat($("t_plus"),()=>setTempo(CLICK.bpm+1));
+holdRepeat($("t_minus"),()=>userTempo(CLICK.bpm-1));
+holdRepeat($("t_plus"),()=>userTempo(CLICK.bpm+1));
 // ---- Einstellungen ----
 function renderClickSettings(){
   document.querySelectorAll("#c_out .segbtn").forEach(b=>b.classList.toggle("on",b.dataset.v===CLICK.out));
@@ -2458,7 +2521,7 @@ function renderClickSettings(){
   $("c_swapRow").style.display=CLICK.out==="split"?"":"none";
   $("c_swap").textContent=CLICK.swap?"Klick links · Pad rechts":"Pad links · Klick rechts";
   $("c_vol").value=CLICK.vol;$("c_volRow").style.display=CLICK.out==="visual"?"none":"";
-  $("c_meter").value=String(CLICK.meter);$("c_follow").checked=!!CLICK.follow;renderClick();
+  $("c_meter").value=meterStr();$("c_accent").checked=CLICK.accent!==false;$("c_pcoAuto").checked=!!CLICK.pcoAuto;$("c_follow").checked=!!CLICK.follow;renderClick();
   $("c_outHint").textContent={visual:"Kein Klick-Ton – der Takt blinkt nur oben als Symbol.",
     split:"Pad und Klick getrennt: per Y-Kabel (Stereo-Klinke → 2× Mono) einen Kanal ans Mischpult, den anderen ins In-Ear.",
     mix:"Klick auf beiden Kanälen zusammen mit dem Pad – z. B. für Kopfhörer beim Üben."}[CLICK.out];
@@ -2473,9 +2536,11 @@ $("c_cnt").onblur=()=>{$("c_cnt").value=CLICK.countIn;};
 $("c_follow").onchange=()=>{CLICK.follow=$("c_follow").checked;saveClick();toast(CLICK.follow?"Klick folgt dem Pad":"Klick unabhängig vom Pad");};
 $("c_swap").onclick=()=>{CLICK.swap=!CLICK.swap;saveClick();routeAudio();renderClickSettings();};
 $("c_vol").oninput=()=>{CLICK.vol=+$("c_vol").value;saveClick();if(clickGain)clickGain.gain.setTargetAtTime(CLICK.vol,ctx.currentTime,.02);};
-$("c_meter").onchange=()=>{setTempo(null,+$("c_meter").value);renderClickSettings();};
-$("c_minus").onclick=()=>setTempo(CLICK.bpm-1);
-$("c_plus").onclick=()=>setTempo(CLICK.bpm+1);
+$("c_meter").onchange=()=>{userTempo(null,$("c_meter").value);renderClickSettings();};
+$("c_minus").onclick=()=>userTempo(CLICK.bpm-1);
+$("c_plus").onclick=()=>userTempo(CLICK.bpm+1);
+$("c_accent").onchange=()=>{CLICK.accent=$("c_accent").checked;saveClick();toast(CLICK.accent?"Eins wird betont":"Alle Schläge gleich");};
+$("c_pcoAuto").onchange=()=>{CLICK.pcoAuto=$("c_pcoAuto").checked;saveClick();updatePcoTempoUI();if(CLICK.pcoAuto&&pcoTempoDirty())savePcoTempo(true);};
 $("c_tap").onclick=tapTempo;
 $("c_test").onclick=()=>{toggleClick();$("c_test").textContent=clickOn?"Klick stoppen":"Klick testen";};
 renderClickSettings();
@@ -2612,7 +2677,7 @@ function settingsSummaries(){
   $("sum_sound").textContent=`Wechsel ${f(S.xfade)} · Fade Out ${f(S.fadeOut)} · Pads ${({90:"1½ Min.",150:"2½ Min.",240:"4 Min.",0:"ganz"})[S.maxLoop]||""}`;
   $("sum_onedrive").textContent=!msClientId()?"Nicht eingerichtet":msSessionValid()?`Angemeldet · ${remoteSets.length} Set${remoteSets.length===1?"":"s"}${remotePlan?" · Neues verfügbar":""}`:`${remoteSets.length} Set${remoteSets.length===1?"":"s"} auf dem Gerät · nicht angemeldet`;
   document.querySelector('.mrow[data-go="onedrive"]').classList.toggle("badge",!!remotePlan);
-  $("sum_click").textContent=`${Math.round(CLICK.bpm)} BPM · ${CLICK.meter===6?"6/8":CLICK.meter+"/"+(CLICK.meter>=6?8:4)} · ${{visual:"nur Anzeige",split:"Split",mix:"gemischt"}[CLICK.out]}${clickOn?" · läuft":""}`;
+  $("sum_click").textContent=`${Math.round(CLICK.bpm)} BPM · ${meterStr()} · ${{visual:"nur Anzeige",split:"Split",mix:"gemischt"}[CLICK.out]}${clickOn?" · läuft":""}`;
   $("sum_pco").textContent=SL?`${slOn()?"An":"Aus"} · ${SL.title}`:(pcoValid()?"Verbunden · noch keine Setlist":"Lieder & Tonarten aus Planning Center");
   $("sum_team").textContent=teamUrl()?`${teamSets.length} Team-Set${teamSets.length===1?"":"s"} auf dem Gerät`:"Noch kein Team-Ordner hinterlegt";
   $("sum_sets").textContent=allSetKeys().map(setLabel).join(", ")+(HIDDEN.length?` · ${HIDDEN.length} ausgeblendet`:"");
@@ -2719,8 +2784,9 @@ function showTuner(f){
   const pc=((near%12)+12)%12;
   $("tNote").textContent=NOTE_NAMES[pc];$("tOct").textContent=Math.floor(near/12)-1;
   $("tHz").textContent=f.toFixed(1).replace(".",",")+" Hz";
-  $("tCents").textContent=(cents>0?"+":"")+Math.round(cents)+" Cent";
-  $("tNeedle").style.transform=`rotate(${cents*1.1}deg)`;
+  const cr=Math.round(cents*10)/10;
+  $("tCents").textContent=(cr>0?"+":cr<0?"−":"±")+Math.abs(cr).toFixed(1).replace(".",",")+" Cent";
+  $("tNeedle").style.transform=`rotate(${cents*TUN_DEG}deg)`;
   const ok=Math.abs(cents)<=3;box.classList.toggle("ok",ok);box.classList.toggle("lo",!ok&&cents<0);box.classList.toggle("hi",!ok&&cents>0);
   const g=GUITAR.reduce((a,s)=>Math.abs(s[1]-midi)<Math.abs(a[1]-midi)?s:a);
   $("tString").textContent=Math.abs(g[1]-midi)<1.5?`Gitarre: ${GUITAR.indexOf(g)===0?"tiefe ":GUITAR.indexOf(g)===5?"hohe ":""}${g[0]}-Saite`:"";
@@ -2728,7 +2794,7 @@ function showTuner(f){
 async function openTuner(after){
   tunAfter=after||null;
   $("settingsSheet").classList.remove("open");$("tunerSheet").classList.add("open");
-  $("tRef").textContent=TUN.ref+" Hz";showTuner(null);
+  renderRef();showTuner(null);
   $("tStatus").textContent="Mikrofon wird gestartet …";
   try{
     ensureCtx();
@@ -2753,8 +2819,30 @@ function stopTuner(){
 }
 function closeTuner(){stopTuner();$("tunerSheet").classList.remove("open");if(tunAfter){const a=tunAfter;tunAfter=null;a();}}
 $("tunerClose").onclick=closeTuner;
-$("tRefMinus").onclick=()=>{TUN.ref=Math.max(430,TUN.ref-1);saveTun();$("tRef").textContent=TUN.ref+" Hz";};
-$("tRefPlus").onclick=()=>{TUN.ref=Math.min(450,TUN.ref+1);saveTun();$("tRef").textContent=TUN.ref+" Hz";};
+function setRef(v){v=Math.round(+v);if(!isFinite(v))v=TUN.ref;TUN.ref=Math.max(415,Math.min(466,v));saveTun();renderRef();}
+function renderRef(){if(document.activeElement!==$("tRef"))$("tRef").value=TUN.ref;$("tRefMinus").disabled=TUN.ref<=415;$("tRefPlus").disabled=TUN.ref>=466;$("tRefReset").hidden=TUN.ref===440;}
+$("tRefMinus").onclick=()=>setRef(TUN.ref-1);
+$("tRefPlus").onclick=()=>setRef(TUN.ref+1);
+$("tRefReset").onclick=()=>{setRef(440);toast("Kammerton A = 440 Hz");};
+$("tRef").onchange=()=>{const v=$("tRef").value;setRef(v===""?TUN.ref:v);$("tRef").value=TUN.ref;};
+$("tRef").onkeydown=e=>{if(e.key==="Enter")$("tRef").blur();};
+$("tRef").onblur=()=>{$("tRef").value=TUN.ref;};
+// Skala: ±50 Cent über ±60°, Striche jede 2 Cent, um die Mitte jede 1 Cent
+const TUN_DEG=1.2;
+(function buildScale(){
+  const cx=150,cy=158,R1=128,ns="http://www.w3.org/2000/svg",el=$("tScale");let h="";
+  const pt=(c,r)=>{const a=(c*TUN_DEG-90)*Math.PI/180;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];};
+  const a0=pt(-3,R1+6),a1=pt(3,R1+6);
+  h+=`<path class="zone2" d="M${a0[0].toFixed(1)} ${a0[1].toFixed(1)} A${R1+6} ${R1+6} 0 0 1 ${a1[0].toFixed(1)} ${a1[1].toFixed(1)}"/>`;
+  for(let c=-50;c<=50;c++){
+    const big=c%10===0,mid=c%5===0,fine=Math.abs(c)<=10;
+    if(!big&&!mid&&!fine&&c%2)continue;
+    const len=big?18:mid?12:7,[x1,y1]=pt(c,R1),[x2,y2]=pt(c,R1-len);
+    h+=`<line class="tk${big?" m10":mid?" m5":""}${Math.abs(c)<=3&&!big?" z":""}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
+    if(big){const [tx,ty]=pt(c,R1+16);h+=`<text class="tl" x="${tx.toFixed(1)}" y="${(ty+4).toFixed(1)}" text-anchor="middle">${c>0?"+"+c:c===0?"0":"−"+(-c)}</text>`;}
+  }
+  el.innerHTML=h;
+})();
 $("tunerRow").onclick=()=>openTuner();
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible"&&tunStream)closeTuner();});
 
